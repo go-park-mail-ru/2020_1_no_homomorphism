@@ -92,6 +92,8 @@ func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	id, err := r.Cookie("session_id")
 
 	if err == http.ErrNoCookie {
@@ -121,7 +123,7 @@ func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie){
+func (api *MyHandler)  createCookie(id uuid.UUID) (cookie *http.Cookie){
 	mutex := sync.RWMutex{}
 	mutex.Lock()
 	sid := uuid.NewV4()
@@ -155,7 +157,42 @@ func (api *MyHandler) signUpHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
+func (api *MyHandler) editUserHandler(w http.ResponseWriter, r *http.Request){
+	defer r.Body.Close()
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		log.Printf("permission denied: %s", err)
+		w.WriteHeader(403)
+	}
+	newUserData := new(models.User)
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&newUserData)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.WriteHeader(400)
+		return
+	}
+	sid, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		log.Printf("permission denied: %s", err)
+		w.WriteHeader(403)
+	}
+	id := api.Sessions[sid]
+	user, err := api.UsersStorage.GetById(id)
+	if err != nil {
+		log.Print(err)
+		w.WriteHeader(403)
+		return
+	}
+	api.UsersStorage.EditUser(user, newUserData)
+}
 
+// func (api *MyHandler) showHandler(w http.ResponseWriter, r *http.Request) {
+// 	defer r.Body.Close()
+// 	for r, w := range api.UsersStorage.Users {
+// 		fmt.Println(r, w)
+// 	}
+// }
 func main() {
 	r := mux.NewRouter()
 	api := NewMyHandler()
@@ -165,6 +202,8 @@ func main() {
 	r.HandleFunc("/login", api.loginHandler).Methods("POST")
 	r.HandleFunc("/logout", api.loginHandler).Methods("DELETE")
 	r.HandleFunc("/signup", api.signUpHandler).Methods("POST")
+	// r.HandleFunc("/show", api.showHandler).Methods("POST")
+	r.HandleFunc("/profile/settings", api.editUserHandler).Methods("POST")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)

@@ -1,7 +1,8 @@
 package models
 
 import (
-	"regexp"
+	"errors"
+	"log"
 	"sync"
 
 	uuid "github.com/satori/go.uuid"
@@ -11,7 +12,6 @@ func NewUsersStorage() *UsersStorage {
 	return &UsersStorage{
 		Users:  make(map[string]*User),
 		Mutex:  sync.RWMutex{},
-		//nextId: 0,
 	}
 }
 
@@ -33,7 +33,6 @@ type UserInput struct {
 	Password string `json:"password"`
 }
 
-
 func (us *UsersStorage) AddUser(input *UserInput) (uuid.UUID, error) {
 	us.Mutex.Lock()
 	user := &User{
@@ -45,18 +44,21 @@ func (us *UsersStorage) AddUser(input *UserInput) (uuid.UUID, error) {
 	us.Mutex.Unlock()
 	return user.Id, nil
 }
-func (us *UsersStorage) GetByUsername(username string) (uuid.UUID) {
+func (us *UsersStorage) GetByUsername(username string) uuid.UUID {
 	return us.Users[username].Id
 }
-
-func ValidateEmail(email string) bool {
-
-	pattern := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|" +
-		"}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\." +
-		"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-	return pattern.MatchString(email)
+func (us *UsersStorage) GetById(id uuid.UUID) (*User, error) {
+	for _, user := range us.Users {
+		if user.Id == id {
+			return user, nil
+		}
+	}
+	return nil, errors.New("user with this id does not exists: " + id.String())
 }
 
-func ValidateNickname(nickname string) bool {
-	return true
+func (us *UsersStorage) EditUser(user *User, newUserData *User){
+
+	newUserData.Id = id
+	delete(us.Users, user.Nickname)
+	us.Users[newUserData.Nickname] = newUserData
 }
