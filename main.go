@@ -15,50 +15,41 @@ import (
 	"no_homomorphism/models"
 )
 
-//User - model of user
-// type User struct {
-// 	ID       uuid.UUID `json:"id"`
-// 	Username string    `json:"username"`
-// 	Password string    `json:"-"`
-// }
-
-type UserInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 type MyHandler struct {
-	Sessions map[string]uuid.UUID
-	Users    map[string]*models.User
-	mu       *sync.Mutex
+	Sessions map[uuid.UUID]uuid.UUID // SID -> ID
+	UsersStorage models.UsersStorage
 }
 
 func NewMyHandler() *MyHandler {
 	return &MyHandler{
-		Sessions: make(map[string]uuid.UUID, 10),
-		Users: map[string]*models.User{
-			"test": {
-				Id:       uuid.FromStringOrNil("1"),
-				Nickname: "test",
-				Password: "123",
+		Sessions: make(map[uuid.UUID]uuid.UUID, 10),
+		UsersStorage: models.UsersStorage{
+			Users: map[string]*models.User{
+				"test" : {
+					Id:       uuid.FromStringOrNil("1"),
+					Nickname: "test",
+					Password: "123",
+				},
 			},
+			Mutex: sync.RWMutex{},
 		},
-		mu: &sync.Mutex{},
 	}
 }
 
 func (api *MyHandler) handler(w http.ResponseWriter, r *http.Request) {
 	authorized := false
 	session, err := r.Cookie("session_id")
-	api.mu.Lock()
+	mutex := &sync.Mutex{}
+	mutex.Lock()
 	if err == nil && session != nil {
-		//id, err := uuid.FromString(session.Value)
-		//if err != nil {
-		//	api.mu.Unlock()
-		//	w.WriteHeader(http.StatusBadRequest)
-		//	return
-		//}
-		_, authorized = api.Sessions[session.Value]
+		id, err := uuid.FromString(session.Value)
+		if err != nil {
+			mutex.Unlock()
+			w.WriteHeader(400)
+			return
+		}
+		_, authorized = api.Sessions[id]
 	}
 
 	if authorized {
@@ -67,14 +58,14 @@ func (api *MyHandler) handler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not autrorized"))
 	}
 
-	api.mu.Unlock()
+	mutex.Unlock()
 
 }
 
 func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	user := new(UserInput)
+	user := new(models.UserInput)
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
@@ -85,31 +76,27 @@ func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.mu.Lock()
-	userModel, ok := api.Users[user.Username]
+	mutex := &sync.Mutex{}
+	mutex.Lock()
+	userModel, ok := api.UsersStorage.Users[user.Nickname]
 
 	if !ok || userModel.Password != user.Password {
-		api.mu.Unlock()
+		mutex.Unlock()
+		w.WriteHeader(400)
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println("Sending status 400 to " + r.RemoteAddr)
 		return
 	}
 
-	id := uuid.NewV4()
-	api.Sessions[id.String()] = id
-	api.mu.Unlock()
-
-	cookie := &http.Cookie{
-		Name:    "session_id",
-		Value:   id.String(),
-		Expires: time.Now().Add(10 * time.Hour),
-	}
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, api.createCookie(userModel.Id))
+	mutex.Unlock()
 	w.WriteHeader(200)
 	fmt.Println("Sending status 200 to " + r.RemoteAddr)
 }
 
 func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
 	id, err := r.Cookie("session_id")
 
 	if err == http.ErrNoCookie {
@@ -117,60 +104,95 @@ func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
+	userToken, err := uuid.FromString(id.Value)
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	if _, ok := api.Sessions[id.Value]; !ok {
+	if _, ok := api.Sessions[userToken]; !ok {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	delete(api.Sessions, id.Value)
+	delete(api.Sessions, userToken)
 
 	id.Expires = time.Now().AddDate(0, 0, -1)
 	http.SetCookie(w, id)
 }
 
+func (api *MyHandler)  createCookie(id uuid.UUID) (cookie *http.Cookie){
+	mutex := sync.RWMutex{}
+	mutex.Lock()
+	sid := uuid.NewV4()
+	api.Sessions[sid] = id
+	cookie = &http.Cookie{
+		Name:    "session_id",
+		Value:   sid.String(),
+		Expires: time.Now().Add(10 * time.Hour),
+	}
+	return
+}
+
 func (api *MyHandler) signUpHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userInput := new(UserInput)
-
+	userInput := new(models.UserInput)
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&userInput)
-
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	api.mu.Lock()
-	user := models.User{
-		Id:       uuid.NewV1(),
-		Nickname: userInput.Username,
-		Password: userInput.Password,
+	userId, err := api.UsersStorage.AddUser(userInput)
+	if err != nil {
+		log.Printf("error while creating User: %s", err)
+		w.WriteHeader(400)
+		return
 	}
-	api.Users[userInput.Username] = &user
-
-	id := uuid.NewV4()
-	api.Sessions[id.String()] = id
-	api.mu.Unlock()
-
-	cookie := &http.Cookie{
-		Name:    "session_id",
-		Value:   id.String(),
-		Expires: time.Now().Add(10 * time.Hour),
-	}
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, api.createCookie(userId))
 	w.WriteHeader(200)
 }
 
+func (api *MyHandler) editUserHandler(w http.ResponseWriter, r *http.Request){
+	defer r.Body.Close()
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		log.Printf("permission denied: %s", err)
+		w.WriteHeader(403)
+	}
+	newUserData := new(models.User)
+	decoder := json.NewDecoder(r.Body)
+	err = decoder.Decode(&newUserData)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.WriteHeader(400)
+		return
+	}
+	sid, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		log.Printf("permission denied: %s", err)
+		w.WriteHeader(403)
+	}
+	id := api.Sessions[sid]
+	user, err := api.UsersStorage.GetById(id)
+	if err != nil {
+		log.Print(err)
+		w.WriteHeader(403)
+		return
+	}
+	api.UsersStorage.EditUser(user, newUserData)
+}
+
+// func (api *MyHandler) showHandler(w http.ResponseWriter, r *http.Request) {
+// 	defer r.Body.Close()
+// 	for r, w := range api.UsersStorage.Users {
+// 		fmt.Println(r, w)
+// 	}
+// }
 func (api *MyHandler) saveImageHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(5 * 1024 * 1025)
 	if err != nil {
@@ -222,6 +244,8 @@ func main() {
 	r.HandleFunc("/logout", api.loginHandler).Methods("DELETE")
 	r.HandleFunc("/signup", api.signUpHandler).Methods("POST")
 	r.HandleFunc("/image", api.saveImageHandler).Methods("POST")
+	// r.HandleFunc("/show", api.showHandler).Methods("POST")
+	r.HandleFunc("/profile/settings", api.editUserHandler).Methods("POST")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)
