@@ -53,10 +53,10 @@ func (us *UsersStorage) AddUser(input *UserInput) (uuid.UUID, error) {
 	us.Mutex.Unlock()
 	return user.Id, nil
 }
-func (us *UsersStorage) GetByUsername(username string) uuid.UUID {
+func (us *UsersStorage) GetIdByUsername(username string) uuid.UUID{
 	return us.Users[username].Id
 }
-func (us *UsersStorage) GetById(id uuid.UUID) (*User, error) {
+func (us *UsersStorage) GetUserById(id uuid.UUID) (*User, error) {
 	for _, user := range us.Users {
 		if user.Id == id {
 			return user, nil
