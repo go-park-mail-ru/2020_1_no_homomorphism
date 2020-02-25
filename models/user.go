@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"log"
 	"sync"
 
 	uuid "github.com/satori/go.uuid"
@@ -58,7 +57,7 @@ func (us *UsersStorage) GetById(id uuid.UUID) (*User, error) {
 
 func (us *UsersStorage) EditUser(user *User, newUserData *User){
 
-	newUserData.Id = id
+	newUserData.Id = user.Id
 	delete(us.Users, user.Nickname)
 	us.Users[newUserData.Nickname] = newUserData
 }
