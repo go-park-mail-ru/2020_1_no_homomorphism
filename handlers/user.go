@@ -90,7 +90,7 @@ func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	id, err := r.Cookie("session_id")
+	sid, err := r.Cookie("session_id")
 
 	if err == http.ErrNoCookie {
 		fmt.Println(err)
@@ -98,7 +98,7 @@ func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userToken, err := uuid.FromString(id.Value)
+	userToken, err := uuid.FromString(sid.Value)
 
 	if err != nil {
 		fmt.Println(err)
@@ -112,10 +112,10 @@ func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	delete(api.Sessions, userToken)
+	delete(api.Sessions,uuid.FromStringOrNil(sid.Value) )
 
-	id.Expires = time.Now().AddDate(0, 0, -1)
-	http.SetCookie(w, id)
+	sid.Expires = time.Now().AddDate(0, 0, -1)
+	http.SetCookie(w, sid)
 
 }
 
@@ -150,7 +150,7 @@ func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.SetCookie(w, api.createCookie(userId))
-	w.WriteHeader(http.StatusBadRequest)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *MyHandler) SetingsHandler(w http.ResponseWriter, r *http.Request) {
