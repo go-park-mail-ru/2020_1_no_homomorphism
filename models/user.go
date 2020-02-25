@@ -2,7 +2,6 @@ package models
 
 import (
 	"errors"
-	"log"
 	"sync"
 
 	uuid "github.com/satori/go.uuid"
@@ -10,22 +9,22 @@ import (
 
 func NewUsersStorage() *UsersStorage {
 	return &UsersStorage{
-		Users:  make(map[string]*User),
-		Mutex:  sync.RWMutex{},
+		Users: make(map[string]*User),
+		Mutex: sync.RWMutex{},
 	}
 }
 
 type UsersStorage struct {
-	Users  map[string]*User
-	Mutex  sync.RWMutex
+	Users map[string]*User
+	Mutex sync.RWMutex
 }
 
 type User struct {
-	Id        uuid.UUID   `json:"id"`
-	Nickname  string `json:"nickname"`
-	Password  string `json:"password"`
-	AvatarURL string `json:"avatar_url"`
-	Email     string `json:"avatar_url"`
+	Id        uuid.UUID `json:"id"`
+	Nickname  string    `json:"nickname"`
+	Password  string    `json:"password"`
+	AvatarURL string    `json:"avatar_url"`
+	Email     string    `json:"avatar_url"`
 }
 
 type UserInput struct {
@@ -56,7 +55,7 @@ func (us *UsersStorage) GetById(id uuid.UUID) (*User, error) {
 	return nil, errors.New("user with this id does not exists: " + id.String())
 }
 
-func (us *UsersStorage) EditUser(user *User, newUserData *User){
+func (us *UsersStorage) EditUser(user *User, newUserData *User) {
 
 	newUserData.Id = id
 	delete(us.Users, user.Nickname)

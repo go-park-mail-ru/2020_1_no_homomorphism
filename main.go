@@ -15,18 +15,31 @@ import (
 	"no_homomorphism/models"
 )
 
-
 type MyHandler struct {
-	Sessions map[uuid.UUID]uuid.UUID // SID -> ID
+	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
 	UsersStorage models.UsersStorage
+	Mutex sync.Mutex
 }
+
+//func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
+//	session, err := r.Cookie("session_id")
+//	if err == http.ErrNoCookie {
+//		return uuid.FromStringOrNil(""), errors.New(string(http.StatusUnauthorized))
+//	}
+//	sessionId, err := uuid.FromString(session.Value)
+//	if err != nil {
+//		return uuid.FromStringOrNil(""), errors.New(string(http.StatusBadRequest))
+//	}
+//
+//	userId := api.Sessions[sessionId]
+//}
 
 func NewMyHandler() *MyHandler {
 	return &MyHandler{
 		Sessions: make(map[uuid.UUID]uuid.UUID, 10),
 		UsersStorage: models.UsersStorage{
 			Users: map[string]*models.User{
-				"test" : {
+				"test": {
 					Id:       uuid.FromStringOrNil("1"),
 					Nickname: "test",
 					Password: "123",
@@ -123,7 +136,7 @@ func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, id)
 }
 
-func (api *MyHandler)  createCookie(id uuid.UUID) (cookie *http.Cookie){
+func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
 	mutex := sync.RWMutex{}
 	mutex.Lock()
 	sid := uuid.NewV4()
@@ -157,7 +170,7 @@ func (api *MyHandler) signUpHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-func (api *MyHandler) editUserHandler(w http.ResponseWriter, r *http.Request){
+func (api *MyHandler) editUserHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
@@ -194,12 +207,14 @@ func (api *MyHandler) editUserHandler(w http.ResponseWriter, r *http.Request){
 // 	}
 // }
 func (api *MyHandler) saveImageHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(5 * 1024 * 1025)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
+	//userId := api.getUserIdByCookie()
+	//
+	//err = r.ParseMultipartForm(5 * 1024 * 1025)
+	//if err != nil {
+	//	w.WriteHeader(http.StatusBadRequest)
+	//	fmt.Println(err)
+	//	return
+	//}
 
 	file, handler, err := r.FormFile("my_file")
 	if err != nil || handler.Size == 0 {
