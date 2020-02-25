@@ -18,7 +18,6 @@ func NewUsersStorage() *UsersStorage {
 type UsersStorage struct {
 	Users  map[string]*User
 	Mutex  sync.RWMutex
-	nextId uuid.UUID
 }
 
 type User struct {
@@ -29,15 +28,26 @@ type User struct {
 	Email     string `json:"avatar_url"`
 }
 
-// func (us *UsersStorage) AddUser(user *User) (uint, error) {
-// 	us.Mutex.Lock()
-// 	user.Id = us.nextId
-// 	us.Users[user.Nickname] = user
-// 	us.nextId++
-// 	us.Mutex.Unlock()
-//
-// 	return user.Id, nil
-// }
+type UserInput struct {
+	Nickname string `json:"nickname"`
+	Password string `json:"password"`
+}
+
+
+func (us *UsersStorage) AddUser(input *UserInput) (uuid.UUID, error) {
+	us.Mutex.Lock()
+	user := &User{
+		Id:       uuid.NewV4(),
+		Nickname: input.Nickname,
+		Password: input.Password,
+	}
+	us.Users[user.Nickname] = user
+	us.Mutex.Unlock()
+	return user.Id, nil
+}
+func (us *UsersStorage) GetByUsername(username string) (uuid.UUID) {
+	return us.Users[username].Id
+}
 
 func ValidateEmail(email string) bool {
 

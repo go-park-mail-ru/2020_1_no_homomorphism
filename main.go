@@ -13,46 +13,37 @@ import (
 	"no_homomorphism/models"
 )
 
-//User - model of user
-// type User struct {
-// 	ID       uuid.UUID `json:"id"`
-// 	Username string    `json:"username"`
-// 	Password string    `json:"-"`
-// }
-
-type UserInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 type MyHandler struct {
-	Sessions map[uuid.UUID]string
-	Users    map[string]*models.User
-	mu       *sync.Mutex
+	Sessions map[uuid.UUID]uuid.UUID // SID -> ID
+	UsersStorage models.UsersStorage
 }
 
 func NewMyHandler() *MyHandler {
 	return &MyHandler{
-		Sessions: make(map[uuid.UUID]string, 10),
-		Users: map[string]*models.User{
-			"test": {
-				Id:     uuid.FromStringOrNil("1"),
-				Nickname:   "test",
-				Password: "123",
+		Sessions: make(map[uuid.UUID]uuid.UUID, 10),
+		UsersStorage: models.UsersStorage{
+			Users: map[string]*models.User{
+				"test" : {
+					Id:       uuid.FromStringOrNil("1"),
+					Nickname: "test",
+					Password: "123",
+				},
 			},
+			Mutex: sync.RWMutex{},
 		},
-		mu: &sync.Mutex{},
 	}
 }
 
 func (api *MyHandler) handler(w http.ResponseWriter, r *http.Request) {
 	authorized := false
 	session, err := r.Cookie("session_id")
-	api.mu.Lock()
+	mutex := &sync.Mutex{}
+	mutex.Lock()
 	if err == nil && session != nil {
 		id, err := uuid.FromString(session.Value)
 		if err != nil {
-			api.mu.Unlock()
+			mutex.Unlock()
 			w.WriteHeader(400)
 			return
 		}
@@ -65,14 +56,14 @@ func (api *MyHandler) handler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("not autrorized"))
 	}
 
-	api.mu.Unlock()
+	mutex.Unlock()
 
 }
 
 func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	user := new(UserInput)
+	user := new(models.UserInput)
 
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
@@ -83,26 +74,19 @@ func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	api.mu.Lock()
-	userModel, ok := api.Users[user.Username]
+	mutex := &sync.Mutex{}
+	mutex.Lock()
+	userModel, ok := api.UsersStorage.Users[user.Nickname]
 
 	if !ok || userModel.Password != user.Password {
-		api.mu.Unlock()
+		mutex.Unlock()
 		w.WriteHeader(400)
 		fmt.Println("Sending status 400 to " + r.RemoteAddr)
 		return
 	}
 
-	id := uuid.NewV4()
-	api.Sessions[id] = userModel.Nickname
-	api.mu.Unlock()
-
-	cookie := &http.Cookie{
-		Name:    "session_id",
-		Value:   id.String(),
-		Expires: time.Now().Add(10 * time.Hour),
-	}
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, api.createCookie(userModel.Id))
+	mutex.Unlock()
 	w.WriteHeader(200)
 	fmt.Println("Sending status 200 to " + r.RemoteAddr)
 }
@@ -137,40 +121,40 @@ func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie){
+	mutex := sync.RWMutex{}
+	mutex.Lock()
+	sid := uuid.NewV4()
+	api.Sessions[sid] = id
+	cookie = &http.Cookie{
+		Name:    "session_id",
+		Value:   sid.String(),
+		Expires: time.Now().Add(10 * time.Hour),
+	}
+	return
+}
+
 func (api *MyHandler) signUpHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	userInput := new(UserInput)
-
+	userInput := new(models.UserInput)
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&userInput)
-
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.WriteHeader(400)
 		return
 	}
-
-	api.mu.Lock()
-	user := models.User{
-		Id:       uuid.NewV1(),
-		Nickname: userInput.Username,
-		Password: userInput.Password,
+	userId, err := api.UsersStorage.AddUser(userInput)
+	if err != nil {
+		log.Printf("error while creating User: %s", err)
+		w.WriteHeader(400)
+		return
 	}
-	api.Users[userInput.Username] = &user
-
-	id := uuid.NewV4()
-	api.Sessions[id] = user.Nickname
-	api.mu.Unlock()
-
-	cookie := &http.Cookie{
-		Name:    "session_id",
-		Value:   id.String(),
-		Expires: time.Now().Add(10 * time.Hour),
-	}
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, api.createCookie(userId))
 	w.WriteHeader(200)
 }
+
 
 func main() {
 	r := mux.NewRouter()
