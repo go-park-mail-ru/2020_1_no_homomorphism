@@ -24,14 +24,14 @@ type UserInput struct {
 }
 
 type MyHandler struct {
-	Sessions map[string]uuid.UUID
+	Sessions map[uuid.UUID]string
 	Users    map[string]*User
 	mu       *sync.Mutex
 }
 
 func NewMyHandler() *MyHandler {
 	return &MyHandler{
-		Sessions: make(map[string]uuid.UUID, 10),
+		Sessions: make(map[uuid.UUID]string, 10),
 		Users: map[string]*User{
 			"test": {uuid.FromStringOrNil("1"), "test", "123"},
 		},
@@ -40,13 +40,30 @@ func NewMyHandler() *MyHandler {
 }
 
 func (api *MyHandler) handler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("New request from " + r.RemoteAddr)
-	w.Write([]byte("Hello,"))
-	fmt.Fprintf(w, r.RemoteAddr+"\n")
+	authorized := false
+	session, err := r.Cookie("session_id")
+	api.mu.Lock()
+	if err == nil && session != nil {
+		id, err := uuid.FromString(session.Value)
+		if err != nil {
+			api.mu.Unlock()
+			w.WriteHeader(400)
+			return
+		}
+		_, authorized = api.Sessions[id]
+	}
+
+	if authorized {
+		w.Write([]byte("autrorized"))
+	} else {
+		w.Write([]byte("not autrorized"))
+	}
+
+	api.mu.Unlock()
+
 }
 
 func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("New request from " + r.RemoteAddr)
 	defer r.Body.Close()
 
 	user := new(UserInput)
@@ -56,34 +73,89 @@ func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
-		w.Write([]byte("{status: 500}"))
+		w.WriteHeader(400)
 		return
 	}
-
-	fmt.Println("i am here")
 
 	api.mu.Lock()
 	userModel, ok := api.Users[user.Username]
 
-	if !ok {
+	if !ok || userModel.Password != user.Password {
 		api.mu.Unlock()
 		w.WriteHeader(400)
+		fmt.Println("Sending status 400 to " + r.RemoteAddr)
 		return
 	}
-
-	if userModel.Password != user.Password {
-		api.mu.Unlock()
-		w.WriteHeader(400)
-		return
-	}
-	fmt.Println("i am here2")
 
 	id := uuid.NewV4()
-
-	api.Sessions[userModel.Username] = id
-
+	api.Sessions[id] = userModel.Username
 	api.mu.Unlock()
-	fmt.Println("i am here3")
+
+	cookie := &http.Cookie{
+		Name:    "session_id",
+		Value:   id.String(),
+		Expires: time.Now().Add(10 * time.Hour),
+	}
+	http.SetCookie(w, cookie)
+	w.WriteHeader(200)
+	fmt.Println("Sending status 200 to " + r.RemoteAddr)
+}
+
+func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := r.Cookie("session_id")
+
+	if err == http.ErrNoCookie {
+		fmt.Println(err)
+		w.WriteHeader(401)
+		return
+	}
+
+	userToken, err := uuid.FromString(id.Value)
+
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(401)
+		return
+	}
+
+	if _, ok := api.Sessions[userToken]; !ok {
+		fmt.Println(err)
+		w.WriteHeader(401)
+		return
+	}
+
+	delete(api.Sessions, userToken)
+
+	id.Expires = time.Now().AddDate(0, 0, -1)
+	http.SetCookie(w, id)
+
+}
+
+func (api *MyHandler) signUpHandler(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	userInput := new(UserInput)
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&userInput)
+
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.WriteHeader(400)
+		return
+	}
+
+	api.mu.Lock()
+	user := User{
+		ID:       uuid.NewV1(),
+		Username: userInput.Username,
+		Password: userInput.Password,
+	}
+	api.Users[userInput.Username] = &user
+
+	id := uuid.NewV4()
+	api.Sessions[id] = user.Username
+	api.mu.Unlock()
 
 	cookie := &http.Cookie{
 		Name:    "session_id",
@@ -98,11 +170,12 @@ func main() {
 	r := mux.NewRouter()
 	api := NewMyHandler()
 
-	fmt.Printf("Starts server at 8080")
+	fmt.Printf("Starts server at 8080\n")
 	r.HandleFunc("/", api.handler)
 	r.HandleFunc("/login", api.loginHandler).Methods("POST")
-	http.Handle("/", r)
-	err := http.ListenAndServe(":8080", nil)
+	r.HandleFunc("/logout", api.loginHandler).Methods("DELETE")
+	r.HandleFunc("/signup", api.signUpHandler).Methods("POST")
+	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)
 		return
