@@ -9,37 +9,47 @@ import (
 
 func NewUsersStorage() *UsersStorage {
 	return &UsersStorage{
-		Users:  make(map[string]*User),
-		Mutex:  sync.RWMutex{},
+		Users: make(map[string]*User),
+		Mutex: sync.RWMutex{},
 	}
 }
 
 type UsersStorage struct {
-	Users  map[string]*User
-	Mutex  sync.RWMutex
+	Users map[string]*User
+	Mutex sync.RWMutex
 }
 
 type User struct {
-	Id        uuid.UUID   `json:"id"`
-	Nickname  string `json:"nickname"`
-	Password  string `json:"password"`
-	AvatarURL string `json:"avatar_url"`
-	Email     string `json:"avatar_url"`
+	Id       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	Login    string    `json:"login"`
+	Sex      string    `json:"sex"`
+	Password string    `json:"password"`
+	Email    string    `json:"email"`
 }
 
 type UserInput struct {
-	Nickname string `json:"nickname"`
+	Login    string `json:"login"`
 	Password string `json:"password"`
+}
+
+type UserSettings struct {
+	NewPassword string `json:"newPassword"`
+	Name     string    `json:"name"`
+	Login    string    `json:"login"`
+	Sex      string    `json:"sex"`
+	Password string    `json:"password"`
+	Email    string    `json:"email"`
 }
 
 func (us *UsersStorage) AddUser(input *UserInput) (uuid.UUID, error) {
 	us.Mutex.Lock()
 	user := &User{
 		Id:       uuid.NewV4(),
-		Nickname: input.Nickname,
+		Login:    input.Login,
 		Password: input.Password,
 	}
-	us.Users[user.Nickname] = user
+	us.Users[user.Login] = user
 	us.Mutex.Unlock()
 	return user.Id, nil
 }
@@ -55,9 +65,15 @@ func (us *UsersStorage) GetById(id uuid.UUID) (*User, error) {
 	return nil, errors.New("user with this id does not exists: " + id.String())
 }
 
-func (us *UsersStorage) EditUser(user *User, newUserData *User){
-
-	newUserData.Id = user.Id
-	delete(us.Users, user.Nickname)
-	us.Users[newUserData.Nickname] = newUserData
+func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) {
+	newUser := &User{
+		Id: user.Id,
+		Name: newUserData.Name,
+		Login: newUserData.Login,
+		Password: newUserData.NewPassword,
+		Email: newUserData.Email,
+		Sex: newUserData.Sex,
+	}
+	delete(us.Users, user.Login)
+	us.Users[newUserData.Login] = newUser
 }

@@ -13,9 +13,8 @@ import (
 	"no_homomorphism/models"
 )
 
-
 type MyHandler struct {
-	Sessions map[uuid.UUID]uuid.UUID // SID -> ID
+	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
 	UsersStorage models.UsersStorage
 }
 
@@ -24,9 +23,9 @@ func NewMyHandler() *MyHandler {
 		Sessions: make(map[uuid.UUID]uuid.UUID, 10),
 		UsersStorage: models.UsersStorage{
 			Users: map[string]*models.User{
-				"test" : {
+				"test": {
 					Id:       uuid.FromStringOrNil("1"),
-					Nickname: "test",
+					Login: "test",
 					Password: "123",
 				},
 			},
@@ -76,7 +75,7 @@ func (api *MyHandler) loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	mutex := &sync.Mutex{}
 	mutex.Lock()
-	userModel, ok := api.UsersStorage.Users[user.Nickname]
+	userModel, ok := api.UsersStorage.Users[user.Login]
 
 	if !ok || userModel.Password != user.Password {
 		mutex.Unlock()
@@ -123,7 +122,7 @@ func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (api *MyHandler)  createCookie(id uuid.UUID) (cookie *http.Cookie){
+func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
 	mutex := sync.RWMutex{}
 	mutex.Lock()
 	sid := uuid.NewV4()
@@ -157,14 +156,14 @@ func (api *MyHandler) signUpHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-func (api *MyHandler) editUserHandler(w http.ResponseWriter, r *http.Request){
+func (api *MyHandler) setingsHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		log.Printf("permission denied: %s", err)
 		w.WriteHeader(403)
 	}
-	newUserData := new(models.User)
+	newUserData := new(models.UserSettings)
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&newUserData)
 	if err != nil {
@@ -181,6 +180,11 @@ func (api *MyHandler) editUserHandler(w http.ResponseWriter, r *http.Request){
 	user, err := api.UsersStorage.GetById(id)
 	if err != nil {
 		log.Print(err)
+		w.WriteHeader(403)
+		return
+	}
+	if newUserData.Password != user.Password {
+		log.Print("wrong old password")
 		w.WriteHeader(403)
 		return
 	}
@@ -203,7 +207,7 @@ func main() {
 	r.HandleFunc("/logout", api.loginHandler).Methods("DELETE")
 	r.HandleFunc("/signup", api.signUpHandler).Methods("POST")
 	// r.HandleFunc("/show", api.showHandler).Methods("POST")
-	r.HandleFunc("/profile/settings", api.editUserHandler).Methods("POST")
+	r.HandleFunc("/profile/settings", api.setingsHandler).Methods("POST")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)
