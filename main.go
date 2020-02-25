@@ -1,17 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"os"
-	"sync"
-	"time"
 
 	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
+	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
 )
 
@@ -251,16 +245,17 @@ func (api *MyHandler) saveImageHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	r := mux.NewRouter()
-	api := NewMyHandler()
+	api := &MyHandler{
+		Sessions:     nil,
+		UsersStorage: models.NewUsersStorage(),
+	}
 
 	fmt.Printf("Starts server at 8080\n")
-	r.HandleFunc("/", api.handler)
-	r.HandleFunc("/login", api.loginHandler).Methods("POST")
-	r.HandleFunc("/logout", api.loginHandler).Methods("DELETE")
-	r.HandleFunc("/signup", api.signUpHandler).Methods("POST")
-	r.HandleFunc("/image", api.saveImageHandler).Methods("POST")
-	// r.HandleFunc("/show", api.showHandler).Methods("POST")
-	r.HandleFunc("/profile/settings", api.editUserHandler).Methods("POST")
+	r.HandleFunc("/", api.MainHandler)
+	r.HandleFunc("/login", api.LoginHandler).Methods("POST")
+	r.HandleFunc("/logout", api.LogoutHandler).Methods("DELETE")
+	r.HandleFunc("/signup", api.SignUpHandler).Methods("POST")
+	r.HandleFunc("/profile/settings", api.SetingsHandler).Methods("PUT")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)
