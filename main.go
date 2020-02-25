@@ -3,20 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
 	"log"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
+	"no_homomorphism/models"
 )
 
 //User - model of user
-type User struct {
-	ID       uuid.UUID `json:"id"`
-	Username string    `json:"username"`
-	Password string    `json:"-"`
-}
+// type User struct {
+// 	ID       uuid.UUID `json:"id"`
+// 	Username string    `json:"username"`
+// 	Password string    `json:"-"`
+// }
 
 type UserInput struct {
 	Username string `json:"username"`
@@ -25,15 +27,19 @@ type UserInput struct {
 
 type MyHandler struct {
 	Sessions map[string]uuid.UUID
-	Users    map[string]*User
+	Users    map[string]*models.User
 	mu       *sync.Mutex
 }
 
 func NewMyHandler() *MyHandler {
 	return &MyHandler{
-		Sessions: make(map[string]uuid.UUID, 10),
-		Users: map[string]*User{
-			"test": {uuid.FromStringOrNil("1"), "test", "123"},
+		Sessions: make(map[uuid.UUID]string, 10),
+		Users: map[string]*models.User{
+			"test": {
+				Id:     uuid.FromStringOrNil("1"),
+				Nickname:   "test",
+				Password: "123",
+			},
 		},
 		mu: &sync.Mutex{},
 	}
@@ -110,6 +116,8 @@ func (api *MyHandler) logoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userToken, err := uuid.FromString(id.Value)
+
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -144,9 +152,9 @@ func (api *MyHandler) signUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	api.mu.Lock()
-	user := User{
-		ID:       uuid.NewV1(),
-		Username: userInput.Username,
+	user := models.User{
+		Id:       uuid.NewV1(),
+		Nickname: userInput.Username,
 		Password: userInput.Password,
 	}
 	api.Users[userInput.Username] = &user
