@@ -2,10 +2,11 @@ package models
 
 import (
 	"errors"
-	"fmt"
+	"log"
 	"sync"
 
 	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func NewUsersStorage(mu *sync.Mutex) (*UsersStorage, error) {
@@ -63,6 +64,11 @@ func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
 	if us.Users[input.Login] != nil {
 		return uuid.UUID{0}, errors.New("пользователь с таким логином уже существует")
 	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
+	if err != nil {
+		log.Println(err)
+	}
+	input.Password = string(hash)
 	us.Users[input.Login] = input
 	return input.Id, nil
 }
@@ -76,7 +82,6 @@ func (us *UsersStorage) GetIdByUsername(username string) uuid.UUID { //todo пр
 func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
-	fmt.Println(us.Users)
 	if us.Users[login] == nil {
 		return nil, errors.New("нет юзера с таким именем")
 	}
@@ -130,11 +135,15 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 	}
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
+	hash, err := bcrypt.GenerateFromPassword([]byte(newUserData.NewPassword), bcrypt.MinCost)
+	if err != nil {
+		log.Println(err)
+	}
 	newUser := &User{
 		Id:       user.Id,
 		Name:     newUserData.Name,
 		Login:    newUserData.Login,
-		Password: newUserData.NewPassword,
+		Password: string(hash),
 		Email:    newUserData.Email,
 		Sex:      newUserData.Sex,
 	}
