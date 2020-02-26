@@ -35,6 +35,7 @@ type Profile struct {
 	Name  string `json:"name"`
 	Login string `json:"login"`
 	Sex   string `json:"sex"`
+	Image string `json:"image"`
 }
 
 type UserInput struct {
@@ -80,6 +81,7 @@ func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 		Login: us.Users[login].Login,
 		Sex:   us.Users[login].Sex,
 		Name:  us.Users[login].Name,
+		Image: "",
 	}
 	return profile, nil
 }

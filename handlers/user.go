@@ -77,12 +77,11 @@ func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
 	return userId, nil
 }
 
-func (api *MyHandler) GetImageURLHandler(w http.ResponseWriter, r *http.Request) {
+func (api *MyHandler) getAvatarPath(r *http.Request) (string, error) {
 	userId, err := api.getUserIdByCookie(r)
 	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Println(err)
-		return
+		return "", err
 	}
 
 	path := api.AvatarDir + userId.String()
@@ -91,21 +90,14 @@ func (api *MyHandler) GetImageURLHandler(w http.ResponseWriter, r *http.Request)
 
 	isExists, err := exists(path)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println(err)
-		return
+		return "", err
 	}
 	if !isExists {
-		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println("file is not exists")
-		return
+		return "", err
 	}
-	_, err = w.Write([]byte(path))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
+	return path, nil
 }
 
 func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
@@ -368,11 +360,19 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	login := vars["profile"]
 
+	path, err := api.getAvatarPath(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(err)
+		return
+	}
+
 	profile, err := api.UsersStorage.GetProfileByLogin(login)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 	}
+	profile.Image = path
 	profileJson, err := json.Marshal(profile)
 	if err != nil {
 		log.Println(err)
