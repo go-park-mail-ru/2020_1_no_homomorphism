@@ -46,7 +46,7 @@ type UserInput struct {
 }
 
 type UserSettings struct {
-	NewPassword string `json:"newPassword"`
+	NewPassword string `json:"newPassword"`//TODO: убрать СamelCase
 	Name        string `json:"name"`
 	Login       string `json:"login"`
 	Sex         string `json:"sex"`
@@ -72,6 +72,7 @@ func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
 	us.Users[input.Login] = input
 	return input.Id, nil
 }
+
 func (us *UsersStorage) GetIdByUsername(username string) uuid.UUID { //todo проверка на существование
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
