@@ -13,15 +13,18 @@ import (
 
 func main() {
 	r := mux.NewRouter()
-	mu := &sync.Mutex{}
+	mu := &sync.Mutex{}//Убери глобальный мьютекс
+
 	trackStorage, err := models.NewTrackStorage(mu)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	userStorage, err := models.NewUsersStorage(mu)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	api := &MyHandler{
 		Sessions:     make(map[uuid.UUID]uuid.UUID, 10),
 		UsersStorage: userStorage,
@@ -35,11 +38,13 @@ func main() {
 		Login:    "test",
 		Password: "123",
 	}
+
 	user2 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test2",
 		Password: "456",
 	}
+
 	user3 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test3",
@@ -57,7 +62,7 @@ func main() {
 	r.HandleFunc("/signup", api.SignUpHandler).Methods("POST")
 	r.HandleFunc("/profile/settings", api.SettingsHandler).Methods("PUT")
 	r.HandleFunc("/profiles/{profile}", api.GetProfileHandler)
-	r.HandleFunc("/profiles/me", api.GetProfileByCookieHandler).Methods("GET")
+	r.HandleFunc("/profile/me", api.GetProfileByCookieHandler).Methods("GET")
 	r.HandleFunc("/image", api.PostImageHandler).Methods("POST")
 	//r.HandleFunc("/image", api.GetImageURLHandler).Methods("GET")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")

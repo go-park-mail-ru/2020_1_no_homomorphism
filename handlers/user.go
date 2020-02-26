@@ -18,6 +18,7 @@ import (
 	"time"
 )
 
+
 type MyHandler struct {
 	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
 	UsersStorage *models.UsersStorage
@@ -80,21 +81,16 @@ func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
 func (api *MyHandler) getAvatarPath(r *http.Request) (string, error) {
 	userId, err := api.getUserIdByCookie(r)
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 
 	path := api.AvatarDir + userId.String() + ".png"
 
-	fmt.Println(path)
-
 	isExists, err := exists(path)
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 	if !isExists {
-		fmt.Println("file is not exists")
 		return "", err
 	}
 	return path, nil
