@@ -370,11 +370,54 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 	}
 	path, err := api.getAvatarPath(r)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(err)
+		profile.Image = api.AvatarDir + "default.png"
+	} else {
+		profile.Image = path
+	}
+	profile.Image = path
+	profileJson, err := json.Marshal(profile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	_, err = w.Write(profileJson)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+}
+
+func (api *MyHandler) GetProfileByCookieHandler(w http.ResponseWriter, r *http.Request) {
+	userId, err := api.getUserIdByCookie(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Println(err)
 		return
 	}
-	profile.Image = path
+
+	user, err := api.UsersStorage.GetUserById(userId)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Println(err)
+		return
+	}
+
+	profile, err := api.UsersStorage.GetProfileByLogin(user.Login)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	path, err := api.getAvatarPath(r)
+	if err != nil {
+		fmt.Println(err)
+		profile.Image = api.AvatarDir + "default.png"
+	} else {
+		profile.Image = path
+	}
 	profileJson, err := json.Marshal(profile)
 	if err != nil {
 		log.Println(err)

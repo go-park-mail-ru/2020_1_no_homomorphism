@@ -57,6 +57,7 @@ func main() {
 	r.HandleFunc("/signup", api.SignUpHandler).Methods("POST")
 	r.HandleFunc("/profile/settings", api.SettingsHandler).Methods("PUT")
 	r.HandleFunc("/profiles/{profile}", api.GetProfileHandler)
+	r.HandleFunc("/profiles/me", api.GetProfileHandler).Methods("GET")
 	r.HandleFunc("/image", api.PostImageHandler).Methods("POST")
 	//r.HandleFunc("/image", api.GetImageURLHandler).Methods("GET")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
