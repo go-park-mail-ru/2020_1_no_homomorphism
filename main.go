@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
-	"log"
 	"net/http"
 	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
@@ -13,23 +12,14 @@ import (
 
 func main() {
 	r := mux.NewRouter()
-	mu := &sync.Mutex{}//Убери глобальный мьютекс
-
-	trackStorage, err := models.NewTrackStorage(mu)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	userStorage, err := models.NewUsersStorage(mu)
-	if err != nil {
-		log.Fatal(err)
-	}
+	trackStorage := models.NewTrackStorage()
+	userStorage:= models.NewUsersStorage()
 
 	api := &MyHandler{
 		Sessions:     make(map[uuid.UUID]uuid.UUID, 10),
 		UsersStorage: userStorage,
 		TrackStorage: trackStorage,
-		Mutex:        mu,
+		Mutex:        &sync.Mutex{},
 		AvatarDir:    "/home/ubuntu/2020_1_no_homomorphism/static/img/avatar/",
 	}
 
@@ -67,7 +57,7 @@ func main() {
 	//r.HandleFunc("/image", api.GetImageURLHandler).Methods("GET")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
-	err = http.ListenAndServe(":8080", r)
+	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)
 		return

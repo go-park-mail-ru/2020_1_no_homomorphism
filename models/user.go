@@ -9,14 +9,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewUsersStorage(mu *sync.Mutex) (*UsersStorage, error) {
-	if mu == nil {
-		return nil, errors.New("input is nil")
-	}
+func NewUsersStorage() *UsersStorage {
 	return &UsersStorage{
 		Users: make(map[string]*User),
-		Mutex: mu,
-	}, nil
+		Mutex: &sync.Mutex{},
+	}
 }
 
 type UsersStorage struct {
@@ -38,20 +35,12 @@ type Profile struct {
 	Login string `json:"login"`
 	Sex   string `json:"sex"`
 	Image string `json:"image"`
-}
-
-type UserInput struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
+	Email string `json:"email"`
 }
 
 type UserSettings struct {
-	NewPassword string `json:"newPassword"`//TODO: убрать СamelCase
-	Name        string `json:"name"`
-	Login       string `json:"login"`
-	Sex         string `json:"sex"`
-	Password    string `json:"password"`
-	Email       string `json:"email"`
+	NewPassword string `json:"new_password"`
+	User
 }
 
 func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
@@ -62,7 +51,7 @@ func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
 	if us.Users[input.Login] != nil {
-		return uuid.UUID{0}, errors.New("пользователь с таким логином уже существует")
+		return uuid.UUID{0}, errors.New("user with current login is already exists")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
 	if err != nil {
@@ -77,7 +66,7 @@ func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
 	if us.Users[login] == nil {
-		return nil, errors.New("нет юзера с таким именем")
+		return nil, errors.New("no user with that name")
 	}
 	profile := &Profile{
 		Login: us.Users[login].Login,

@@ -136,7 +136,7 @@ func TestMyHandler_SettingsHandler(t *testing.T) {
 		t.Error(err)
 	}
 	id := api.Sessions[sid]
-	jsonSettings := bytes.NewBuffer([]byte("{ \"Login\":\"3test\", \"Password\":\"789\",\"NewPassword\":\"555\" }"))
+	jsonSettings := bytes.NewBuffer([]byte("{ \"Login\":\"3test\", \"Password\":\"789\",\"new_password\":\"555\" }"))
 	req, err = http.NewRequest("PUT", "/profile/settings", jsonSettings)
 	if err != nil {
 		t.Error(err)
@@ -234,11 +234,11 @@ func Test_GetIdByLogin(t *testing.T) {
 	id := api.UsersStorage.GetIdByLogin("test")
 	assert.Equal(t, api.UsersStorage.Users["test"].Id, id)
 }
-
-func TestNewUsersStorage(t *testing.T) {
-	mu := &sync.Mutex{}
-	_, err := models.NewUsersStorage(nil)
-	assert.NotNil(t, err)
-	_, err = models.NewUsersStorage(mu)
-	assert.Nil(t, err)
-}
+//
+//func TestNewUsersStorage(t *testing.T) {
+//	//mu := &sync.Mutex{}
+//	_ = models.NewUsersStorage()
+//	//assert.NotNil(t, err)
+//	_ = models.NewUsersStorage()
+//	//assert.Nil(t, err)
+//}
