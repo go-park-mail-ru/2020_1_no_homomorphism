@@ -87,10 +87,17 @@ func (api *MyHandler) GetImageURLHandler(w http.ResponseWriter, r *http.Request)
 
 	path := api.AvatarDir + userId.String()
 
+	fmt.Println(path)
+
 	isExists, err := exists(path)
-	if err != nil || !isExists {
+	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println(err)
+		return
+	}
+	if !isExists {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println("file is not exists")
 		return
 	}
 	_, err = w.Write([]byte(path))
@@ -167,7 +174,7 @@ func (api *MyHandler) GetUserImageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	file, err := os.Open("./images/" + userId.String() + ".png")
+	file, err := os.Open(api.AvatarDir + userId.String() + ".png")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println(err)
