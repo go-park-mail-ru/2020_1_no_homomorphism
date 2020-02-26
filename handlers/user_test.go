@@ -12,28 +12,28 @@ import (
 	"no_homomorphism/models"
 )
 
-var 	api = MyHandler{Sessions: make(map[uuid.UUID]uuid.UUID, 10),
-		UsersStorage: &models.UsersStorage{
-			Users: map[string]*models.User{
-				"test": {
-					Id:       uuid.NewV4(),
-					Login:    "test",
-					Password: "123",
-				},
-				"test2": {
-					Id:       uuid.NewV4(),
-					Login:    "test2",
-					Password: "456",
-				},
-				"test3": {
-					Id:       uuid.NewV4(),
-					Login:    "test3",
-					Password: "789",
-				},
+var api = MyHandler{Sessions: make(map[uuid.UUID]uuid.UUID, 10),
+	UsersStorage: &models.UsersStorage{
+		Users: map[string]*models.User{
+			"test": {
+				Id:       uuid.NewV4(),
+				Login:    "test",
+				Password: "123",
 			},
-			Mutex: sync.RWMutex{},
+			"test2": {
+				Id:       uuid.NewV4(),
+				Login:    "test2",
+				Password: "456",
+			},
+			"test3": {
+				Id:       uuid.NewV4(),
+				Login:    "test3",
+				Password: "789",
+			},
 		},
-	}
+		Mutex: &sync.Mutex{},
+	},
+}
 
 func TestHandlers_LoginHandler(t *testing.T) {
 
@@ -106,8 +106,8 @@ func TestHandlers_LogoutHandler(t *testing.T) {
 	http.HandlerFunc(api.LogoutHandler).ServeHTTP(rr, req)
 
 	assert.Equal(t, rr.Code, http.StatusOK)
-	id,err  := uuid.FromString(sid)
-	if err != nil{
+	id, err := uuid.FromString(sid)
+	if err != nil {
 		t.Error(err)
 	}
 	assert.Equal(t, uuid.FromStringOrNil("0"), api.Sessions[id])
@@ -128,7 +128,7 @@ func TestMyHandler_SettingsHandler(t *testing.T) {
 		t.Error(err)
 	}
 	id := api.Sessions[sid]
-	jsonSettings:= bytes.NewBuffer([]byte("{ \"Login\":\"3test\", \"Password\":\"789\",\"NewPassword\":\"555\" }"))
+	jsonSettings := bytes.NewBuffer([]byte("{ \"Login\":\"3test\", \"Password\":\"789\",\"NewPassword\":\"555\" }"))
 	req, err = http.NewRequest("PUT", "/profile/settings", jsonSettings)
 	if err != nil {
 		t.Error(err)
@@ -137,9 +137,9 @@ func TestMyHandler_SettingsHandler(t *testing.T) {
 	http.HandlerFunc(api.SettingsHandler).ServeHTTP(rr, req)
 	idAfter := api.Sessions[uuid.FromStringOrNil(rr.Result().Cookies()[0].Value)]
 	assert.Equal(t, rr.Code, http.StatusOK)
-	assert.Equal(t, id.String() , idAfter.String())
-	assert.Equal(t, api.UsersStorage.Users["3test"].Id,  id)
-	assert.Equal(t, api.UsersStorage.Users["3test"].Password,  "555")
+	assert.Equal(t, id.String(), idAfter.String())
+	assert.Equal(t, api.UsersStorage.Users["3test"].Id, id)
+	assert.Equal(t, api.UsersStorage.Users["3test"].Password, "555")
 
 }
 
@@ -163,7 +163,7 @@ func TestMyHandler_MainHandler(t *testing.T) {
 					Password: "789",
 				},
 			},
-			Mutex: sync.RWMutex{},
+			Mutex: &sync.Mutex{},
 		},
 	}
 
@@ -174,7 +174,7 @@ func TestMyHandler_MainHandler(t *testing.T) {
 		t.Error(err)
 	}
 	http.HandlerFunc(api.MainHandler).ServeHTTP(rr, req)
-	assert.Equal(t, http.StatusNonAuthoritativeInfo , rr.Result().StatusCode)
+	assert.Equal(t, http.StatusNonAuthoritativeInfo, rr.Result().StatusCode)
 	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test3\", \"Password\":\"789\"}"))
 	rr = httptest.NewRecorder()
 	req, err = http.NewRequest("POST", "/login", jsonUser)
@@ -189,7 +189,7 @@ func TestMyHandler_MainHandler(t *testing.T) {
 	}
 	req.AddCookie(rr.Result().Cookies()[0])
 	http.HandlerFunc(api.MainHandler).ServeHTTP(rr, req)
-	assert.Equal(t, http.StatusOK , rr.Result().StatusCode)
+	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
 }
 
 // func TestMyHandler_GetProfileHandler(t *testing.T) {

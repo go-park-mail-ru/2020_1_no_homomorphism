@@ -16,9 +16,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
-	"no_homomorphism/models"
 )
 
 type MyHandler struct {
@@ -111,13 +108,7 @@ func (api *MyHandler) PostImageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	//
-	//mimeType := handler.Header.Get("Content-Type")
-	//switch mimeType {
-	//case "image/jpeg":
-	//case "image/png":
-	//default:
-	//}
+
 	err = saveFile(file, userId.String())
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -175,7 +166,6 @@ func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { //б
 	if err == nil && session != nil {
 		id, err := uuid.FromString(session.Value)
 		if err != nil {
-			mutex.Unlock()
 			log.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -219,15 +209,14 @@ func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	sessionId, err := r.Cookie("session_id")
-	if err == http.ErrNoCookie || sessionId == nil {
+	sid, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie || sid == nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	sessionToken, err := uuid.FromString(sessionId.Value)
-	userToken, err := uuid.FromString(sid.Value)//todo check
+	sessionToken, err := uuid.FromString(sid.Value)
 
 	if err != nil {
 		fmt.Println(err)
@@ -242,7 +231,7 @@ func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	delete(api.Sessions,uuid.FromStringOrNil(sid.Value) )
+	delete(api.Sessions, uuid.FromStringOrNil(sid.Value))
 	api.Mutex.Unlock()
 	fmt.Println("Mutex Unlocked")
 
@@ -267,8 +256,7 @@ func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
 func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) { //todo чекать на наличие такой записи
 	defer r.Body.Close()
 
-	userInput := new(models.UserInput) //todo мб расширить эту структуру
-	userInput := new(models.User)//todo hz che za model
+	userInput := new(models.User) //todo hz che za model
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&userInput)
 	if err != nil {
@@ -334,11 +322,11 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
 	}
-	json, err := json.Marshal(profile)
+	profileJson, err := json.Marshal(profile)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
-	w.Write(json)
+	w.Write(profileJson)
 }
