@@ -7,11 +7,14 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func NewUsersStorage(mu *sync.Mutex) *UsersStorage {
+func NewUsersStorage(mu *sync.Mutex) (*UsersStorage, error) {
+	if mu == nil {
+		return nil, errors.New("input is nil")
+	}
 	return &UsersStorage{
 		Users: make(map[string]*User),
 		Mutex: mu,
-	}
+	}, nil
 }
 
 type UsersStorage struct {
@@ -49,12 +52,15 @@ type UserSettings struct {
 }
 
 func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
+	if input == nil {
+		return uuid.UUID{0}, errors.New("nil input")
+	}
 	input.Id = uuid.NewV4()
 	us.Mutex.Lock()
+	defer us.Mutex.Unlock()
 	if us.Users[input.Login] != nil {
 		return uuid.UUID{0}, errors.New("пользователь с таким логином уже существует")
 	}
-	defer us.Mutex.Unlock()
 	us.Users[input.Login] = input
 	return input.Id, nil
 }
@@ -113,7 +119,10 @@ func (us *UsersStorage) GetFullUserInfo(login string) (User, error) {
 	}
 }
 
-func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) {
+func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
+	if user == nil || newUserData == nil {
+		return errors.New("input data is nil")
+	}
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
 	newUser := &User{
@@ -126,4 +135,5 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) {
 	}
 	delete(us.Users, user.Login)
 	us.Users[newUserData.Login] = newUser
+	return nil
 }

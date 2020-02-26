@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
+	"log"
 	"net/http"
 	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
@@ -13,10 +14,18 @@ import (
 func main() {
 	r := mux.NewRouter()
 	mu := &sync.Mutex{}
+	trackStorage, err := models.NewTrackStorage(mu)
+	if err != nil {
+		log.Fatal(err)
+	}
+	userStorage, err := models.NewUsersStorage(mu)
+	if err != nil {
+		log.Fatal(err)
+	}
 	api := &MyHandler{
 		Sessions:     make(map[uuid.UUID]uuid.UUID, 10),
-		UsersStorage: models.NewUsersStorage(mu),
-		TrackStorage: models.NewTrackStorage(mu),
+		UsersStorage: userStorage,
+		TrackStorage: trackStorage,
 		Mutex:        mu,
 	}
 
@@ -50,7 +59,7 @@ func main() {
 	r.HandleFunc("/image", api.PostImageHandler).Methods("POST")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
-	err := http.ListenAndServe(":8080", r)
+	err = http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)
 		return

@@ -5,7 +5,10 @@ import (
 	"sync"
 )
 
-func NewTrackStorage(mu *sync.Mutex) *TrackStorage {
+func NewTrackStorage(mu *sync.Mutex) (*TrackStorage, error) {
+	if mu == nil {
+		return nil, errors.New("input is empty")
+	}
 	storage := &TrackStorage{
 		TrackStorage: make(map[uint]*Track),
 		Mutex:        mu,
@@ -19,7 +22,7 @@ func NewTrackStorage(mu *sync.Mutex) *TrackStorage {
 		Link:     "https://d4.hotplayer.ru/download/4219e191e9078c11d1e7825344da42b8/287373405_456239023/12a221000968e-51fb57871d78-d722a1dfefb/HIS%20NAME%20IS%20-%20JOHN%20CENA%20%232.mp3",
 	}
 	storage.TrackStorage[12345] = &track
-	return storage
+	return storage, nil
 }
 
 type TrackStorage struct {

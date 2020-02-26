@@ -50,23 +50,28 @@ func saveFile(file multipart.File, userId string) error {
 func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie || cookie == nil {
-		return uuid.FromStringOrNil(""), errors.New(string(http.StatusUnauthorized))
+		return uuid.FromStringOrNil(""), err
 	}
 	sessionId, err := uuid.FromString(cookie.Value)
 	if err != nil {
-		return uuid.FromStringOrNil(""), errors.New(string(http.StatusBadRequest))
+		return uuid.FromStringOrNil(""), err
 	}
 	api.Mutex.Lock()
 	defer api.Mutex.Unlock()
 	userId, ok := api.Sessions[sessionId]
 	if !ok {
-		return uuid.FromStringOrNil(""), errors.New(string(http.StatusUnauthorized))
+		return uuid.FromStringOrNil(""), err
 	}
 	return userId, nil
 }
 
 func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
-	requestedID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	requestedID, err := strconv.Atoi(mux.Vars(r)["id"])
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(err)
+		return
+	}
 
 	track, err := api.TrackStorage.GetFullTrackInfo(uint(requestedID))
 	if err != nil {
@@ -121,8 +126,7 @@ func (api *MyHandler) PostImageHandler(w http.ResponseWriter, r *http.Request) {
 func (api *MyHandler) GetUserImageHandler(w http.ResponseWriter, r *http.Request) {
 	userId, err := api.getUserIdByCookie(r)
 	if err != nil {
-		statusCode, _ := strconv.Atoi(err.Error())
-		w.WriteHeader(statusCode)
+		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Println(err)
 		return
 	}
@@ -138,14 +142,19 @@ func (api *MyHandler) GetUserImageHandler(w http.ResponseWriter, r *http.Request
 	_, err = file.Read(FileHeader)
 	FileContentType := http.DetectContentType(FileHeader)
 
-	FileStat, _ := file.Stat()
+	FileStat, err := file.Stat()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
 	FileSize := strconv.FormatInt(FileStat.Size(), 10) //Get file size as a string
 
 	w.Header().Set("Content-Disposition", "attachment; filename=profileImage")
 	w.Header().Set("Content-Type", FileContentType)
 	w.Header().Set("Content-Length", FileSize)
 
-	_, _ = file.Seek(0, 0)
+	_, err = file.Seek(0, 0)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)
@@ -157,10 +166,10 @@ func (api *MyHandler) GetUserImageHandler(w http.ResponseWriter, r *http.Request
 		fmt.Println(err)
 		return
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { //без мьютекса!! - just test
-	defer r.Body.Close()
 	authorized := false
 	session, err := r.Cookie("session_id")
 	if err == nil && session != nil {
@@ -182,8 +191,6 @@ func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { //б
 }
 
 func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	user := new(models.UserInput)
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
@@ -207,8 +214,6 @@ func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
 	sid, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie || sid == nil {
 		fmt.Println(err)
@@ -237,7 +242,7 @@ func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 
 	sid.Expires = time.Now().AddDate(0, 0, -1)
 	http.SetCookie(w, sid)
-
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
@@ -253,10 +258,8 @@ func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
 	return
 }
 
-func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) { //todo чекать на наличие такой записи
-	defer r.Body.Close()
-
-	userInput := new(models.User) //todo hz che za model
+func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+	userInput := new(models.User)
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&userInput)
 	if err != nil {
@@ -275,7 +278,6 @@ func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) { //
 }
 
 func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		log.Printf("permission denied: %s", err)
@@ -309,11 +311,17 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	api.UsersStorage.EditUser(user, newUserData)
+	err = api.UsersStorage.EditUser(user, newUserData)
+	if err != nil {
+		log.Print(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
-
 	vars := mux.Vars(r)
 	login := vars["profile"]
 
@@ -328,5 +336,10 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	w.Header().Set("content-type", "application/json")
-	w.Write(profileJson)
+	_, err = w.Write(profileJson)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
 }
