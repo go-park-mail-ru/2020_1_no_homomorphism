@@ -23,15 +23,27 @@ type MyHandler struct {
 	UsersStorage *models.UsersStorage
 	TrackStorage *models.TrackStorage
 	Mutex        *sync.Mutex
+	AvatarDir    string
 }
 
-func saveFile(file multipart.File, userId string) error {
+func exists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return true, err
+}
+
+func saveFile(file multipart.File, userId string, avatarDir string) error {
 	fileBody, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
 		return errors.New("failed to read file body file")
 	}
-	filePath := "./images/" + userId + ".png" //todo подставлять формат файла
+	filePath := avatarDir + userId + ".png" //todo подставлять формат файла
 	newFile, err := os.Create(filePath)
 	if err != nil {
 		fmt.Println(err)
@@ -63,6 +75,30 @@ func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
 		return uuid.FromStringOrNil(""), err
 	}
 	return userId, nil
+}
+
+func (api *MyHandler) GetImageURLHandler(w http.ResponseWriter, r *http.Request) {
+	userId, err := api.getUserIdByCookie(r)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Println(err)
+		return
+	}
+
+	path := api.AvatarDir + userId.String()
+
+	isExists, err := exists(path)
+	if err != nil || !isExists {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(err)
+		return
+	}
+	_, err = w.Write([]byte(path))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
 }
 
 func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
@@ -114,7 +150,7 @@ func (api *MyHandler) PostImageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	err = saveFile(file, userId.String())
+	err = saveFile(file, userId.String(), api.AvatarDir)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)

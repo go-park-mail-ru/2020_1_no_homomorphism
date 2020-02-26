@@ -27,6 +27,7 @@ func main() {
 		UsersStorage: userStorage,
 		TrackStorage: trackStorage,
 		Mutex:        mu,
+		AvatarDir:    "/home/ubuntu/2020_1_no_homomorphism/static/img/avatar/",
 	}
 
 	user1 := models.User{
@@ -57,7 +58,8 @@ func main() {
 	r.HandleFunc("/profile/settings", api.SettingsHandler).Methods("PUT")
 	r.HandleFunc("/profiles/{profile}", api.GetProfileHandler)
 	r.HandleFunc("/image", api.PostImageHandler).Methods("POST")
-	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
+	r.HandleFunc("/image", api.GetImageURLHandler).Methods("GET")
+	r.HandleFunc("/image_byte", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {
