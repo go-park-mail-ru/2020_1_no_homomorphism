@@ -16,6 +16,7 @@ func main() {
 	api := &MyHandler{
 		Sessions:     make(map[uuid.UUID]uuid.UUID, 10),
 		UsersStorage: models.NewUsersStorage(mu),
+		TrackStorage: models.NewTrackStorage(mu),
 		Mutex:        mu,
 	}
 
@@ -27,6 +28,7 @@ func main() {
 	r.HandleFunc("/image", api.PostImageHandler).Methods("POST")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/profile/settings", api.SettingsHandler).Methods("PUT")
+	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
 	err := http.ListenAndServe(":8080", r)
 	if err != nil {
 		fmt.Println(err)

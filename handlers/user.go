@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"io"
 	"io/ioutil"
@@ -20,6 +21,7 @@ import (
 type MyHandler struct {
 	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
 	UsersStorage *models.UsersStorage
+	TrackStorage *models.TrackStorage
 	Mutex        *sync.Mutex
 }
 
@@ -61,6 +63,27 @@ func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
 		return uuid.FromStringOrNil(""), errors.New(string(http.StatusUnauthorized))
 	}
 	return userId, nil
+}
+
+func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
+	requestedID, _ := strconv.Atoi(mux.Vars(r)["id"])
+
+	track, err := api.TrackStorage.GetFullTrackInfo(uint(requestedID))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	writer := json.NewEncoder(w)
+	err = writer.Encode(track)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *MyHandler) PostImageHandler(w http.ResponseWriter, r *http.Request) {
