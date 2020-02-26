@@ -29,9 +29,9 @@ type User struct {
 }
 
 type Profile struct {
-	Name     string    `json:"name"`
-	Login    string    `json:"login"`
-	Sex      string    `json:"sex"`
+	Name  string `json:"name"`
+	Login string `json:"login"`
+	Sex   string `json:"sex"`
 }
 
 type UserInput struct {
@@ -49,36 +49,37 @@ type UserSettings struct {
 }
 
 func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
+	input.Id = uuid.NewV4()
+	us.Mutex.Lock()
 	if us.Users[input.Login] != nil {
 		return uuid.UUID{0}, errors.New("пользователь с таким логином уже существует")
 	}
-	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
-	user := &User{//todo mutex
-		Id:       uuid.NewV4(),
-		Login:    input.Login,
-		Password: input.Password,
-	}
-	us.Users[user.Login] = user
-	return user.Id, nil
+	us.Users[input.Login] = input
+	return input.Id, nil
 }
 func (us *UsersStorage) GetIdByUsername(username string) uuid.UUID { //todo проверка на существование
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
 	return us.Users[username].Id
+}
 
-func  (us *UsersStorage)  GetProfileByLogin(login string) (*Profile ,error){
+func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
+	us.Mutex.Lock()
+	defer us.Mutex.Unlock()
 	if us.Users[login] == nil {
 		return nil, errors.New("нет юзера с таким именем")
 	}
-	profile := &Profile {
+	profile := &Profile{
 		Login: us.Users[login].Login,
-		Sex: us.Users[login].Sex,
-		Name: us.Users[login].Name,
+		Sex:   us.Users[login].Sex,
+		Name:  us.Users[login].Name,
 	}
 	return profile, nil
 }
-func (us *UsersStorage) GetIdByLogin(login string) uuid.UUID{
+func (us *UsersStorage) GetIdByLogin(login string) uuid.UUID {
+	us.Mutex.Lock()
+	defer us.Mutex.Unlock()
 	return us.Users[login].Id
 }
 func (us *UsersStorage) GetUserById(id uuid.UUID) (*User, error) {
