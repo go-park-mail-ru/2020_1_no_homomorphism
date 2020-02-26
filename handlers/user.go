@@ -4,18 +4,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gorilla/mux"
-	uuid "github.com/satori/go.uuid"
 	"io"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
-	"no_homomorphism/models"
 	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
+	"golang.org/x/crypto/bcrypt"
+	"no_homomorphism/models"
 )
 
 type MyHandler struct {
@@ -226,7 +228,7 @@ func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { //б
 }
 
 func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	user := new(models.UserInput)
+	user := &models.User{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
 
@@ -237,7 +239,13 @@ func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	userModel, err := api.UsersStorage.GetFullUserInfo(user.Login)
-	if err != nil || userModel.Password != user.Password {
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println("Sending status 400 to " + r.RemoteAddr)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(userModel.Password), []byte(user.Password)); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println("Sending status 400 to " + r.RemoteAddr)
 		return
@@ -341,7 +349,8 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	if newUserData.Password != user.Password {
+
+	if err   := bcrypt.CompareHashAndPassword( []byte(user.Password), []byte(newUserData.Password)); err!=nil {
 		log.Print("wrong old password")
 		w.WriteHeader(http.StatusForbidden)
 		return

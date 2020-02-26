@@ -9,29 +9,35 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/models"
 )
 
-var api = MyHandler{Sessions: make(map[uuid.UUID]uuid.UUID, 10),
+var mu = &sync.Mutex{}
+
+var api = MyHandler{
+	Sessions: make(map[uuid.UUID]uuid.UUID, 10),
+	Mutex: mu,
 	UsersStorage: &models.UsersStorage{
 		Users: map[string]*models.User{
 			"test": {
 				Id:       uuid.NewV4(),
 				Login:    "test",
-				Password: "123",
+				Password: "$2a$04$0GzSltexrV9gQjFwv5BYuebu7/F13cX.NOupseJQUwqHWDucyBBgO", //123
 			},
 			"test2": {
 				Id:       uuid.NewV4(),
 				Login:    "test2",
-				Password: "456",
+				Password: "$2a$04$r/rWIhO8ptZAxheWs9cXmeG8fKhICfA5Gko3Qr61ae0.71CwjyODC", //456
 			},
 			"test3": {
 				Id:       uuid.NewV4(),
 				Login:    "test3",
-				Password: "789",
+				Password: "$2a$04$8G8SC41DvtOYD04qVizzbek.uL9zEI5zlQ3q2Cg.DYekuzMWFsoLa", //789
 			},
 		},
-		Mutex: &sync.Mutex{},
+		Mutex: mu,
+
 	},
 }
 
@@ -45,7 +51,7 @@ func TestHandlers_LoginHandler(t *testing.T) {
 	}
 	http.HandlerFunc(api.LoginHandler).ServeHTTP(rr, req)
 
-	assert.Equal(t, rr.Code, http.StatusOK)
+	assert.Equal(t, http.StatusOK, rr.Code)
 	id, err := uuid.FromString(rr.Result().Cookies()[0].Value)
 	if err != nil {
 		t.Error(err)
@@ -139,34 +145,11 @@ func TestMyHandler_SettingsHandler(t *testing.T) {
 	assert.Equal(t, rr.Code, http.StatusOK)
 	assert.Equal(t, id.String(), idAfter.String())
 	assert.Equal(t, api.UsersStorage.Users["3test"].Id, id)
-	assert.Equal(t, api.UsersStorage.Users["3test"].Password, "555")
+	assert.Nil(t, bcrypt.CompareHashAndPassword([]byte(api.UsersStorage.Users["3test"].Password), []byte("555")))
 
 }
 
 func TestMyHandler_MainHandler(t *testing.T) {
-	api := MyHandler{Sessions: make(map[uuid.UUID]uuid.UUID, 10),
-		UsersStorage: &models.UsersStorage{
-			Users: map[string]*models.User{
-				"test": {
-					Id:       uuid.NewV4(),
-					Login:    "test",
-					Password: "123",
-				},
-				"test2": {
-					Id:       uuid.NewV4(),
-					Login:    "test2",
-					Password: "456",
-				},
-				"test3": {
-					Id:       uuid.NewV4(),
-					Login:    "test3",
-					Password: "789",
-				},
-			},
-			Mutex: &sync.Mutex{},
-		},
-	}
-
 	jsonUser := bytes.NewBuffer([]byte("{}"))
 	rr := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "/", jsonUser)
@@ -175,7 +158,7 @@ func TestMyHandler_MainHandler(t *testing.T) {
 	}
 	http.HandlerFunc(api.MainHandler).ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusNonAuthoritativeInfo, rr.Result().StatusCode)
-	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test3\", \"Password\":\"789\"}"))
+	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
 	rr = httptest.NewRecorder()
 	req, err = http.NewRequest("POST", "/login", jsonUser)
 	if err != nil {
@@ -191,6 +174,8 @@ func TestMyHandler_MainHandler(t *testing.T) {
 	http.HandlerFunc(api.MainHandler).ServeHTTP(rr, req)
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
 }
+
+
 
 // func TestMyHandler_GetProfileHandler(t *testing.T) {
 // 	jsonInput := bytes.NewBuffer([]byte("{}"))
