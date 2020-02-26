@@ -1,8 +1,7 @@
-package main
+package handlers
 
 import (
 	"bytes"
-
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -11,7 +10,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
-	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
 )
 
@@ -19,7 +17,7 @@ var mu = &sync.Mutex{}
 
 var api = MyHandler{
 	Sessions: make(map[uuid.UUID]uuid.UUID, 10),
-	Mutex: mu,
+	Mutex:    mu,
 	UsersStorage: &models.UsersStorage{
 		Users: map[string]*models.User{
 			"test": {
@@ -39,15 +37,22 @@ var api = MyHandler{
 			},
 		},
 		Mutex: mu,
-
 	},
 }
 
 func TestHandlers_LoginHandler(t *testing.T) {
-
-	jsonUser := bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
+	jsonUser := bytes.NewBuffer([]byte("{ \"Logindgfd\":\"test\", \"Password\":\"123\"}"))
 	rr := httptest.NewRecorder()
 	req, err := http.NewRequest("POST", "/login", jsonUser)
+	if err != nil {
+		t.Error(err)
+	}
+	http.HandlerFunc(api.LoginHandler).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
+	rr = httptest.NewRecorder()
+	req, err = http.NewRequest("POST", "/login", jsonUser)
 	if err != nil {
 		t.Error(err)
 	}
@@ -200,7 +205,6 @@ func TestMyHandler_GetProfileHandlerDoesNotExists(t *testing.T) {
 	}
 	http.HandlerFunc(api.GetProfileHandler).ServeHTTP(rr, req)
 
-
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 }
@@ -230,10 +234,33 @@ func TestMyHandler_PostImageHandler(t *testing.T) {
 
 }
 
+func Test_GetUserImageHandler(t *testing.T) {
+	jsonUser := bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
+	rr := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/image", jsonUser)
+	if err != nil {
+		t.Error(err)
+	}
+	http.HandlerFunc(api.GetUserImageHandler).ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusUnauthorized, rr.Result().StatusCode)
+	rr = httptest.NewRecorder()
+	req, err = http.NewRequest("POST", "/login", jsonUser)
+	if err != nil {
+		t.Error(err)
+	}
+	http.HandlerFunc(api.LoginHandler).ServeHTTP(rr, req)
+	req.AddCookie(rr.Result().Cookies()[0])
+	rr = httptest.NewRecorder()
+	http.HandlerFunc(api.GetUserImageHandler).ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusBadRequest, rr.Result().StatusCode)
+}
+
 func Test_GetIdByLogin(t *testing.T) {
 	id := api.UsersStorage.GetIdByLogin("test")
 	assert.Equal(t, api.UsersStorage.Users["test"].Id, id)
 }
+
 //
 //func TestNewUsersStorage(t *testing.T) {
 //	//mu := &sync.Mutex{}
@@ -242,3 +269,10 @@ func Test_GetIdByLogin(t *testing.T) {
 //	_ = models.NewUsersStorage()
 //	//assert.Nil(t, err)
 //}
+
+func Test_GetUserPassword(t *testing.T) {
+	_, err := api.UsersStorage.GetUserPassword("abracadabra")
+	assert.NotNil(t, err)
+	_, err = api.UsersStorage.GetUserPassword("test")
+	assert.Nil(t, err)
+}
