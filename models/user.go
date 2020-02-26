@@ -73,12 +73,6 @@ func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
 	return input.Id, nil
 }
 
-func (us *UsersStorage) GetIdByUsername(username string) uuid.UUID { //todo проверка на существование
-	us.Mutex.Lock()
-	defer us.Mutex.Unlock()
-	return us.Users[username].Id
-}
-
 func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()

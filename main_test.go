@@ -1,7 +1,8 @@
-package handlers
+package main
 
 import (
 	"bytes"
+
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
+	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
 )
 
@@ -175,26 +177,68 @@ func TestMyHandler_MainHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
 }
 
+func TestMyHandler_GetProfileByCookieHandler(t *testing.T) {
+	jsonUser := bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
+	rr := httptest.NewRecorder()
+	req, err := http.NewRequest("POST", "/login", jsonUser)
+	if err != nil {
+		t.Error(err)
+	}
+	http.HandlerFunc(api.LoginHandler).ServeHTTP(rr, req)
+	req, err = http.NewRequest("POST", "/profile/me", jsonUser)
+	req.AddCookie(rr.Result().Cookies()[0])
+	http.HandlerFunc(api.GetProfileByCookieHandler).ServeHTTP(rr, req)
+
+}
+
+func TestMyHandler_GetProfileHandlerDoesNotExists(t *testing.T) {
+	jsonInput := bytes.NewBuffer([]byte("{}"))
+	rr := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/profiles/abracadabra", jsonInput)
+	if err != nil {
+		t.Error(err)
+	}
+	http.HandlerFunc(api.GetProfileHandler).ServeHTTP(rr, req)
 
 
-// func TestMyHandler_GetProfileHandler(t *testing.T) {
-// 	jsonInput := bytes.NewBuffer([]byte("{}"))
-// 	rr := httptest.NewRecorder()
-// 	req, err := http.NewRequest("GET", "/profiles/3test/", jsonInput)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// 	http.HandlerFunc(api.GetProfileHandler).ServeHTTP(rr, req)
-//
-// 	profile := new(models.Profile)
-//
-// 	decoder := json.NewDecoder(rr.Result().Body)
-// 	err = decoder.Decode(&profile)
-// 	if err != nil {
-// 		log.Printf("error while unmarshalling JSON: %s", err)
-// 		t.Error(err)
-// 		return
-// 	}
-// 	fmt.Println(api.UsersStorage.Users)
-// 	fmt.Println(profile)
-// }
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+}
+
+func TestMyHandler_PostImageHandler(t *testing.T) {
+	jsonInput := bytes.NewBuffer([]byte("{}"))
+	rr := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "/image", jsonInput)
+	if err != nil {
+		t.Error(err)
+	}
+	http.HandlerFunc(api.PostImageHandler).ServeHTTP(rr, req)
+	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+
+	jsonUser := bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
+	rr = httptest.NewRecorder()
+	req, err = http.NewRequest("POST", "/login", jsonUser)
+	if err != nil {
+		t.Error(err)
+	}
+	http.HandlerFunc(api.LoginHandler).ServeHTTP(rr, req)
+	req, err = http.NewRequest("POST", "/image", jsonUser)
+	req.AddCookie(rr.Result().Cookies()[0])
+	rr = httptest.NewRecorder()
+	http.HandlerFunc(api.PostImageHandler).ServeHTTP(rr, req)
+	assert.Equal(t, rr.Code, http.StatusBadRequest)
+
+}
+
+func Test_GetIdByLogin(t *testing.T) {
+	id := api.UsersStorage.GetIdByLogin("test")
+	assert.Equal(t, api.UsersStorage.Users["test"].Id, id)
+}
+
+func TestNewUsersStorage(t *testing.T) {
+	mu := &sync.Mutex{}
+	_, err := models.NewUsersStorage(nil)
+	assert.NotNil(t, err)
+	_, err = models.NewUsersStorage(mu)
+	assert.Nil(t, err)
+}
