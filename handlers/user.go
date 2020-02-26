@@ -84,7 +84,7 @@ func (api *MyHandler) getAvatarPath(r *http.Request) (string, error) {
 		return "", err
 	}
 
-	path := api.AvatarDir + userId.String()
+	path := api.AvatarDir + userId.String() + ".png"
 
 	fmt.Println(path)
 
@@ -360,17 +360,19 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 	vars := mux.Vars(r)
 	login := vars["profile"]
 
-	path, err := api.getAvatarPath(r)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
+	fmt.Println(login)
 
 	profile, err := api.UsersStorage.GetProfileByLogin(login)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	path, err := api.getAvatarPath(r)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Println(err)
+		return
 	}
 	profile.Image = path
 	profileJson, err := json.Marshal(profile)
