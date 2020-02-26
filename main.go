@@ -2,9 +2,13 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"sync"
+
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"net/http"
+	uuid "github.com/satori/go.uuid"
 	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
 	"sync"
@@ -12,6 +16,27 @@ import (
 
 func main() {
 	r := mux.NewRouter()
+	api := MyHandler{Sessions: make(map[uuid.UUID]uuid.UUID, 10),
+		UsersStorage: &models.UsersStorage{
+			Users: map[string]*models.User{
+				"test": {
+					Id:       uuid.NewV4(),
+					Login:    "test",
+					Password: "123",
+				},
+				"test2": {
+					Id:       uuid.NewV4(),
+					Login:    "test2",
+					Password: "456",
+				},
+				"test3": {
+					Id:       uuid.NewV4(),
+					Login:    "test3",
+					Password: "789",
+				},
+			},
+			Mutex: sync.RWMutex{},
+		},
 	mu := &sync.Mutex{}
 	api := &MyHandler{
 		Sessions:     make(map[uuid.UUID]uuid.UUID, 10),
@@ -25,6 +50,8 @@ func main() {
 	r.HandleFunc("/login", api.LoginHandler).Methods("POST")
 	r.HandleFunc("/logout", api.LogoutHandler).Methods("DELETE")
 	r.HandleFunc("/signup", api.SignUpHandler).Methods("POST")
+	r.HandleFunc("/profile/settings", api.SettingsHandler).Methods("PUT")
+	r.HandleFunc("/profiles/{profile}", api.GetProfileHandler)
 	r.HandleFunc("/image", api.PostImageHandler).Methods("POST")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/profile/settings", api.SettingsHandler).Methods("PUT")

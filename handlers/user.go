@@ -16,6 +16,9 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
+	"no_homomorphism/models"
 )
 
 type MyHandler struct {
@@ -172,14 +175,18 @@ func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { //б
 	if err == nil && session != nil {
 		id, err := uuid.FromString(session.Value)
 		if err != nil {
+			mutex.Unlock()
+			log.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		_, authorized = api.Sessions[id]
 	}
 	if authorized {
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("autrorized"))
 	} else {
+		w.WriteHeader(http.StatusNonAuthoritativeInfo)
 		w.Write([]byte("not autrorized"))
 	}
 }
@@ -220,6 +227,8 @@ func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionToken, err := uuid.FromString(sessionId.Value)
+	userToken, err := uuid.FromString(sid.Value)//todo check
+
 	if err != nil {
 		fmt.Println(err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -232,12 +241,14 @@ func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	delete(api.Sessions, sessionToken)
+
+	delete(api.Sessions,uuid.FromStringOrNil(sid.Value) )
 	api.Mutex.Unlock()
 	fmt.Println("Mutex Unlocked")
 
-	sessionId.Expires = time.Now().AddDate(0, 0, -1)
-	http.SetCookie(w, sessionId)
+	sid.Expires = time.Now().AddDate(0, 0, -1)
+	http.SetCookie(w, sid)
+
 }
 
 func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
@@ -257,6 +268,7 @@ func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) { //
 	defer r.Body.Close()
 
 	userInput := new(models.UserInput) //todo мб расширить эту структуру
+	userInput := new(models.User)//todo hz che za model
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&userInput)
 	if err != nil {
@@ -310,4 +322,23 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	api.UsersStorage.EditUser(user, newUserData)
+}
+
+func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
+
+	vars := mux.Vars(r)
+	login := vars["profile"]
+
+	profile, err := api.UsersStorage.GetProfileByLogin(login)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	json, err := json.Marshal(profile)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(json)
 }
