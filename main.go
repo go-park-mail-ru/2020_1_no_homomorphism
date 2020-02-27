@@ -8,6 +8,7 @@ import (
 	"net/http"
 	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
+	"os"
 	"sync"
 )
 
@@ -20,7 +21,7 @@ func InitStorages() *MyHandler {
 		UsersStorage: userStorage,
 		TrackStorage: trackStorage,
 		Mutex:        &sync.Mutex{},
-		AvatarDir:    "/home/ubuntu/2020_1_no_homomorphism/static/img/avatar/",
+		AvatarDir:    os.Getenv("MY_ENV")+"/static/img/avatar/",
 	}
 
 	user1 := models.User{
@@ -54,6 +55,7 @@ func InitStorages() *MyHandler {
 }
 
 func main() {
+
 	r := mux.NewRouter()
 
 	c := cors.New(cors.Options{
