@@ -1,8 +1,7 @@
-package models
+package main
 
 import (
 	"github.com/stretchr/testify/assert"
-	. "no_homomorphism"
 	"testing"
 )
 

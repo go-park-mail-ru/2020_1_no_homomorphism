@@ -261,7 +261,6 @@ func Test_GetIdByLogin(t *testing.T) {
 	assert.Equal(t, api.UsersStorage.Users["test"].Id, id)
 }
 
-
 func Test_GetUserPassword(t *testing.T) {
 	_, err := api.UsersStorage.GetUserPassword("abracadabra")
 	assert.NotNil(t, err)

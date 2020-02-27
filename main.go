@@ -46,6 +46,7 @@ func InitStorages() *MyHandler {
 	api.UsersStorage.Users["test3"] = &user3
 	return api
 }
+
 func main() {
 	r := mux.NewRouter()
 
