@@ -45,6 +45,7 @@ type UserSettings struct {
 }
 
 func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
+
 	if input == nil {
 		return uuid.UUID{0}, errors.New("nil input")
 	}
@@ -52,7 +53,7 @@ func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
 	_, e := us.Users[input.Login]
-	if !e {
+	if e {
 		return uuid.UUID{0}, errors.New("user with current login is already exists")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
