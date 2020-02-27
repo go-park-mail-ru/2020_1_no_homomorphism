@@ -79,11 +79,11 @@ func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
 	return userId, nil
 }
 
-func (api *MyHandler) getAvatarPath(r *http.Request) (string, error) {
-	userId, err := api.getUserIdByCookie(r)
-	if err != nil {
-		return "", err
-	}
+func (api *MyHandler) getAvatarPath(userId uuid.UUID) (string, error) {
+	//userId, err := api.getUserIdByCookie(r)
+	//if err != nil {
+	//	return "", err
+	//}
 
 	path := api.AvatarDir + userId.String() + ".png"
 
@@ -380,7 +380,11 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	path, err := api.getAvatarPath(r)
+	userId, err := api.getUserIdByCookie(r)
+	if err != nil {
+		return
+	}
+	path, err := api.getAvatarPath(userId)
 	if err != nil {
 		fmt.Println(err)
 		profile.Image = api.AvatarDir + "default.png"
@@ -425,7 +429,7 @@ func (api *MyHandler) GetProfileByCookieHandler(w http.ResponseWriter, r *http.R
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	path, err := api.getAvatarPath(r)
+	path, err := api.getAvatarPath(userId)
 	if err != nil {
 		fmt.Println(err)
 		profile.Image = api.AvatarDir + "default.png"
@@ -446,13 +450,12 @@ func (api *MyHandler) GetProfileByCookieHandler(w http.ResponseWriter, r *http.R
 	}
 }
 
-
 func (api *MyHandler) Debug(w http.ResponseWriter, r *http.Request) {
-	for _, r:=range api.UsersStorage.Users {
-		fmt.Println(r.Email , " ",r.Name , " " ,r.Login , " " , r.Id)
+	for _, r := range api.UsersStorage.Users {
+		fmt.Println(r.Email, " ", r.Name, " ", r.Login, " ", r.Id)
 	}
 	fmt.Println("sessions")
-	for _, r:=range api.Sessions {
+	for _, r := range api.Sessions {
 		fmt.Println(r)
 	}
 
