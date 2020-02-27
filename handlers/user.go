@@ -132,6 +132,14 @@ func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *MyHandler) PostImageHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Header)
+	var kek []byte
+	_, err := r.Body.Read(kek)
+	if err != nil {
+		fmt.Println("noooooooooooooooooooo")
+		return
+	}
+	fmt.Println(kek)
 	userId, err := api.getUserIdByCookie(r)
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
