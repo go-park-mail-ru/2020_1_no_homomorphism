@@ -211,31 +211,31 @@ func TestMyHandler_GetProfileHandlerDoesNotExists(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 }
-
-func TestMyHandler_PostImageHandler(t *testing.T) {
-	jsonInput := bytes.NewBuffer([]byte("{}"))
-	rr := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "/image", jsonInput)
-	if err != nil {
-		t.Error(err)
-	}
-	http.HandlerFunc(api.PostImageHandler).ServeHTTP(rr, req)
-	assert.Equal(t, http.StatusUnauthorized, rr.Code)
-
-	jsonUser := bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
-	rr = httptest.NewRecorder()
-	req, err = http.NewRequest("POST", "/login", jsonUser)
-	if err != nil {
-		t.Error(err)
-	}
-	http.HandlerFunc(api.LoginHandler).ServeHTTP(rr, req)
-	req, err = http.NewRequest("POST", "/image", jsonUser)
-	req.AddCookie(rr.Result().Cookies()[0])
-	rr = httptest.NewRecorder()
-	http.HandlerFunc(api.PostImageHandler).ServeHTTP(rr, req)
-	assert.Equal(t, rr.Code, http.StatusBadRequest)
-
-}
+//
+// func TestMyHandler_PostImageHandler(t *testing.T) {
+// 	jsonInput := bytes.NewBuffer([]byte("{}"))
+// 	rr := httptest.NewRecorder()
+// 	req, err := http.NewRequest("GET", "/image", jsonInput)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	http.HandlerFunc(api.PostImageHandler).ServeHTTP(rr, req)
+// 	assert.Equal(t, http.StatusUnauthorized, rr.Code)
+//
+// 	jsonUser := bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))
+// 	rr = httptest.NewRecorder()
+// 	req, err = http.NewRequest("POST", "/login", jsonUser)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	http.HandlerFunc(api.LoginHandler).ServeHTTP(rr, req)
+// 	req, err = http.NewRequest("POST", "/image", jsonUser)
+// 	req.AddCookie(rr.Result().Cookies()[0])
+// 	rr = httptest.NewRecorder()
+// 	http.HandlerFunc(api.PostImageHandler).ServeHTTP(rr, req)
+//
+//
+// }
 
 func Test_GetUserImageHandler(t *testing.T) {
 	jsonUser := bytes.NewBuffer([]byte("{ \"Login\":\"test\", \"Password\":\"123\"}"))

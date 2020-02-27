@@ -20,7 +20,7 @@ func InitStorages() *MyHandler {
 		UsersStorage: userStorage,
 		TrackStorage: trackStorage,
 		Mutex:        &sync.Mutex{},
-		AvatarDir:    "/static/img/avatar/",
+		AvatarDir:    "/home/ubuntu/2020_1_no_homomorphism/home/static/img/avatar/",
 	}
 
 	user1 := models.User{
