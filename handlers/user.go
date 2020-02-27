@@ -242,7 +242,7 @@ func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err := bcrypt.CompareHashAndPassword([]byte(userModel.Password), []byte(user.Password)); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println("Sending status 400 to " + r.RemoteAddr)
+		fmt.Println("Sending status 400 to TOPKEK " + r.RemoteAddr)
 		return
 	}
 

@@ -26,19 +26,19 @@ func InitStorages() *MyHandler {
 	user1 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test",
-		Password: "123",
+		Password: "$2a$04$0GzSltexrV9gQjFwv5BYuebu7/F13cX.NOupseJQUwqHWDucyBBgO",
 	}
 
 	user2 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test2",
-		Password: "456",
+		Password: "$2a$04$r/rWIhO8ptZAxheWs9cXmeG8fKhICfA5Gko3Qr61ae0.71CwjyODC",
 	}
 
 	user3 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test3",
-		Password: "789",
+		Password: "$2a$04$8G8SC41DvtOYD04qVizzbek.uL9zEI5zlQ3q2Cg.DYekuzMWFsoLa",
 	}
 
 	api.UsersStorage.Users["test"] = &user1
@@ -73,7 +73,7 @@ func main() {
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
 	//handler := c.Handler(r)
-	err := http.ListenAndServe(":8080", c.Handler(r))
+	err := http.ListenAndServe(":8081", c.Handler(r))
 	if err != nil {
 		fmt.Println(err)
 		return
