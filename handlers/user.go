@@ -322,7 +322,7 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("permission denied: %s", err)
 		w.WriteHeader(http.StatusUnauthorized)
 	}
-	newUserData := new(models.UserSettings)
+	newUserData := &models.UserSettings{}
 
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&newUserData)

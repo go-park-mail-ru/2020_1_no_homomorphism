@@ -141,7 +141,7 @@ func TestMyHandler_SettingsHandler(t *testing.T) {
 		t.Error(err)
 	}
 	id := api.Sessions[sid]
-	jsonSettings := bytes.NewBuffer([]byte("{ \"Login\":\"3test\", \"Password\":\"789\",\"new_password\":\"555\" }"))
+	jsonSettings := bytes.NewBuffer([]byte("{ \"Name\":\"Pisa\", \"Password\":\"789\",\"new_password\":\"555\" }"))
 	req, err = http.NewRequest("PUT", "/profile/settings", jsonSettings)
 	if err != nil {
 		t.Error(err)
@@ -151,8 +151,8 @@ func TestMyHandler_SettingsHandler(t *testing.T) {
 	idAfter := api.Sessions[uuid.FromStringOrNil(rr.Result().Cookies()[0].Value)]
 	assert.Equal(t, rr.Code, http.StatusOK)
 	assert.Equal(t, id.String(), idAfter.String())
-	assert.Equal(t, api.UsersStorage.Users["3test"].Id, id)
-	assert.Nil(t, bcrypt.CompareHashAndPassword([]byte(api.UsersStorage.Users["3test"].Password), []byte("555")))
+	assert.Equal(t, api.UsersStorage.Users["test3"].Name, "Pisa")
+	assert.Nil(t, bcrypt.CompareHashAndPassword([]byte(api.UsersStorage.Users["test3"].Password), []byte("555")))
 
 }
 
