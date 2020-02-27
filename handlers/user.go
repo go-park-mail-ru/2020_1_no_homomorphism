@@ -89,9 +89,13 @@ func (api *MyHandler) getAvatarPath(userId uuid.UUID) (string, error) {
 
 	isExists, err := exists(path)
 	if err != nil {
+		fmt.Println("ERRORRRRRRRRRR")
+		log.Println(err)
 		return "", err
 	}
 	if !isExists {
+		fmt.Println("ERRORRRRRRRRRR")
+		log.Println(err)
 		return "", errors.New("path does not exists")
 	}
 	return path, nil
@@ -390,8 +394,9 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 		profile.Image = api.AvatarDir + "default.png"
 	} else {
 		profile.Image = path
+		fmt.Println(path)
 	}
-	profile.Image = path
+
 	fmt.Println(profile)
 	profileJson, err := json.Marshal(profile)
 	if err != nil {

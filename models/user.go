@@ -73,7 +73,7 @@ func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 		Login: us.Users[login].Login,
 		Sex:   us.Users[login].Sex,
 		Name:  us.Users[login].Name,
-		Image: "",
+		Image: "https://www.google.com/url?sa=i&url=https%3A%2F%2Fru.depositphotos.com%2Fstock-photos%2F%25D1%2580%25D0%25BE%25D0%25BC%25D0%25B0%25D0%25BD%25D1%2582%25D0%25B8%25D0%25BA%25D0%25B0.html&psig=AOvVaw1l_EOxwCnFV0MK_NgnAvdb&ust=1582897607330000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCNDcrJ_v8ecCFQAAAAAdAAAAABAD",
 		Email: us.Users[login].Email,
 	}
 	return profile, nil
