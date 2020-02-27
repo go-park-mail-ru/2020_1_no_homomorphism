@@ -388,12 +388,14 @@ func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) 
 		profile.Image = path
 	}
 	profile.Image = path
+	fmt.Println(profile)
 	profileJson, err := json.Marshal(profile)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
+	fmt.Println(profileJson)
 	_, err = w.Write(profileJson)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

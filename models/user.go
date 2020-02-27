@@ -74,6 +74,7 @@ func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 		Sex:   us.Users[login].Sex,
 		Name:  us.Users[login].Name,
 		Image: "",
+		Email: us.Users[login].Email,
 	}
 	return profile, nil
 }
