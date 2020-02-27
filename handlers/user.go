@@ -320,9 +320,10 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		log.Printf("permission denied: %s", err)
-		w.WriteHeader(http.StatusForbidden)
+		w.WriteHeader(http.StatusUnauthorized)
 	}
 	newUserData := new(models.UserSettings)
+
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&newUserData)
 	if err != nil {
@@ -333,11 +334,16 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 	sid, err := uuid.FromString(cookie.Value)
 	if err != nil {
 		log.Printf("permission denied: %s", err)
-		w.WriteHeader(http.StatusForbidden)
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	api.Mutex.Lock()
-	id := api.Sessions[sid]
+	id, ok := api.Sessions[sid]
+	if !ok {
+		log.Printf("no session found: %s", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	api.Mutex.Unlock()
 	user, err := api.UsersStorage.GetUserById(id)
 	if err != nil {
@@ -351,6 +357,7 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
+	fmt.Println(user)
 	err = api.UsersStorage.EditUser(user, newUserData)
 	if err != nil {
 		log.Print(err)

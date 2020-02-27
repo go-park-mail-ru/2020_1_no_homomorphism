@@ -60,7 +60,7 @@ func main() {
 
 	api := InitStorages()
 
-	fmt.Printf("Starts server at 8080\n")
+	fmt.Printf("Starts server at 8081\n")
 	r.HandleFunc("/", api.MainHandler)
 	r.HandleFunc("/login", api.LoginHandler).Methods("POST")
 	r.HandleFunc("/logout", api.LogoutHandler).Methods("DELETE")
