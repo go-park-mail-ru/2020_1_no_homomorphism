@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -82,7 +83,7 @@ func TestHandlers_SignUpHandler(t *testing.T) {
 	}
 	http.HandlerFunc(api.SignUpHandler).ServeHTTP(rr, req)
 	assert.Equal(t, rr.Result().StatusCode, http.StatusBadRequest)
-	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test4\", \"Password\":\"111\",\"Email\":\"amd@gbk.ru\"}"))
+	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test4\", \"email\":\"amd@gbk.ru\", \"Password\":\"111\"}"))
 	rr = httptest.NewRecorder()
 	req, err = http.NewRequest("POST", "/signup", jsonUser)
 	if err != nil {
@@ -97,6 +98,7 @@ func TestHandlers_SignUpHandler(t *testing.T) {
 	}
 	assert.Equal(t, api.UsersStorage.Users["test4"].Id, api.Sessions[id])
 	assert.Equal(t, api.UsersStorage.Users["test4"].Email, "amd@gbk.ru")
+	fmt.Println(api.UsersStorage.Users["test4"])
 }
 
 func TestHandlers_LogoutHandler(t *testing.T) {
@@ -280,3 +282,4 @@ func Test_GetUserPassword(t *testing.T) {
 //	err = saveFile(file, "", "")
 //	assert.NotNil(t, err)
 //}
+

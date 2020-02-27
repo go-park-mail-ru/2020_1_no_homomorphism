@@ -441,3 +441,16 @@ func (api *MyHandler) GetProfileByCookieHandler(w http.ResponseWriter, r *http.R
 		return
 	}
 }
+
+
+func (api *MyHandler) Debug(w http.ResponseWriter, r *http.Request) {
+	for _, r:=range api.UsersStorage.Users {
+		fmt.Println(r.Email , " ",r.Name , " " ,r.Login , " " , r.Id)
+	}
+	fmt.Println("sessions")
+	for _, r:=range api.Sessions {
+		fmt.Println(r)
+	}
+
+	fmt.Println(api.Sessions)
+}
