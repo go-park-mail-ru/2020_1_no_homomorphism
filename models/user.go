@@ -122,10 +122,11 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 	if err != nil {
 		log.Println(err)
 	}
+
 	newUser := &User{
 		Id:       user.Id,
+		Login:    user.Login,
 		Name:     newUserData.Name,
-		Login:    newUserData.Login,
 		Password: string(hash),
 		Email:    newUserData.Email,
 		Sex:      newUserData.Sex,
