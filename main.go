@@ -21,7 +21,7 @@ func InitStorages() *MyHandler {
 		UsersStorage: userStorage,
 		TrackStorage: trackStorage,
 		Mutex:        &sync.Mutex{},
-		AvatarDir:    os.Getenv("MY_ENV")+"/static/img/avatar/",
+		AvatarDir:    os.Getenv("MUSIC_PROJ_DIR")+"/static/img/avatar/",
 	}
 
 	user1 := models.User{
