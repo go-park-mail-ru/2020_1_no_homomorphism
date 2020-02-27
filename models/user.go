@@ -51,7 +51,8 @@ func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
 	input.Id = uuid.NewV4()
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
-	if us.Users[input.Login] != nil {
+	_, e := us.Users[input.Login]
+	if !e {
 		return uuid.UUID{0}, errors.New("user with current login is already exists")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.MinCost)
@@ -66,7 +67,8 @@ func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {
 func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
-	if us.Users[login] == nil {
+	_, e := us.Users[login]
+	if !e {
 		return nil, errors.New("no user with that name")
 	}
 	profile := &Profile{

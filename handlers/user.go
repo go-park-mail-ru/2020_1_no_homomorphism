@@ -102,7 +102,11 @@ func (api *MyHandler) getAvatarPath(userId uuid.UUID) (string, error) {
 }
 
 func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
-	requestedID, err := strconv.Atoi(mux.Vars(r)["id"])
+	id, e :=  mux.Vars(r)["id"]
+	if e == false {
+		log.Println("no id in mux vars")
+	}
+	requestedID, err := strconv.Atoi(id)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println(err)
@@ -376,8 +380,10 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 
 func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	login := vars["profile"]
-
+	login, e := vars["profile"]
+	if e == false {
+		log.Println("no id in mux vars")
+	}
 	profile, err := api.UsersStorage.GetProfileByLogin(login)
 	if err != nil {
 		log.Println(err)
