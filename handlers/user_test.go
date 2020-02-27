@@ -82,7 +82,7 @@ func TestHandlers_SignUpHandler(t *testing.T) {
 	}
 	http.HandlerFunc(api.SignUpHandler).ServeHTTP(rr, req)
 	assert.Equal(t, rr.Result().StatusCode, http.StatusBadRequest)
-	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test4\", \"Password\":\"111\"}"))
+	jsonUser = bytes.NewBuffer([]byte("{ \"Login\":\"test4\", \"Password\":\"111\",\"Email\":\"amd@gbk.ru\"}"))
 	rr = httptest.NewRecorder()
 	req, err = http.NewRequest("POST", "/signup", jsonUser)
 	if err != nil {
@@ -96,6 +96,7 @@ func TestHandlers_SignUpHandler(t *testing.T) {
 		t.Error(err)
 	}
 	assert.Equal(t, api.UsersStorage.Users["test4"].Id, api.Sessions[id])
+	assert.Equal(t, api.UsersStorage.Users["test4"].Email, "amd@gbk.ru")
 }
 
 func TestHandlers_LogoutHandler(t *testing.T) {
