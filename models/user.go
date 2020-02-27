@@ -135,7 +135,5 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 	fmt.Println("this is user:", user)
 	fmt.Println("this is NewUser:", newUser)
 
-	delete(us.Users, user.Login)
-	us.Users[newUserData.Login] = newUser
 	return nil
 }
