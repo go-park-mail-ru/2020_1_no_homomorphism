@@ -49,6 +49,13 @@ func InitStorages() *MyHandler {
 func main() {
 	r := mux.NewRouter()
 
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://89.208.199.170:3000"},
+		AllowCredentials: true,
+		// Enable Debugging for testing, consider disabling in production
+		Debug: true,
+	})
+
 	api := InitStorages()
 
 	fmt.Printf("Starts server at 8080\n")
@@ -63,8 +70,8 @@ func main() {
 	//r.HandleFunc("/image", api.GetImageURLHandler).Methods("GET")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
-	handler := cors.Default().Handler(r)
-	err := http.ListenAndServe(":8080", handler)
+	//handler := c.Handler(r)
+	err := http.ListenAndServe(":8080", c.Handler(r))
 	if err != nil {
 		fmt.Println(err)
 		return
