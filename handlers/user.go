@@ -20,7 +20,6 @@ import (
 	"no_homomorphism/models"
 )
 
-
 type MyHandler struct {
 	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
 	UsersStorage *models.UsersStorage
@@ -312,6 +311,7 @@ func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	log.Println("New user added")
 	http.SetCookie(w, api.createCookie(userId))
 	w.WriteHeader(http.StatusOK)
 }
@@ -346,7 +346,7 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err   := bcrypt.CompareHashAndPassword( []byte(user.Password), []byte(newUserData.Password)); err!=nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newUserData.Password)); err != nil {
 		log.Print("wrong old password")
 		w.WriteHeader(http.StatusForbidden)
 		return

@@ -267,3 +267,14 @@ func Test_GetUserPassword(t *testing.T) {
 	_, err = api.UsersStorage.GetUserPassword("test")
 	assert.Nil(t, err)
 }
+//
+//func Test_SaveFile(t *testing.T) {
+//	file, err := ioutil.TempFile("../handlers", "prefix")
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//	defer os.Remove(file.Name())
+//
+//	err = saveFile(file, "", "")
+//	assert.NotNil(t, err)
+//}
