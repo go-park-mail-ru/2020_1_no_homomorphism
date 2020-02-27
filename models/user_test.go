@@ -1,11 +1,13 @@
 package models
 
+import (
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
-
-//func Test_NewUsersStorage(t *testing.T) {
-//	mu := &sync.Mutex{}
-//	_, err := NewUsersStorage(nil)
-//	assert.NotNil(t, err)
-//	_, err = NewUsersStorage(mu)
-//	assert.Nil(t, err)
-//}
+func TestNewUsersStorage(t *testing.T) {
+	userModel := NewUsersStorage()
+	assert.NotNil(t, userModel)
+	trackModel := NewTrackStorage()
+	assert.NotNil(t, trackModel)
+}

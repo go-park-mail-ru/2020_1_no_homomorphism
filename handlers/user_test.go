@@ -261,14 +261,6 @@ func Test_GetIdByLogin(t *testing.T) {
 	assert.Equal(t, api.UsersStorage.Users["test"].Id, id)
 }
 
-//
-//func TestNewUsersStorage(t *testing.T) {
-//	//mu := &sync.Mutex{}
-//	_ = models.NewUsersStorage()
-//	//assert.NotNil(t, err)
-//	_ = models.NewUsersStorage()
-//	//assert.Nil(t, err)
-//}
 
 func Test_GetUserPassword(t *testing.T) {
 	_, err := api.UsersStorage.GetUserPassword("abracadabra")
