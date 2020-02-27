@@ -77,11 +77,13 @@ func (us *UsersStorage) GetProfileByLogin(login string) (*Profile, error) {
 	}
 	return profile, nil
 }
+
 func (us *UsersStorage) GetIdByLogin(login string) uuid.UUID {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
 	return us.Users[login].Id
 }
+
 func (us *UsersStorage) GetUserById(id uuid.UUID) (*User, error) {
 	us.Mutex.Lock()
 	defer us.Mutex.Unlock()
@@ -124,13 +126,13 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 		log.Println(err)
 	}
 	bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newUserData.Password))
-	if  newUserData.Email != "" {
+	if newUserData.Email != "" {
 		user.Email = newUserData.Email
 	}
-	if  newUserData.NewPassword != "" {
+	if newUserData.NewPassword != "" {
 		user.Password = string(hash)
 	}
-	if  newUserData.Sex != "" {
+	if newUserData.Sex != "" {
 		user.Password = string(hash)
 	}
 	if newUserData.Name != "" {
@@ -138,7 +140,6 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 	}
 
 	fmt.Println("this is user:", user)
-
 
 	return nil
 }

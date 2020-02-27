@@ -267,6 +267,7 @@ func Test_GetUserPassword(t *testing.T) {
 	_, err = api.UsersStorage.GetUserPassword("test")
 	assert.Nil(t, err)
 }
+
 //
 //func Test_SaveFile(t *testing.T) {
 //	file, err := ioutil.TempFile("../handlers", "prefix")
