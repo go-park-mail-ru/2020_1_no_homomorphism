@@ -123,17 +123,22 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 	if err != nil {
 		log.Println(err)
 	}
-
-	newUser := &User{
-		Id:       user.Id,
-		Login:    user.Login,
-		Name:     newUserData.Name,
-		Password: string(hash),
-		Email:    newUserData.Email,
-		Sex:      newUserData.Sex,
+	bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newUserData.Password))
+	if  newUserData.Email != "" {
+		user.Email = newUserData.Email
 	}
+	if  newUserData.NewPassword != "" {
+		user.Password = string(hash)
+	}
+	if  newUserData.Sex != "" {
+		user.Password = string(hash)
+	}
+	if newUserData.Name != "" {
+		user.Name = newUserData.Name
+	}
+
 	fmt.Println("this is user:", user)
-	fmt.Println("this is NewUser:", newUser)
+
 
 	return nil
 }
