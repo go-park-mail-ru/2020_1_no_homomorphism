@@ -297,6 +297,7 @@ func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
 }
 
 func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Body)
 	userInput := new(models.User)
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&userInput)
@@ -317,6 +318,7 @@ func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Body)
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		log.Printf("permission denied: %s", err)
