@@ -92,7 +92,7 @@ func (api *MyHandler) getAvatarPath(r *http.Request) (string, error) {
 		return "", err
 	}
 	if !isExists {
-		return "", err
+		return "", errors.New("path does not exists")
 	}
 	return path, nil
 }
@@ -371,8 +371,6 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	login := vars["profile"]
-
-	fmt.Println(login)
 
 	profile, err := api.UsersStorage.GetProfileByLogin(login)
 	if err != nil {
