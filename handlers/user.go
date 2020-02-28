@@ -303,9 +303,10 @@ func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
 	sid := uuid.NewV4()
 	api.Sessions[sid] = id
 	cookie = &http.Cookie{
-		Name:    "session_id",
-		Value:   sid.String(),
-		Expires: time.Now().Add(10 * time.Hour),
+		Name:     "session_id",
+		Value:    sid.String(),
+		HttpOnly: true,
+		Expires:  time.Now().Add(72 * time.Hour),
 	}
 	return
 }
@@ -479,7 +480,7 @@ func (api *MyHandler) Debug(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(api.Sessions)
 }
 
-func (api *MyHandler) CheckSession(w http.ResponseWriter, r *http.Request) {
+func (api *MyHandler) CheckSessionHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie {
 		log.Println(http.StatusUnauthorized)

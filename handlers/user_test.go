@@ -211,6 +211,7 @@ func TestMyHandler_GetProfileHandlerDoesNotExists(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
 
 }
+
 //
 // func TestMyHandler_PostImageHandler(t *testing.T) {
 // 	jsonInput := bytes.NewBuffer([]byte("{}"))
@@ -282,4 +283,3 @@ func Test_GetUserPassword(t *testing.T) {
 //	err = saveFile(file, "", "")
 //	assert.NotNil(t, err)
 //}
-

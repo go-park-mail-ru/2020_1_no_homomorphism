@@ -81,7 +81,7 @@ func main() {
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
 	r.HandleFunc("/debug", api.Debug)
-	r.HandleFunc("/user", api.CheckSession)
+	r.HandleFunc("/user", api.CheckSessionHandler)
 	//handler := c.Handler(r)
 	err := http.ListenAndServe(":8081", c.Handler(r))
 	if err != nil {
