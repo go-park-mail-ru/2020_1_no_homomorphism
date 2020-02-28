@@ -27,24 +27,24 @@ func InitStorages() *MyHandler {
 	user1 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test",
-		Name: "Rita",
-		Email: "rita@margarita.tyt",
+		Name:     "Rita",
+		Email:    "rita@margarita.tyt",
 		Password: "$2a$04$0GzSltexrV9gQjFwv5BYuebu7/F13cX.NOupseJQUwqHWDucyBBgO",
 	}
 
 	user2 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test2",
-		Name:   "User2",
-		Email: "user2@da.tu",
+		Name:     "User2",
+		Email:    "user2@da.tu",
 		Password: "$2a$04$r/rWIhO8ptZAxheWs9cXmeG8fKhICfA5Gko3Qr61ae0.71CwjyODC",
 	}
 
 	user3 := models.User{
 		Id:       uuid.NewV4(),
 		Login:    "test3",
-		Name:   "User3",
-		Email: "user3@da.tu",
+		Name:     "User3",
+		Email:    "user3@da.tu",
 		Password: "$2a$04$8G8SC41DvtOYD04qVizzbek.uL9zEI5zlQ3q2Cg.DYekuzMWFsoLa",
 	}
 
@@ -81,6 +81,7 @@ func main() {
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
 	r.HandleFunc("/debug", api.Debug)
+	r.HandleFunc("/user", api.CheckSession)
 	//handler := c.Handler(r)
 	err := http.ListenAndServe(":8081", c.Handler(r))
 	if err != nil {

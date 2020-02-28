@@ -100,7 +100,7 @@ func (api *MyHandler) getAvatarPath(userId uuid.UUID) (string, error) {
 }
 
 func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
-	id, e :=  mux.Vars(r)["id"]
+	id, e := mux.Vars(r)["id"]
 	if e == false {
 		log.Println("no id in mux vars")
 	}
@@ -477,4 +477,25 @@ func (api *MyHandler) Debug(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println(api.Sessions)
+}
+
+func (api *MyHandler) CheckSession(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie {
+		log.Println(http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		log.Println(http.StatusUnauthorized)
+		return
+	}
+
+	if _, ok := api.Sessions[userID]; ok {
+		log.Println(http.StatusOK)
+		return
+	}
+	log.Println(http.StatusUnauthorized)
+	return
 }
