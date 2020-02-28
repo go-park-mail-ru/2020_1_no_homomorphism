@@ -482,9 +482,9 @@ func (api *MyHandler) Debug(w http.ResponseWriter, r *http.Request) {
 
 func (api *MyHandler) CheckSessionHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		fmt.Println(cookie.Value + "1")
+	if err != nil  {
 		log.Println(http.StatusUnauthorized)
+		fmt.Println("SUPER KEEEEEEEEEEEEEK")
 		return
 	}
 
