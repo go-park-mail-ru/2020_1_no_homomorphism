@@ -38,8 +38,8 @@ func addTestTracks(storage *TrackStorage) {
 	}
 	track2 := Track{
 		Id:       12347,
-		Name:     "Синие море",
-		Artist:   "Любе",
+		Name:     "Thirteen Thirty Five",
+		Artist:   "Dillon",
 		Duration: 223,
 		Image:    "static/img/vk.jpg",
 		Link:     "http://beloweb.ru/audio/dillon_-_thirteen_thirtyfive_.mp3",
@@ -50,7 +50,7 @@ func addTestTracks(storage *TrackStorage) {
 		Artist:   "Пчеловод",
 		Duration: 170,
 		Image:    "static/img/ok.png",
-		Link:     "https://dl2.mp3party.net/online/8905454.mp3",
+		Link:     "https://ns1.topzaycevs.ru/files/dl/rasa_-_Tii_pchela_ya_pchelovod.mp3",
 	}
 	track4 := Track{
 		Id:       12349,
@@ -58,7 +58,7 @@ func addTestTracks(storage *TrackStorage) {
 		Artist:   "Стас",
 		Duration: 40,
 		Image:    "static/img/rocket.svg",
-		Link:     "https://dl1.mp3party.net/online/8650950.mp3",
+		Link:     "http://cdn1.pesnigoo.ru/uploads/files/2018-10/jekstaz-krokodil_456242584.mp3",
 	}
 	track5 := Track{
 		Id:       12344,
