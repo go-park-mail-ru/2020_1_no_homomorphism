@@ -45,7 +45,7 @@ func saveFile(file multipart.File, userId string, avatarDir string) error {
 		fmt.Println(err)
 		return errors.New("failed to read file body file")
 	}
-	filePath := avatarDir + userId + ".png" //todo подставлять формат файла
+	filePath := os.Getenv("MUSIC_PROJ_DIR") + avatarDir + userId + ".png" //todo подставлять формат файла
 	newFile, err := os.Create(filePath)
 	if err != nil {
 		fmt.Println(err)
@@ -87,14 +87,12 @@ func (api *MyHandler) getAvatarPath(userId uuid.UUID) (string, error) {
 
 	path := api.AvatarDir + userId.String() + ".png"
 
-	isExists, err := exists(path)
+	isExists, err := exists(os.Getenv("MUSIC_PROJ_DIR") + path)
 	if err != nil {
-		fmt.Println("ERRORRRRRRRRRR")
 		log.Println(err)
 		return "", err
 	}
 	if !isExists {
-		fmt.Println("ERRORRRRRRRRRR")
 		log.Println(err)
 		return "", errors.New("path does not exists")
 	}
@@ -179,7 +177,7 @@ func (api *MyHandler) GetUserImageHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	file, err := os.Open(api.AvatarDir + userId.String() + ".png")
+	file, err := os.Open(os.Getenv("MUSIC_PROJ_DIR") + api.AvatarDir + userId.String() + ".png")
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Println(err)

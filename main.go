@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+	"sync"
+
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	uuid "github.com/satori/go.uuid"
-	"net/http"
 	. "no_homomorphism/handlers"
 	"no_homomorphism/models"
-	"os"
-	"sync"
 )
 
 func InitStorages() *MyHandler {
@@ -21,7 +21,7 @@ func InitStorages() *MyHandler {
 		UsersStorage: userStorage,
 		TrackStorage: trackStorage,
 		Mutex:        &sync.Mutex{},
-		AvatarDir:    os.Getenv("MUSIC_PROJ_DIR")+"/static/img/avatar/",
+		AvatarDir:    "/static/img/avatar/",
 	}
 
 	user1 := models.User{
@@ -59,7 +59,7 @@ func main() {
 	r := mux.NewRouter()
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001"},
+		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://194.186.188.240"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		// Enable Debugging for testing, consider disabling in production
