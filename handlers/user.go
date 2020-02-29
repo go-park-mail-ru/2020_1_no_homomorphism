@@ -343,7 +343,6 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&newUserData)
-	fmt.Println("MODEL IS", " OLD PASS :",  newUserData.Password, " NEW PASS: ", newUserData.NewPassword)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -375,7 +374,6 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	fmt.Println(user)
 	err = api.UsersStorage.EditUser(user, newUserData)
 	if err != nil {
 		log.Print(err)
