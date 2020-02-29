@@ -343,6 +343,7 @@ func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
 
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&newUserData)
+	fmt.Println("MODEL IS", newUserData)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
