@@ -40,7 +40,7 @@ type Profile struct {
 }
 
 type UserSettings struct {
-	NewPassword string `json:"new_password"`
+	NewPassword string `json:"newPassword"`
 	User
 }
 
@@ -129,7 +129,6 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 	if err != nil {
 		log.Println(err)
 	}
-	bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newUserData.Password))
 	if newUserData.Email != "" {
 		user.Email = newUserData.Email
 	}
