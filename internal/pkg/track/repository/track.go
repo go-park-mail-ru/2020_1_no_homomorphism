@@ -1,22 +1,14 @@
-package models
+package repository
 
 import (
 	"errors"
 	"sync"
+	. "no_homomorphism/internal/pkg/models"
 )
 
 type TrackStorage struct {
 	TrackStorage map[uint]*Track
 	Mutex        *sync.Mutex
-}
-
-type Track struct {
-	Id       uint   `json:"id"`
-	Name     string `json:"name"`
-	Artist   string `json:"artist"`
-	Duration uint   `json:"duration"`
-	Image    string `json:"image"`
-	Link     string `json:"link"`
 }
 
 func addTestTracks(storage *TrackStorage) {

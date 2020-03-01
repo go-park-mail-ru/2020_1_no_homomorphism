@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -8,13 +8,15 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	uuid "github.com/satori/go.uuid"
-	. "no_homomorphism/handlers"
-	"no_homomorphism/models"
+	"no_homomorphism/internal/pkg/models"
+	track "no_homomorphism/internal/pkg/track/repository"
+	. "no_homomorphism/internal/pkg/user/delivery"
+	"no_homomorphism/internal/pkg/user/repository"
 )
 
 func InitStorages() *MyHandler {
-	trackStorage := models.NewTrackStorage()
-	userStorage := models.NewUsersStorage()
+	trackStorage := track.NewTrackStorage()
+	userStorage := repository.NewUsersStorage()
 
 	api := &MyHandler{
 		Sessions:     make(map[uuid.UUID]uuid.UUID, 10),
@@ -54,7 +56,7 @@ func InitStorages() *MyHandler {
 	return api
 }
 
-func main() {
+func Start() {
 
 	r := mux.NewRouter()
 
@@ -80,7 +82,7 @@ func main() {
 	//r.HandleFunc("/image", api.GetImageURLHandler).Methods("GET")
 	r.HandleFunc("/image", api.GetUserImageHandler).Methods("GET")
 	r.HandleFunc("/track/{id:[0-9]+}", api.GetTrackHandler).Methods("GET")
-	r.HandleFunc("/debug", api.Debug)
+	r.HandleFunc("/debug", api.DebugHandler)
 	r.HandleFunc("/user", api.CheckSessionHandler)
 	//handler := c.Handler(r)
 	err := http.ListenAndServe(":8081", c.Handler(r))

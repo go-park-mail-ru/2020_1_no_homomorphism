@@ -1,4 +1,4 @@
-package models
+package repository
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
+	. "no_homomorphism/internal/pkg/models"
 )
 
 func NewUsersStorage() *UsersStorage {
@@ -20,28 +21,6 @@ func NewUsersStorage() *UsersStorage {
 type UsersStorage struct {
 	Users map[string]*User
 	Mutex *sync.Mutex
-}
-
-type User struct {
-	Id       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	Login    string    `json:"login"`
-	Sex      string    `json:"sex"`
-	Password string    `json:"password"`
-	Email    string    `json:"email"`
-}
-
-type Profile struct {
-	Name  string `json:"name"`
-	Login string `json:"login"`
-	Sex   string `json:"sex"`
-	Image string `json:"image"`
-	Email string `json:"email"`
-}
-
-type UserSettings struct {
-	NewPassword string `json:"newPassword"`
-	User
 }
 
 func (us *UsersStorage) AddUser(input *User) (uuid.UUID, error) {

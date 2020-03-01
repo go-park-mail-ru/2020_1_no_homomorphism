@@ -1,4 +1,4 @@
-package handlers
+package delivery
 
 import (
 	"encoding/json"
@@ -17,13 +17,15 @@ import (
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
-	"no_homomorphism/models"
+	"no_homomorphism/internal/pkg/models"
+	track "no_homomorphism/internal/pkg/track/repository"
+	"no_homomorphism/internal/pkg/user/repository"
 )
 
 type MyHandler struct {
 	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
-	UsersStorage *models.UsersStorage
-	TrackStorage *models.TrackStorage
+	UsersStorage *repository.UsersStorage
+	TrackStorage *track.TrackStorage
 	Mutex        *sync.Mutex
 	AvatarDir    string
 }
@@ -297,31 +299,16 @@ func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
-	api.Mutex.Lock()
-	defer api.Mutex.Unlock()
-	sid := uuid.NewV4()
-	api.Sessions[sid] = id
-	cookie = &http.Cookie{
-		Name:     "session_id",
-		Value:    sid.String(),
-		HttpOnly: true,
-		Expires:  time.Now().Add(72 * time.Hour),
-	}
-	return
-}
-
 func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Body)
-	userInput := new(models.User)
+	user := &models.User{}
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&userInput)
+	err := decoder.Decode(&user)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	userId, err := api.UsersStorage.AddUser(userInput)
+	userId, err := api.UsersStorage.AddUser(user)
 	if err != nil {
 		log.Printf("error while creating User: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
@@ -467,7 +454,7 @@ func (api *MyHandler) GetProfileByCookieHandler(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (api *MyHandler) Debug(w http.ResponseWriter, r *http.Request) {
+func (api *MyHandler) DebugHandler(w http.ResponseWriter, r *http.Request) {
 	for _, r := range api.UsersStorage.Users {
 		fmt.Println(r.Email, " ", r.Name, " ", r.Login, " ", r.Id)
 	}
@@ -505,3 +492,32 @@ func (api *MyHandler) CheckSessionHandler(w http.ResponseWriter, r *http.Request
 
 	return
 }
+
+//
+// type Handler struct {
+// 	useCase user.UseCase
+// }
+//
+// func NewHandler(useCase user.UseCase) *Handler{
+// 	return &Handler{
+// 		useCase: useCase,
+// 	}
+// }
+//
+// type signInInput struct {
+// 	Login    string    `json:"login"`
+// 	Password string    `json:"password"`
+// }
+//
+// func (api *Handler) SignIn(w http.ResponseWriter, r *http.Request){
+// 	user := &models.User{}
+// 	if err:= json.NewDecoder(r.Body).Decode(&user); err != nil{
+// 		log.Printf("error while unmarshalling JSON: %s", err)
+// 		w.WriteHeader(http.StatusBadRequest)
+// 		return
+// 	}
+// 	if err := api.useCase.SignIn(); err != nil {
+// 		log.Printf("can't signin %s", err)
+// 	}
+//
+// }

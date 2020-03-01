@@ -1,4 +1,4 @@
-package handlers
+package delivery
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/crypto/bcrypt"
-	"no_homomorphism/models"
+	"no_homomorphism/internal/pkg/models"
 )
 
 var mu = &sync.Mutex{}
