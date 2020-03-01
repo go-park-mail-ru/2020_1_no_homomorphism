@@ -18,13 +18,89 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
+	session "no_homomorphism/internal/pkg/session/repository"
 	track "no_homomorphism/internal/pkg/track/repository"
-	"no_homomorphism/internal/pkg/user/repository"
+	user "no_homomorphism/internal/pkg/user/repository"
 )
 
+type Handler struct {
+	SessionRepo *session.SessionRepository
+	UserRepo    *user.MemUserRepository
+	Mutex       *sync.Mutex
+}
+
+func NewUserHandler() *Handler {
+	mutex := &sync.Mutex{}
+	return &Handler{
+		SessionRepo: session.NewSessionRepository(mutex),
+		UserRepo:    user.NewUserRepository(mutex),
+		Mutex:       mutex,
+	}
+}
+
+func (us *Handler) Update(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		log.Printf("permission denied: %s", err)
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+	input := &models.UserSettings{}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	sid, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		log.Printf("permission denied: %s", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	user, err := us.SessionRepo.GetUserBySessionID(sid)
+	if err != nil {
+		log.Printf("permission denied: %s", err)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		log.Println("wrong old password")
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+	if err := us.UserRepo.Update(&input.User); err != nil {
+		log.Print(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (us *Handler) Create(w http.ResponseWriter, r *http.Request) {
+	user := &models.User{}
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&user)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err := us.UserRepo.Create(user); err != nil {
+		log.Printf("error while creating User: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	sid := us.SessionRepo.Create(user)
+	http.SetCookie(w, CreateCookie(sid))
+	w.WriteHeader(http.StatusOK)
+}
+
+// --------------------------------------------------------
+// -------------------------OLD----------------------------
 type MyHandler struct {
 	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
-	UsersStorage *repository.UsersStorage
+	UsersStorage *user.UsersStorage
 	TrackStorage *track.TrackStorage
 	Mutex        *sync.Mutex
 	AvatarDir    string
@@ -41,13 +117,27 @@ func exists(path string) (bool, error) {
 	return true, err
 }
 
+func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
+	api.Mutex.Lock()
+	defer api.Mutex.Unlock()
+	sid := uuid.NewV4()
+	api.Sessions[sid] = id
+	cookie = &http.Cookie{
+		Name:    "session_id",
+		Value:   sid.String(),
+		Expires: time.Now().Add(10 * time.Hour),
+	}
+	return
+}
+
+
 func saveFile(file multipart.File, userId string, avatarDir string) error {
 	fileBody, err := ioutil.ReadAll(file)
 	if err != nil {
 		fmt.Println(err)
 		return errors.New("failed to read file body file")
 	}
-	filePath := os.Getenv("MUSIC_PROJ_DIR") + avatarDir + userId + ".png" //todo подставлять формат файла
+	filePath := os.Getenv("MUSIC_PROJ_DIR") + avatarDir + userId + ".png" // todo подставлять формат файла
 	newFile, err := os.Create(filePath)
 	if err != nil {
 		fmt.Println(err)
@@ -63,29 +153,11 @@ func saveFile(file multipart.File, userId string, avatarDir string) error {
 	return nil
 }
 
-func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
-	cookie, err := r.Cookie("session_id")
-	if err == http.ErrNoCookie || cookie == nil {
-		return uuid.FromStringOrNil(""), err
-	}
-	sessionId, err := uuid.FromString(cookie.Value)
-	if err != nil {
-		return uuid.FromStringOrNil(""), err
-	}
-	api.Mutex.Lock()
-	defer api.Mutex.Unlock()
-	userId, ok := api.Sessions[sessionId]
-	if !ok {
-		return uuid.FromStringOrNil(""), err
-	}
-	return userId, nil
-}
-
 func (api *MyHandler) getAvatarPath(userId uuid.UUID) (string, error) {
-	//userId, err := api.getUserIdByCookie(r)
-	//if err != nil {
+	// userId, err := api.getUserIdByCookie(r)
+	// if err != nil {
 	//	return "", err
-	//}
+	// }
 
 	path := api.AvatarDir + userId.String() + ".png"
 
@@ -196,7 +268,7 @@ func (api *MyHandler) GetUserImageHandler(w http.ResponseWriter, r *http.Request
 		fmt.Println(err)
 		return
 	}
-	FileSize := strconv.FormatInt(FileStat.Size(), 10) //Get file size as a string
+	FileSize := strconv.FormatInt(FileStat.Size(), 10) // Get file size as a string
 
 	w.Header().Set("Content-Disposition", "attachment; filename=profileImage")
 	w.Header().Set("Content-Type", FileContentType)
@@ -217,7 +289,7 @@ func (api *MyHandler) GetUserImageHandler(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusOK)
 }
 
-func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { //без мьютекса!! - just test
+func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { // без мьютекса!! - just test
 	authorized := false
 	session, err := r.Cookie("session_id")
 	if err == nil && session != nil {
@@ -491,6 +563,24 @@ func (api *MyHandler) CheckSessionHandler(w http.ResponseWriter, r *http.Request
 	fmt.Println(cookie.Value + "4")
 
 	return
+}
+
+func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
+	cookie, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie || cookie == nil {
+		return uuid.FromStringOrNil(""), err
+	}
+	sessionId, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		return uuid.FromStringOrNil(""), err
+	}
+	api.Mutex.Lock()
+	defer api.Mutex.Unlock()
+	userId, ok := api.Sessions[sessionId]
+	if !ok {
+		return uuid.FromStringOrNil(""), err
+	}
+	return userId, nil
 }
 
 //

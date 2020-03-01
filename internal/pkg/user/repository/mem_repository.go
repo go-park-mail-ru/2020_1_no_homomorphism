@@ -11,6 +11,46 @@ import (
 	. "no_homomorphism/internal/pkg/models"
 )
 
+
+type MemUserRepository struct {
+	Users map[string]*User
+	mutex *sync.Mutex
+}
+func NewUserRepository(mutex *sync.Mutex) *MemUserRepository {
+	return &MemUserRepository{
+		Users: make(map[string]*User),
+		mutex: mutex,
+	}
+}
+
+func (ur *MemUserRepository) Create(user *User) error {
+	user.Id = uuid.NewV4()
+	ur.mutex.Lock()
+	defer ur.mutex.Unlock()
+	_, ok := ur.Users[user.Login]
+	if ok {
+		return errors.New("user with this login is already exists")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	if err != nil {
+		log.Println(err)
+	}
+	user.Password = string(hash)
+	ur.Users[user.Login] = user
+	return nil
+}
+
+func (ur *MemUserRepository) Update(user *User) error {
+	_, ok := ur.Users[user.Login]
+	if !ok {
+		return errors.New("user with this login is already exists")
+	}
+	ur.Users[user.Login] = user
+	return nil
+}
+
+// --------------------------------------------------
+
 func NewUsersStorage() *UsersStorage {
 	return &UsersStorage{
 		Users: make(map[string]*User),
