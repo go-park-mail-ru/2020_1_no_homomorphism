@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -76,13 +77,16 @@ func StartNew() {
 
 	fmt.Printf("Starts server at 8081\n")
 	r.HandleFunc("/signup", api.Create).Methods("POST")
-	r.HandleFunc("/login", api.Login)
-	r.HandleFunc("/logout", api.Logout)
+	r.HandleFunc("/login", api.Login).Methods("POST")
+	r.HandleFunc("/logout", api.Logout).Methods("DELETE")
 	r.HandleFunc("/profile/settings", api.Update).Methods("PUT")
+	r.HandleFunc("/profiles/{profile}", api.Profile)
+	r.HandleFunc("/profile/me", api.SelfProfile).Methods("GET")
 	r.HandleFunc("/debug", api.Debug)
-	err := http.ListenAndServe(":8081", c.Handler(r))
-	if err != nil {
-		fmt.Println(err)
+
+	if err := http.ListenAndServe(":8081", c.Handler(r)); err != nil {
+		log.Println(err)
 		return
 	}
+
 }

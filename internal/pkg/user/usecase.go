@@ -9,4 +9,5 @@ type UseCase interface {
 	Update(user *models.UserSettings) error
 	GetUserByLogin(login string) (*models.User, error)
 	PrintUserList()
+	GetProfileByLogin(login string) (*models.Profile, error)
 }

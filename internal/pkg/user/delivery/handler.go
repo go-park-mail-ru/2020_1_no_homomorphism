@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
@@ -124,15 +125,75 @@ func (h *Handler) Debug(w http.ResponseWriter, r *http.Request) {
 	h.SessionUC.PrintSessionList()
 }
 
-// --------------------------------------------------------
-// -------------------------OLD----------------------------
-/*type MyHandler struct {
-	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
-	UsersStorage *user.UsersStorage
-	TrackStorage *track.TrackStorage
-	Mutex        *sync.Mutex
-	AvatarDir    string
+func (h *Handler) Profile(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	login, e := vars["profile"]
+	if e == false {
+		log.Println("no id in mux vars")
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	profile, err := h.UserUC.GetProfileByLogin(login)
+
+	if err != nil {
+		log.Println("can't find this profile :", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	profileJson, err := json.Marshal(profile)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	_, err = w.Write(profileJson)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
+
+func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie || cookie == nil {
+		log.Println("could not find cookie :", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	sid, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		log.Println("can't get session id from cookie :", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	user := &models.User{}
+	if user, err = h.SessionUC.GetUserBySessionID(sid); err != nil {
+		log.Println("this session does not exists : ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	profile, err := h.UserUC.GetProfileByLogin(user.Login)
+
+	profileJson, err := json.Marshal(profile)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	_, err = w.Write(profileJson)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+/*
 
 func exists(path string) (bool, error) {
 	_, err := os.Stat(path)
@@ -143,19 +204,6 @@ func exists(path string) (bool, error) {
 		return false, nil
 	}
 	return true, err
-}
-
-func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
-	api.Mutex.Lock()
-	defer api.Mutex.Unlock()
-	sid := uuid.NewV4()
-	api.Sessions[sid] = id
-	cookie = &http.Cookie{
-		Name:    "session_id",
-		Value:   sid.String(),
-		Expires: time.Now().Add(10 * time.Hour),
-	}
-	return
 }
 
 func saveFile(file multipart.File, userId string, avatarDir string) error {
@@ -334,180 +382,6 @@ func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { // Ð
 	} else {
 		w.WriteHeader(http.StatusNonAuthoritativeInfo)
 		w.Write([]byte("not autrorized"))
-	}
-}
-
-func (api *MyHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
-	user := &models.User{}
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&user)
-
-	if err != nil {
-		log.Printf("error while unmarshalling JSON: %s", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	userModel, err := api.UsersStorage.GetFullUserInfo(user.Login)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println("Sending status 400 to " + r.RemoteAddr)
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(userModel.Password), []byte(user.Password)); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println("Sending status 400 to TOPKEK " + r.RemoteAddr)
-		return
-	}
-
-	http.SetCookie(w, api.createCookie(userModel.Id))
-	w.WriteHeader(http.StatusOK)
-	fmt.Println("Sending status 200 to " + r.RemoteAddr)
-}
-
-func (api *MyHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
-	sid, err := r.Cookie("session_id")
-	if err == http.ErrNoCookie || sid == nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	sessionToken, err := uuid.FromString(sid.Value)
-
-	if err != nil {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	api.Mutex.Lock()
-	if _, ok := api.Sessions[sessionToken]; !ok {
-		fmt.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	delete(api.Sessions, uuid.FromStringOrNil(sid.Value))
-	api.Mutex.Unlock()
-	fmt.Println("Mutex Unlocked")
-
-	sid.Expires = time.Now().AddDate(0, 0, -1)
-	http.SetCookie(w, sid)
-	w.WriteHeader(http.StatusOK)
-}
-
-func (api *MyHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) {
-	user := &models.User{}
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&user)
-	if err != nil {
-		log.Printf("error while unmarshalling JSON: %s", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	userId, err := api.UsersStorage.AddUser(user)
-	if err != nil {
-		log.Printf("error while creating User: %s", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	log.Println("New user added")
-	http.SetCookie(w, api.createCookie(userId))
-	w.WriteHeader(http.StatusOK)
-}
-
-func (api *MyHandler) SettingsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Body)
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		log.Printf("permission denied: %s", err)
-		w.WriteHeader(http.StatusUnauthorized)
-	}
-	newUserData := &models.UserSettings{}
-
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&newUserData)
-	if err != nil {
-		log.Printf("error while unmarshalling JSON: %s", err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	sid, err := uuid.FromString(cookie.Value)
-	if err != nil {
-		log.Printf("permission denied: %s", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	api.Mutex.Lock()
-	id, ok := api.Sessions[sid]
-	if !ok {
-		log.Printf("no session found: %s", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	api.Mutex.Unlock()
-	user, err := api.UsersStorage.GetUserById(id)
-	if err != nil {
-		log.Print(err)
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(newUserData.Password)); err != nil {
-		log.Print("wrong old password")
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
-	err = api.UsersStorage.EditUser(user, newUserData)
-	if err != nil {
-		log.Print(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (api *MyHandler) GetProfileHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	login, e := vars["profile"]
-	if e == false {
-		log.Println("no id in mux vars")
-	}
-	profile, err := api.UsersStorage.GetProfileByLogin(login)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	userId, err := api.getUserIdByCookie(r)
-	if err != nil {
-		return
-	}
-	path, err := api.getAvatarPath(userId)
-	if err != nil {
-		fmt.Println(err)
-		profile.Image = api.AvatarDir + "default.png"
-	} else {
-		profile.Image = path
-		fmt.Println(path)
-	}
-
-	fmt.Println(profile)
-	profileJson, err := json.Marshal(profile)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	w.Header().Set("content-type", "application/json")
-	fmt.Println(profileJson)
-	_, err = w.Write(profileJson)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
-		return
 	}
 }
 

@@ -59,8 +59,8 @@ func Start() {
 
 	fmt.Printf("Starts server at 8081\n")
 	r.HandleFunc("/", api.MainHandler)
-	r.HandleFunc("/login", api.LoginHandler).Methods("POST")
-	r.HandleFunc("/logout", api.LogoutHandler).Methods("DELETE")
+	r.HandleFunc("/login", api.LoginHandler).Methods("POST") +
+	r.HandleFunc("/logout", api.LogoutHandler).Methods("DELETE") +
 	r.HandleFunc("/signup", api.SignUpHandler).Methods("POST")
 	r.HandleFunc("/profile/settings", api.SettingsHandler).Methods("PUT")
 	r.HandleFunc("/profiles/{profile}", api.GetProfileHandler)
