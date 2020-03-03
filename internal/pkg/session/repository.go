@@ -6,7 +6,8 @@ import (
 )
 
 type Repository interface {
-	Create(user *models.User) (uuid.UUID, error)
-	Delete(sessionID uuid.UUID) error
+	Create(user *models.User) uuid.UUID
+	Delete(sessionID uuid.UUID)
 	GetUserBySessionID(sessionID uuid.UUID) (*models.User, error)
+	PrintSessionList()
 }

@@ -1,23 +1,42 @@
 package usecase
 
 import (
-	"sync"
+	"errors"
+	"net/http"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/session"
-	"no_homomorphism/internal/pkg/session/repository"
 )
 
-
-type sessionUseCase struct {
-	repository session.Repository
-	mutex *sync.Mutex
+type SessionUseCase struct {
+	Repository session.Repository
 }
 
-func NewSessionUseCase(mutex *sync.Mutex) session.UseCase {
-	return &sessionUseCase{
-		repository: repository.NewSessionRepository(mutex),
-		mutex: mutex,
+func (uc *SessionUseCase) Create(user *models.User) *http.Cookie {
+	sid := uc.Repository.Create(user)
+	return &http.Cookie{
+		Name:     "session_id",
+		Value:    sid.String(),
+		HttpOnly: true,
+		Expires:  time.Now().Add(72 * time.Hour),
 	}
+}
+
+func (uc *SessionUseCase) Delete(sessionID uuid.UUID) error {
+	_, err := uc.Repository.GetUserBySessionID(sessionID)
+	if err != nil {
+		return errors.New("can't delete session because it does not exists : " + sessionID.String())
+	}
+	uc.Repository.Delete(sessionID)
+	return nil
+}
+
+func (uc *SessionUseCase) GetUserBySessionID(sessionID uuid.UUID) (*models.User, error) {
+	return uc.Repository.GetUserBySessionID(sessionID)
+}
+
+func (uc *SessionUseCase) PrintSessionList() {
+	uc.Repository.PrintSessionList()
 }

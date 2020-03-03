@@ -5,6 +5,8 @@ import (
 )
 
 type Repository interface {
-	Create(user models.User) (*models.User, error)
-	Update(user models.UserSettings) (*models.User, error)
+	Create(user *models.User) error
+	Update(user *models.User) error
+	GetUserByLogin(login string) (*models.User, error)
+	PrintUserList()
 }

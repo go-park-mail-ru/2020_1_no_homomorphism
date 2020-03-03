@@ -2,43 +2,24 @@ package delivery
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"mime/multipart"
 	"net/http"
-	"os"
-	"strconv"
-	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
-	session "no_homomorphism/internal/pkg/session/repository"
-	track "no_homomorphism/internal/pkg/track/repository"
-	user "no_homomorphism/internal/pkg/user/repository"
+	"no_homomorphism/internal/pkg/session"
+	"no_homomorphism/internal/pkg/user"
 )
 
 type Handler struct {
-	SessionRepo *session.SessionRepository
-	UserRepo    *user.MemUserRepository
-	Mutex       *sync.Mutex
+	SessionUC session.UseCase
+	UserUC    user.UseCase
 }
 
-func NewUserHandler() *Handler {
-	mutex := &sync.Mutex{}
-	return &Handler{
-		SessionRepo: session.NewSessionRepository(mutex),
-		UserRepo:    user.NewUserRepository(mutex),
-		Mutex:       mutex,
-	}
-}
-
-func (us *Handler) Update(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		log.Printf("permission denied: %s", err)
@@ -56,28 +37,21 @@ func (us *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user, err := us.SessionRepo.GetUserBySessionID(sid)
-	if err != nil {
-		log.Printf("permission denied: %s", err)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		log.Println("wrong old password")
+	userSession, err := h.SessionUC.GetUserBySessionID(sid)
+	if userSession.Login != input.Login || err != nil {
+		log.Println("user and session don't match :", err)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	if err := us.UserRepo.Update(&input.User); err != nil {
-		log.Print(err)
-		w.WriteHeader(http.StatusBadRequest)
+	if err := h.UserUC.Update(input); err != nil {
+		log.Println("can't update user :", err)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 }
 
-func (us *Handler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	user := &models.User{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
@@ -86,19 +60,73 @@ func (us *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err := us.UserRepo.Create(user); err != nil {
+	if err := h.UserUC.Create(user); err != nil {
 		log.Printf("error while creating User: %s", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	sid := us.SessionRepo.Create(user)
-	http.SetCookie(w, CreateCookie(sid))
+	http.SetCookie(w, h.SessionUC.Create(user))
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	input := &models.UserSignIn{}
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		log.Printf("error while unmarshalling JSON: %s", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	user, err := h.UserUC.GetUserByLogin(input.Login)
+	if err != nil {
+		fmt.Println("Sending status 400 to " + r.RemoteAddr)
+		log.Println("can't get user from base : ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("wrong password : ", err)
+		fmt.Println("Sending status 400 to " + r.RemoteAddr)
+		return
+	}
+	http.SetCookie(w, h.SessionUC.Create(user))
+	w.WriteHeader(http.StatusOK)
+	fmt.Println("Sending status 200 to " + r.RemoteAddr)
+}
+
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie || cookie == nil {
+		log.Println("could not find cookie :", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	sid, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		log.Println("can't get session id from cookie :", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if _, err := h.SessionUC.GetUserBySessionID(sid); err != nil {
+		log.Println("this session does not exists : ", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	h.SessionUC.Delete(sid)
+	cookie.Expires = time.Now().AddDate(0, 0, -1)
+	http.SetCookie(w, cookie)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) Debug(w http.ResponseWriter, r *http.Request) {
+	h.UserUC.PrintUserList()
+	h.SessionUC.PrintSessionList()
 }
 
 // --------------------------------------------------------
 // -------------------------OLD----------------------------
-type MyHandler struct {
+/*type MyHandler struct {
 	Sessions     map[uuid.UUID]uuid.UUID // SID -> ID
 	UsersStorage *user.UsersStorage
 	TrackStorage *track.TrackStorage
@@ -129,7 +157,6 @@ func (api *MyHandler) createCookie(id uuid.UUID) (cookie *http.Cookie) {
 	}
 	return
 }
-
 
 func saveFile(file multipart.File, userId string, avatarDir string) error {
 	fileBody, err := ioutil.ReadAll(file)
@@ -611,3 +638,4 @@ func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
 // 	}
 //
 // }
+*/

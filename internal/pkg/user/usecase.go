@@ -5,6 +5,8 @@ import (
 )
 
 type UseCase interface {
-	Create(user *models.User)  error
-	Update(user *models.User) error
+	Create(user *models.User) error
+	Update(user *models.UserSettings) error
+	GetUserByLogin(login string) (*models.User, error)
+	PrintUserList()
 }

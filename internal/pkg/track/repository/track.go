@@ -2,8 +2,8 @@ package repository
 
 import (
 	"errors"
-	"sync"
 	. "no_homomorphism/internal/pkg/models"
+	"sync"
 )
 
 type TrackStorage struct {

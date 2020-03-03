@@ -1,6 +1,5 @@
 package models
 
-
 type Track struct {
 	Id       uint   `json:"id"`
 	Name     string `json:"name"`
@@ -9,4 +8,3 @@ type Track struct {
 	Image    string `json:"image"`
 	Link     string `json:"link"`
 }
-

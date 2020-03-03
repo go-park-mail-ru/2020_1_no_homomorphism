@@ -8,39 +8,56 @@ import (
 	"github.com/rs/cors"
 	uuid "github.com/satori/go.uuid"
 	"no_homomorphism/internal/pkg/models"
+	"no_homomorphism/internal/pkg/session/repository"
+	"no_homomorphism/internal/pkg/session/usecase"
 	. "no_homomorphism/internal/pkg/user/delivery"
+	repository2 "no_homomorphism/internal/pkg/user/repository"
+	usecase2 "no_homomorphism/internal/pkg/user/usecase"
 )
 
 func InitNewStorages() *Handler {
-	api := NewUserHandler()
-	user1 := models.User{
-		Id:       uuid.NewV4(),
-		Login:    "test",
-		Name:     "Rita",
-		Email:    "rita@margarita.tyt",
-		Password: "$2a$04$0GzSltexrV9gQjFwv5BYuebu7/F13cX.NOupseJQUwqHWDucyBBgO",
+	sesRep := repository.SessionRepository{
+		Sessions: make(map[uuid.UUID]*models.User),
+	}
+	userRep := repository2.MemUserRepository{
+		Users: map[string]*models.User{
+			"test": &models.User{
+				Id:       0,
+				Login:    "test",
+				Name:     "Rita",
+				Email:    "rita@margarita.tyt",
+				Password: "$2a$04$0GzSltexrV9gQjFwv5BYuebu7/F13cX.NOupseJQUwqHWDucyBBgO",
+			},
+			"test2": &models.User{
+				Id:       1,
+				Login:    "test2",
+				Name:     "User2",
+				Email:    "user2@da.tu",
+				Password: "$2a$04$r/rWIhO8ptZAxheWs9cXmeG8fKhICfA5Gko3Qr61ae0.71CwjyODC",
+			},
+			"test3": &models.User{
+				Id:       2,
+				Login:    "test3",
+				Name:     "User3",
+				Email:    "user3@da.tu",
+				Password: "$2a$04$8G8SC41DvtOYD04qVizzbek.uL9zEI5zlQ3q2Cg.DYekuzMWFsoLa",
+			},
+		},
+		Count: 3,
 	}
 
-	user2 := models.User{
-		Id:       uuid.NewV4(),
-		Login:    "test2",
-		Name:     "User2",
-		Email:    "user2@da.tu",
-		Password: "$2a$04$r/rWIhO8ptZAxheWs9cXmeG8fKhICfA5Gko3Qr61ae0.71CwjyODC",
+	SessionUC := usecase.SessionUseCase{
+		Repository: &sesRep,
+	}
+	UserUC := usecase2.UserUseCase{
+		Repository: &userRep,
+	}
+	h := &Handler{
+		SessionUC: &SessionUC,
+		UserUC:    &UserUC,
 	}
 
-	user3 := models.User{
-		Id:       uuid.NewV4(),
-		Login:    "test3",
-		Name:     "User3",
-		Email:    "user3@da.tu",
-		Password: "$2a$04$8G8SC41DvtOYD04qVizzbek.uL9zEI5zlQ3q2Cg.DYekuzMWFsoLa",
-	}
-
-	api.UserRepo.Users["test"] = &user1
-	api.UserRepo.Users["test2"] = &user2
-	api.UserRepo.Users["test3"] = &user3
-	return api
+	return h
 }
 
 func StartNew() {
@@ -59,7 +76,10 @@ func StartNew() {
 
 	fmt.Printf("Starts server at 8081\n")
 	r.HandleFunc("/signup", api.Create).Methods("POST")
+	r.HandleFunc("/login", api.Login)
+	r.HandleFunc("/logout", api.Logout)
 	r.HandleFunc("/profile/settings", api.Update).Methods("PUT")
+	r.HandleFunc("/debug", api.Debug)
 	err := http.ListenAndServe(":8081", c.Handler(r))
 	if err != nil {
 		fmt.Println(err)

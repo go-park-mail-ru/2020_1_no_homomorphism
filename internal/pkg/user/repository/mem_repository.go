@@ -4,53 +4,59 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"sync"
 
-	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
-	. "no_homomorphism/internal/pkg/models"
+	"no_homomorphism/internal/pkg/models"
 )
 
-
 type MemUserRepository struct {
-	Users map[string]*User
-	mutex *sync.Mutex
-}
-func NewUserRepository(mutex *sync.Mutex) *MemUserRepository {
-	return &MemUserRepository{
-		Users: make(map[string]*User),
-		mutex: mutex,
-	}
+	Users map[string]*models.User
+	Count uint
 }
 
-func (ur *MemUserRepository) Create(user *User) error {
-	user.Id = uuid.NewV4()
-	ur.mutex.Lock()
-	defer ur.mutex.Unlock()
-	_, ok := ur.Users[user.Login]
-	if ok {
-		return errors.New("user with this login is already exists")
-	}
+// func NewUserRepository(mutex *sync.Mutex) *MemUserRepository {
+// 	return &MemUserRepository{
+// 		Users: make(map[string]*models.User),
+// 		Count: 0,
+// 	}
+// }
+
+func (ur *MemUserRepository) Create(user *models.User) error {
+	user.Id = ur.Count
+	ur.Count++
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
 	if err != nil {
 		log.Println(err)
+		return nil
 	}
 	user.Password = string(hash)
 	ur.Users[user.Login] = user
 	return nil
 }
 
-func (ur *MemUserRepository) Update(user *User) error {
-	_, ok := ur.Users[user.Login]
-	if !ok {
-		return errors.New("user with this login is already exists")
-	}
+func (ur *MemUserRepository) Update(user *models.User) error {
 	ur.Users[user.Login] = user
+	fmt.Println("current user is ", *user)
 	return nil
 }
 
-// --------------------------------------------------
+func (ur *MemUserRepository) GetUserByLogin(login string) (*models.User, error) {
+	user, ok := ur.Users[login]
+	if !ok {
+		return nil, errors.New("user with this login does not exists")
+	}
+	return user, nil
+}
 
+func (ur *MemUserRepository) PrintUserList() {
+	fmt.Println("[USERS LIST]")
+	for _, r := range ur.Users {
+		fmt.Println(r)
+	}
+}
+
+// --------------------------------------------------
+/*
 func NewUsersStorage() *UsersStorage {
 	return &UsersStorage{
 		Users: make(map[string]*User),
@@ -164,4 +170,4 @@ func (us *UsersStorage) EditUser(user *User, newUserData *UserSettings) error {
 	fmt.Println("this is user:", user)
 
 	return nil
-}
+} */

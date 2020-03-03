@@ -1,19 +1,6 @@
 package server
 
-import (
-	"fmt"
-	"net/http"
-	"sync"
-
-	"github.com/gorilla/mux"
-	"github.com/rs/cors"
-	uuid "github.com/satori/go.uuid"
-	"no_homomorphism/internal/pkg/models"
-	track "no_homomorphism/internal/pkg/track/repository"
-	. "no_homomorphism/internal/pkg/user/delivery"
-	"no_homomorphism/internal/pkg/user/repository"
-)
-
+/*
 func InitStorages() *MyHandler {
 	trackStorage := track.NewTrackStorage()
 	userStorage := repository.NewUsersStorage()
@@ -91,3 +78,4 @@ func Start() {
 		return
 	}
 }
+*/
