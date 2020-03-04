@@ -2,6 +2,6 @@ package track
 
 import "no_homomorphism/internal/pkg/models"
 
-type Repository interface {
+type UseCase interface {
 	GetTrackById(id uint) (*models.Track, error)
 }

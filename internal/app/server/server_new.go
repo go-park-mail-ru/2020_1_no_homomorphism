@@ -11,12 +11,15 @@ import (
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/session/repository"
 	"no_homomorphism/internal/pkg/session/usecase"
+	"no_homomorphism/internal/pkg/track/delivery"
+	repository3 "no_homomorphism/internal/pkg/track/repository"
+	usecase3 "no_homomorphism/internal/pkg/track/usecase"
 	. "no_homomorphism/internal/pkg/user/delivery"
 	repository2 "no_homomorphism/internal/pkg/user/repository"
 	usecase2 "no_homomorphism/internal/pkg/user/usecase"
 )
 
-func InitNewStorages() *Handler {
+func InitNewHandler() *Handler {
 	sesRep := repository.SessionRepository{
 		Sessions: make(map[uuid.UUID]*models.User),
 	}
@@ -70,24 +73,31 @@ func StartNew() {
 	r := mux.NewRouter()
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000",},
+		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001","http://localhost:3000",},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		// Enable Debugging for testing, consider disabling in production
 		Debug: true,
 	})
 
-	api := InitNewStorages()
+	handler := InitNewHandler()
+	trackHandler := &delivery.TrackHandler{
+		TrackUC: &usecase3.TrackUseCase{
+			Repository: repository3.NewTestRepo(),
+		},
+	}
 
 	fmt.Printf("Starts server at 8081\n")
-	r.HandleFunc("/signup", api.Create).Methods("POST")
-	r.HandleFunc("/login", api.Login).Methods("POST")
-	r.HandleFunc("/logout", api.Logout).Methods("DELETE")
-	r.HandleFunc("/profile/settings", api.Update).Methods("PUT")
-	r.HandleFunc("/profiles/{profile}", api.Profile)
-	r.HandleFunc("/profile/me", api.SelfProfile).Methods("GET")
-	r.HandleFunc("/image", api.UpdateAvatar).Methods("POST")
-	r.HandleFunc("/debug", api.Debug)
+	r.HandleFunc("/signup", handler.Create).Methods("POST")
+	r.HandleFunc("/login", handler.Login).Methods("POST")
+	r.HandleFunc("/logout", handler.Logout).Methods("DELETE")
+	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
+	r.HandleFunc("/profiles/{profile}", handler.Profile)
+	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
+	r.HandleFunc("/image", handler.UpdateAvatar).Methods("POST")
+	r.HandleFunc("/track/{id:[0-9]+}", trackHandler.GetTrack).Methods("GET")
+	r.HandleFunc("/debug", handler.Debug)
+	r.HandleFunc("/user", handler.CheckAuth)
 
 	if err := http.ListenAndServe(":8081", c.Handler(r)); err != nil {
 		log.Println(err)
