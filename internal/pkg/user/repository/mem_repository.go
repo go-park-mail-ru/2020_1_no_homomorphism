@@ -36,8 +36,10 @@ func (ur *MemUserRepository) Create(user *models.User) error {
 
 func (ur *MemUserRepository) Update(user *models.User) error {
 	ur.Users[user.Login] = user
-	fmt.Println("current user is ", *user)
 	return nil
+}
+func (ur *MemUserRepository) UpdateAvatar(user *models.User, filePath string) {
+	user.Image = filePath
 }
 
 func (ur *MemUserRepository) GetUserByLogin(login string) (*models.User, error) {

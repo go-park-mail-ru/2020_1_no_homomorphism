@@ -38,13 +38,13 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	userSession, err := h.SessionUC.GetUserBySessionID(sid)
-	if userSession.Login != input.Login || err != nil {
+	user, err := h.SessionUC.GetUserBySessionID(sid)
+	if err != nil {
 		log.Println("user and session don't match :", err)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	if err := h.UserUC.Update(input); err != nil {
+	if err := h.UserUC.Update(user, input); err != nil {
 		log.Println("can't update user :", err)
 		w.WriteHeader(http.StatusForbidden)
 		return
@@ -170,13 +170,13 @@ func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	user := &models.User{}
-	if user, err = h.SessionUC.GetUserBySessionID(sid); err != nil {
+	user, err := h.SessionUC.GetUserBySessionID(sid)
+	if err != nil {
 		log.Println("this session does not exists : ", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	profile, err := h.UserUC.GetProfileByLogin(user.Login)
+	profile := h.UserUC.GetProfileByUser(user)
 
 	profileJson, err := json.Marshal(profile)
 	if err != nil {
@@ -193,6 +193,52 @@ func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 }
+
+func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
+
+	cookie, err := r.Cookie("session_id")
+	if err == http.ErrNoCookie || cookie == nil {
+		log.Println("could not find cookie :", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	sid, err := uuid.FromString(cookie.Value)
+	if err != nil {
+		log.Println("can't get session id from cookie :", err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	user, err := h.SessionUC.GetUserBySessionID(sid)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		log.Println(err)
+		return
+	}
+	err = r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("can't Parse Multipart Form " , err)
+		return
+	}
+
+	file, handler, err := r.FormFile("profile_image")
+	if err != nil || handler.Size == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		log.Println("can't read profile_image : ", err)
+		return
+	}
+	defer file.Close()
+
+	err = h.UserUC.UpdateAvatar(user, file)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Println(err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+
 /*
 
 func exists(path string) (bool, error) {
@@ -385,60 +431,6 @@ func (api *MyHandler) MainHandler(w http.ResponseWriter, r *http.Request) { // Ð
 	}
 }
 
-func (api *MyHandler) GetProfileByCookieHandler(w http.ResponseWriter, r *http.Request) {
-	userId, err := api.getUserIdByCookie(r)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Println(err)
-		return
-	}
-
-	user, err := api.UsersStorage.GetUserById(userId)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Println(err)
-		return
-	}
-
-	profile, err := api.UsersStorage.GetProfileByLogin(user.Login)
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	path, err := api.getAvatarPath(userId)
-	if err != nil {
-		fmt.Println(err)
-		profile.Image = api.AvatarDir + "default.png"
-	} else {
-		profile.Image = path
-	}
-	profileJson, err := json.Marshal(profile)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	w.Header().Set("content-type", "application/json")
-	_, err = w.Write(profileJson)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)
-		return
-	}
-}
-
-func (api *MyHandler) DebugHandler(w http.ResponseWriter, r *http.Request) {
-	for _, r := range api.UsersStorage.Users {
-		fmt.Println(r.Email, " ", r.Name, " ", r.Login, " ", r.Id)
-	}
-	fmt.Println("sessions")
-	for _, r := range api.Sessions {
-		fmt.Println(r)
-	}
-
-	fmt.Println(api.Sessions)
-}
-
 func (api *MyHandler) CheckSessionHandler(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
@@ -466,50 +458,5 @@ func (api *MyHandler) CheckSessionHandler(w http.ResponseWriter, r *http.Request
 	return
 }
 
-func (api *MyHandler) getUserIdByCookie(r *http.Request) (uuid.UUID, error) {
-	cookie, err := r.Cookie("session_id")
-	if err == http.ErrNoCookie || cookie == nil {
-		return uuid.FromStringOrNil(""), err
-	}
-	sessionId, err := uuid.FromString(cookie.Value)
-	if err != nil {
-		return uuid.FromStringOrNil(""), err
-	}
-	api.Mutex.Lock()
-	defer api.Mutex.Unlock()
-	userId, ok := api.Sessions[sessionId]
-	if !ok {
-		return uuid.FromStringOrNil(""), err
-	}
-	return userId, nil
-}
 
-//
-// type Handler struct {
-// 	useCase user.UseCase
-// }
-//
-// func NewHandler(useCase user.UseCase) *Handler{
-// 	return &Handler{
-// 		useCase: useCase,
-// 	}
-// }
-//
-// type signInInput struct {
-// 	Login    string    `json:"login"`
-// 	Password string    `json:"password"`
-// }
-//
-// func (api *Handler) SignIn(w http.ResponseWriter, r *http.Request){
-// 	user := &models.User{}
-// 	if err:= json.NewDecoder(r.Body).Decode(&user); err != nil{
-// 		log.Printf("error while unmarshalling JSON: %s", err)
-// 		w.WriteHeader(http.StatusBadRequest)
-// 		return
-// 	}
-// 	if err := api.useCase.SignIn(); err != nil {
-// 		log.Printf("can't signin %s", err)
-// 	}
-//
-// }
 */

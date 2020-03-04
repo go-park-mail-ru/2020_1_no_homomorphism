@@ -52,6 +52,7 @@ func InitNewStorages() *Handler {
 	}
 	UserUC := usecase2.UserUseCase{
 		Repository: &userRep,
+		AvatarDir: "/static/img/",
 	}
 	h := &Handler{
 		SessionUC: &SessionUC,
@@ -82,6 +83,7 @@ func StartNew() {
 	r.HandleFunc("/profile/settings", api.Update).Methods("PUT")
 	r.HandleFunc("/profiles/{profile}", api.Profile)
 	r.HandleFunc("/profile/me", api.SelfProfile).Methods("GET")
+	r.HandleFunc("/image", api.UpdateAvatar).Methods("POST")
 	r.HandleFunc("/debug", api.Debug)
 
 	if err := http.ListenAndServe(":8081", c.Handler(r)); err != nil {
