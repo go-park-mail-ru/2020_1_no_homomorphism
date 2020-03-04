@@ -196,6 +196,14 @@ func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 
+	fmt.Println(r.Header)
+	var kek []byte
+	_, err := r.Body.Read(kek)
+	if err != nil {
+		fmt.Println("noooooooooooooooooooo")
+		return
+	}
+
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie || cookie == nil {
 		log.Println("could not find cookie :", err)
@@ -318,46 +326,6 @@ func (api *MyHandler) GetTrackHandler(w http.ResponseWriter, r *http.Request) {
 	err = writer.Encode(track)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-}
-
-func (api *MyHandler) PostImageHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Header)
-	var kek []byte
-	_, err := r.Body.Read(kek)
-	if err != nil {
-		fmt.Println("noooooooooooooooooooo")
-		return
-	}
-	fmt.Println(kek)
-	userId, err := api.getUserIdByCookie(r)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Println(err)
-		return
-	}
-
-	err = r.ParseMultipartForm(10 << 20)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-
-	file, handler, err := r.FormFile("profile_image")
-	if err != nil || handler.Size == 0 {
-		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(err)
-		return
-	}
-	defer file.Close()
-
-	err = saveFile(file, userId.String(), api.AvatarDir)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)
 		return
 	}

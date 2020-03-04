@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -43,25 +45,17 @@ func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) err
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
 		return errors.New("old password is wrong")
 	}
-	if input.NewPassword != "" {
-		hash, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
-		if err != nil {
-			return err
-		}
-		user.Password = string(hash)
-	}
-	input.Login = user.Login
-	return uc.Repository.Update(user)
+	return uc.Repository.Update(user, input)
 }
 
 func getFileContentType(file multipart.File) (string, error) {
 	buffer := make([]byte, 512)
-	if _, err := file.Read([]byte("")); err != nil {
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
 		return "", err
 	}
-	file.Seek(0, 0)
-	contentType := http.DetectContentType(buffer)
-
+	contentType := http.DetectContentType(buffer[:n])
+	fmt.Println("CONTENT TYPE: ", contentType)
 	return contentType, nil
 }
 
@@ -79,26 +73,30 @@ func checkFileContentType(file multipart.File) ( string, error) {
 }
 
 func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) error{
+	fmt.Println("HELLO")
 	fileBody, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Println(err)
 		return errors.New("failed to read file body file")
 	}
-	contentType, err := checkFileContentType(file)
+	//contentType, err := checkFileContentType(file)
+	contentType := "png"
 	if err != nil {
+		log.Println("error while checking content type :", err)
 		return err
 	}
 	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
 	filePath := os.Getenv("MUSIC_PROJ_DIR") + uc.AvatarDir + fileName + "." + contentType
+	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		log.Println(err)
+		log.Println("failed to create file", err)
 		return errors.New("failed to create file")
 	}
 	defer newFile.Close()
 	_, err = newFile.Write(fileBody)
 	if err != nil {
-		log.Println(err)
+		log.Println("error while writing to file", err)
 		return errors.New("error while writing to file")
 	}
 	uc.Repository.UpdateAvatar(user, uc.AvatarDir + fileName + "." + contentType)

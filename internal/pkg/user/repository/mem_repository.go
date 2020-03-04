@@ -34,8 +34,15 @@ func (ur *MemUserRepository) Create(user *models.User) error {
 	return nil
 }
 
-func (ur *MemUserRepository) Update(user *models.User) error {
-	ur.Users[user.Login] = user
+func (ur *MemUserRepository) Update(user *models.User, input *models.UserSettings) error {
+	if input.NewPassword != "" {
+		hash, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+		user.Password = string(hash)
+	}
+	user.Email = input.Email
 	return nil
 }
 func (ur *MemUserRepository) UpdateAvatar(user *models.User, filePath string) {
