@@ -225,7 +225,7 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 	err = r.ParseMultipartForm(10 << 20)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Println("can't Parse Multipart Form " , err)
+		log.Println("can't Parse Multipart Form ", err)
 		return
 	}
 
@@ -246,7 +246,7 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) CheckAuth(w http.ResponseWriter, r *http.Request){
+func (h *Handler) CheckAuth(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)

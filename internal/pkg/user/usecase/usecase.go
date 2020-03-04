@@ -22,14 +22,14 @@ var mutex = &sync.Mutex{}
 
 type UserUseCase struct {
 	Repository user.Repository
-	AvatarDir string
+	AvatarDir  string
 }
 
 var allowedContentType = []string{
-		"image/png",
-		"image/jpeg",
-		"image/jpg",
-	}
+	"image/png",
+	"image/jpeg",
+	"image/jpg",
+}
 
 func (uc *UserUseCase) Create(user *models.User) error {
 	_, ok := uc.GetUserByLogin(user.Login)
@@ -37,7 +37,7 @@ func (uc *UserUseCase) Create(user *models.User) error {
 		return errors.New("user with this login is already exists")
 	}
 	err := uc.Repository.Create(user)
-	uc.Repository.UpdateAvatar(user, uc.AvatarDir + "default.png")
+	uc.Repository.UpdateAvatar(user, uc.AvatarDir+"default.png")
 	return err
 }
 
@@ -59,12 +59,12 @@ func getFileContentType(file multipart.File) (string, error) {
 	return contentType, nil
 }
 
-func checkFileContentType(file multipart.File) ( string, error) {
+func checkFileContentType(file multipart.File) (string, error) {
 	contentType, err := getFileContentType(file)
 	if err != nil {
 		return "", err
 	}
-	for _, r :=range allowedContentType {
+	for _, r := range allowedContentType {
 		if contentType == r {
 			return strings.Split(contentType, "/")[1], nil
 		}
@@ -72,7 +72,7 @@ func checkFileContentType(file multipart.File) ( string, error) {
 	return "", errors.New("this content type does not allowed")
 }
 
-func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) error{
+func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) error {
 	fmt.Println("HELLO")
 	fileBody, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -99,7 +99,7 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) erro
 		log.Println("error while writing to file", err)
 		return errors.New("error while writing to file")
 	}
-	uc.Repository.UpdateAvatar(user, uc.AvatarDir + fileName + "." + contentType)
+	uc.Repository.UpdateAvatar(user, uc.AvatarDir+fileName+"."+contentType)
 	return nil
 }
 
@@ -136,4 +136,3 @@ func (uc *UserUseCase) GetProfileByUser(user *models.User) *models.Profile {
 func (uc *UserUseCase) PrintUserList() {
 	uc.Repository.PrintUserList()
 }
-

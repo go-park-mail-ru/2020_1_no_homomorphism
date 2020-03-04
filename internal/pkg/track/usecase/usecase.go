@@ -5,7 +5,7 @@ import (
 	"no_homomorphism/internal/pkg/track"
 )
 
-type TrackUseCase struct{
+type TrackUseCase struct {
 	Repository track.Repository
 }
 

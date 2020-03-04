@@ -73,7 +73,7 @@ func StartNew() {
 	r := mux.NewRouter()
 
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001","http://localhost:3000",},
+		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		// Enable Debugging for testing, consider disabling in production

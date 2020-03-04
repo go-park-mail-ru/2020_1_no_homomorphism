@@ -6,12 +6,11 @@ import (
 	"no_homomorphism/internal/pkg/models"
 )
 
-
 type TrackRepository struct {
 	Repository []*models.Track
 }
 
-func NewTestRepo() *TrackRepository{
+func NewTestRepo() *TrackRepository {
 	return &TrackRepository{
 		Repository: []*models.Track{
 			&models.Track{
@@ -67,7 +66,7 @@ func NewTestRepo() *TrackRepository{
 }
 
 func (tr *TrackRepository) GetTrackById(id uint) (*models.Track, error) {
-	for _, r:=range tr.Repository {
+	for _, r := range tr.Repository {
 		if r.Id == id {
 			return r, nil
 		}

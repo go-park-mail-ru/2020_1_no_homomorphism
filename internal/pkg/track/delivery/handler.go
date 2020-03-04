@@ -14,7 +14,8 @@ import (
 type TrackHandler struct {
 	TrackUC track.UseCase
 }
-func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request){
+
+func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 	varId, e := mux.Vars(r)["id"]
 	if e == false {
 		log.Println("no song id in mux vars")
