@@ -2,9 +2,8 @@ package delivery
 
 import (
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
+	"no_homomorphism/pkg/logger"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -13,35 +12,35 @@ import (
 
 type TrackHandler struct {
 	TrackUC track.UseCase
+	Log     *logger.MainLogger
 }
 
 func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 	varId, e := mux.Vars(r)["id"]
 	if e == false {
-		log.Println("no song id in mux vars")
+		h.Log.HttpInfo("", "no id in mux vars", http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	ID, err := strconv.Atoi(varId)
 	if err != nil {
-		log.Println("song id is not u integer")
+		h.Log.HttpInfo("", "failed to parse id:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	track, err := h.TrackUC.GetTrackById(uint(ID))
 	if err != nil {
+		h.Log.HttpInfo("", "failed get track"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Println(err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	writer := json.NewEncoder(w)
 	err = writer.Encode(track)
 	if err != nil {
-		log.Println("can't write track info into json :", err)
+		h.Log.HttpInfo("", "can't write track info into json:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-
+	h.Log.HttpInfo("", "OK", http.StatusOK)
 }

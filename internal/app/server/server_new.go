@@ -1,13 +1,11 @@
 package server
 
 import (
-	"fmt"
-	"log"
-	"net/http"
-
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	uuid "github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
+	"net/http"
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/session/repository"
 	"no_homomorphism/internal/pkg/session/usecase"
@@ -17,6 +15,8 @@ import (
 	. "no_homomorphism/internal/pkg/user/delivery"
 	repository2 "no_homomorphism/internal/pkg/user/repository"
 	usecase2 "no_homomorphism/internal/pkg/user/usecase"
+	"no_homomorphism/pkg/logger"
+	"os"
 )
 
 func InitNewHandler() *Handler {
@@ -77,17 +77,31 @@ func StartNew() {
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 		// Enable Debugging for testing, consider disabling in production
-		Debug: true,
+		Debug: false,
 	})
 
 	handler := InitNewHandler()
+
 	trackHandler := &delivery.TrackHandler{
 		TrackUC: &usecase3.TrackUseCase{
 			Repository: repository3.NewTestRepo(),
 		},
 	}
 
-	fmt.Printf("Starts server at 8081\n")
+	filename := "logfile.log"
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		logrus.Error("Failed to open logfile:", err)
+		customLogger := logger.NewLogger(os.Stdout)
+		handler.Log = customLogger
+		trackHandler.Log = customLogger
+	} else {
+		customLogger := logger.NewLogger(f)
+		handler.Log = customLogger
+		trackHandler.Log = customLogger
+	}
+
+	logrus.Info("Starts server at 8081")
 	r.HandleFunc("/signup", handler.Create).Methods("POST")
 	r.HandleFunc("/login", handler.Login).Methods("POST")
 	r.HandleFunc("/logout", handler.Logout).Methods("DELETE")
@@ -100,7 +114,7 @@ func StartNew() {
 	r.HandleFunc("/user", handler.CheckAuth)
 
 	if err := http.ListenAndServe(":8081", c.Handler(r)); err != nil {
-		log.Println(err)
+		logrus.Fatal(err)
 		return
 	}
 

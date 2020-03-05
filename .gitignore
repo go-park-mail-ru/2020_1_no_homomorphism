@@ -1,3 +1,4 @@
 .idea/*
 images/*
 coverage.out
+cmd/server/logfile.log

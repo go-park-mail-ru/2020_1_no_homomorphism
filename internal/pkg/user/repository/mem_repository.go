@@ -3,7 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
