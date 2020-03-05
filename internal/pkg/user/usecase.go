@@ -12,6 +12,6 @@ type UseCase interface {
 	UpdateAvatar(user *models.User, file multipart.File) error
 	GetUserByLogin(login string) (*models.User, error)
 	PrintUserList()
-	GetProfileByLogin(login string) (*models.Profile, error)
-	GetProfileByUser(user *models.User) *models.Profile
+	GetProfileByLogin(login string) (*models.User, error)
+	GetProfileByUser(user *models.User) *models.User
 }

@@ -107,12 +107,12 @@ func (uc *UserUseCase) GetUserByLogin(user string) (*models.User, error) {
 	return uc.Repository.GetUserByLogin(user)
 }
 
-func (uc *UserUseCase) GetProfileByLogin(login string) (*models.Profile, error) {
+func (uc *UserUseCase) GetProfileByLogin(login string) (*models.User, error) {
 	user, err := uc.Repository.GetUserByLogin(login)
 	if err != nil {
 		return nil, err
 	}
-	profile := &models.Profile{
+	profile := &models.User{
 		Name:  user.Name,
 		Login: user.Login,
 		Sex:   user.Sex,
@@ -122,8 +122,8 @@ func (uc *UserUseCase) GetProfileByLogin(login string) (*models.Profile, error) 
 	return profile, nil
 }
 
-func (uc *UserUseCase) GetProfileByUser(user *models.User) *models.Profile {
-	profile := &models.Profile{
+func (uc *UserUseCase) GetProfileByUser(user *models.User) *models.User {
+	profile := &models.User{
 		Name:  user.Name,
 		Login: user.Login,
 		Sex:   user.Sex,

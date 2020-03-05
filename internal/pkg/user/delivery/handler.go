@@ -71,7 +71,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	input := &models.UserSignIn{}
+	input := &models.User{}
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
 		log.Printf("error while unmarshalling JSON: %s", err)
