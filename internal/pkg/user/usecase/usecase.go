@@ -9,16 +9,14 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/user"
 )
-
-var mutex = &sync.Mutex{}
 
 type UserUseCase struct {
 	Repository user.Repository
@@ -28,7 +26,6 @@ type UserUseCase struct {
 var allowedContentType = []string{
 	"image/png",
 	"image/jpeg",
-	"image/jpg",
 }
 
 func (uc *UserUseCase) Create(user *models.User) error {
@@ -73,7 +70,7 @@ func checkFileContentType(file multipart.File) (string, error) {
 }
 
 func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) error {
-	fmt.Println("HELLO")
+
 	fileBody, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Println(err)
@@ -86,7 +83,7 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) erro
 		return err
 	}
 	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
-	filePath := os.Getenv("MUSIC_PROJ_DIR") + uc.AvatarDir + fileName + "." + contentType
+	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName, ".", contentType)
 	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
@@ -99,7 +96,7 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) erro
 		log.Println("error while writing to file", err)
 		return errors.New("error while writing to file")
 	}
-	uc.Repository.UpdateAvatar(user, uc.AvatarDir+fileName+"."+contentType)
+	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName, ".", contentType))
 	return nil
 }
 
@@ -133,6 +130,13 @@ func (uc *UserUseCase) GetProfileByUser(user *models.User) *models.Profile {
 	return profile
 }
 
-func (uc *UserUseCase) PrintUserList() {
-	uc.Repository.PrintUserList()
+func (uc *UserUseCase) CheckUserPassword(user *models.User, password string) error {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return errors.New("wrong password")
+	}
+	return nil
 }
+
+// func (uc *UserUseCase) PrintUserList() {
+// 	uc.Repository.PrintUserList()
+// }

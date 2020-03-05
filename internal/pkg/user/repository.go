@@ -9,5 +9,4 @@ type Repository interface {
 	Update(user *models.User, input *models.UserSettings) error
 	UpdateAvatar(user *models.User, avatarPath string)
 	GetUserByLogin(login string) (*models.User, error)
-	PrintUserList()
 }
