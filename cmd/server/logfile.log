@@ -1,4 +1,0 @@
-{"id":"","level":"info","msg":"permission denied:http: named cookie not present","status":401,"time":"06-03-2020 00:14:15"}
-{"id":"49291","level":"info","method":"POST","msg":"request","req_addr":"/login","time":"06-03-2020 00:14:52","usr_addr":"[::1]:57162","usr_agent":"PostmanRuntime/7.22.0"}
-{"id":"","level":"info","msg":"can't get user from storage: user with this login does not exists","status":400,"time":"06-03-2020 00:14:52"}
-{"id":"","level":"info","msg":"OK","status":200,"time":"06-03-2020 00:16:32"}

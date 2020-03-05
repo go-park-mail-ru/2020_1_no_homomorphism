@@ -1,15 +1,11 @@
 package logger
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"io"
-	"math/rand"
 	"net/http"
 	"time"
 )
-
-//TODO сделать под 2 конфига - консоль или в файл
 
 type MainLogger struct {
 	*logrus.Logger
@@ -27,23 +23,27 @@ func NewLogger(writer io.Writer) *MainLogger {
 func (l *MainLogger) LogError(rid string, pkg string, funcName string, err error) {
 	l.WithFields(logrus.Fields{
 		"id":       rid,
-		"pkg":      pkg,
-		"pkg_func": funcName,
+		"package":  pkg,
+		"function": funcName,
 	}).Error(err)
 }
 
 //функция для access логов, возвращает сгенерированый id запроса
-func (l *MainLogger) LogRequest(r http.Request) string {
-	rand.Seed(time.Now().UnixNano())
-	rid := fmt.Sprintf("%016x", rand.Int())[:5]
+func (l *MainLogger) StartReq(r http.Request, rid string) {
 	l.WithFields(logrus.Fields{
-		"id":        rid,
-		"usr_addr":  r.RemoteAddr,
-		"req_addr":  r.RequestURI,
-		"method":    r.Method,
-		"usr_agent": r.UserAgent(),
-	}).Info("request")
-	return rid
+		"id":         rid,
+		"usr_addr":   r.RemoteAddr,
+		"req_URI":    r.RequestURI,
+		"method":     r.Method,
+		"user_agent": r.UserAgent(),
+	}).Info("request started")
+}
+
+func (l *MainLogger) EndReq(start time.Time, rid string) {
+	l.WithFields(logrus.Fields{
+		"id":              rid,
+		"elapsed_time,μs": time.Since(start).Microseconds(),
+	}).Info("request ended")
 }
 
 func (l *MainLogger) HttpInfo(rid string, msg string, status int) {
@@ -56,7 +56,7 @@ func (l *MainLogger) HttpInfo(rid string, msg string, status int) {
 func (l *MainLogger) LogWarning(rid string, pkg string, funcName string, msg string) {
 	l.WithFields(logrus.Fields{
 		"id":       rid,
-		"pkg":      pkg,
-		"pkg_func": funcName,
+		"package":  pkg,
+		"function": funcName,
 	}).Warn(msg)
 }
