@@ -114,8 +114,12 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	h.SessionUC.Delete(sid) //todo handle error
-	panic("kek")
+	err = h.SessionUC.Delete(sid) //todo handle error
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "Logout", "Unable to delete session")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	cookie.Expires = time.Now().AddDate(0, 0, -1)
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
