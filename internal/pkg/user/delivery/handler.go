@@ -20,7 +20,6 @@ type Handler struct {
 	Log       *logger.MainLogger
 }
 
-
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
@@ -239,12 +238,13 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	err = h.UserUC.UpdateAvatar(user, file)
+	path, err := h.UserUC.UpdateAvatar(user, file)
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "delivery", "UpdateAvatar", "failed to update avatar:"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	h.Log.Info("new file created:", path)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 

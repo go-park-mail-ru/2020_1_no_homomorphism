@@ -20,7 +20,7 @@ import (
 	"os"
 )
 
-func InitNewHandler() *Handler {
+func InitNewHandler(mainLogger *logger.MainLogger) *Handler {
 	sesRep := repository.SessionRepository{
 		Sessions: make(map[uuid.UUID]*models.User),
 	}
@@ -64,6 +64,7 @@ func InitNewHandler() *Handler {
 	h := &Handler{
 		SessionUC: &SessionUC,
 		UserUC:    &UserUC,
+		Log:       mainLogger,
 	}
 
 	return h
@@ -81,27 +82,26 @@ func StartNew() {
 		Debug: false,
 	})
 
-	handler := InitNewHandler()
-
-	trackHandler := &delivery.TrackHandler{
-		TrackUC: &usecase3.TrackUseCase{
-			Repository: repository3.NewTestRepo(),
-		},
-	}
+	var customLogger *logger.MainLogger
 
 	filename := "logfile.log"
 	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		logrus.Error("Failed to open logfile:", err)
-		customLogger := logger.NewLogger(os.Stdout)
-		handler.Log = customLogger
-		trackHandler.Log = customLogger
+		customLogger = logger.NewLogger(os.Stdout)
 	} else {
-		customLogger := logger.NewLogger(f)
-		handler.Log = customLogger
-		trackHandler.Log = customLogger
+		customLogger = logger.NewLogger(f)
 	}
 	defer f.Close()
+
+	handler := InitNewHandler(customLogger)
+
+	trackHandler := &delivery.TrackHandler{
+		TrackUC: &usecase3.TrackUseCase{
+			Repository: repository3.NewTestRepo(),
+		},
+		Log: customLogger,
+	}
 
 	logrus.Info("Starts server at 8081")
 	r.HandleFunc("/signup", handler.Create).Methods("POST")

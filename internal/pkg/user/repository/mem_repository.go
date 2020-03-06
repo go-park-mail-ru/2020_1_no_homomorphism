@@ -3,8 +3,6 @@ package repository
 import (
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
 )
@@ -19,8 +17,7 @@ func (ur *MemUserRepository) Create(user *models.User) error {
 	ur.Count++
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
 	if err != nil {
-		log.Println(err)
-		return nil
+		return err
 	}
 	user.Password = string(hash)
 	ur.Users[user.Login] = user

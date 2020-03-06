@@ -9,7 +9,7 @@ import (
 type UseCase interface {
 	Create(user *models.User) error
 	Update(user *models.User, input *models.UserSettings) error
-	UpdateAvatar(user *models.User, file multipart.File) error
+	UpdateAvatar(user *models.User, file multipart.File) (string, error)
 	GetUserByLogin(login string) (*models.User, error)
 	PrintUserList()
 	GetProfileByLogin(login string) (*models.User, error)

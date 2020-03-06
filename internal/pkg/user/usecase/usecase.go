@@ -2,8 +2,6 @@ package usecase
 
 import (
 	"errors"
-	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -55,7 +53,6 @@ func getFileContentType(file multipart.File) (string, error) {
 		return "", err
 	}
 	contentType := http.DetectContentType(buffer[:n])
-	fmt.Println("CONTENT TYPE: ", contentType)
 	return contentType, nil
 }
 
@@ -72,35 +69,30 @@ func checkFileContentType(file multipart.File) (string, error) {
 	return "", errors.New("this content type does not allowed")
 }
 
-func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) error {
-	fmt.Println("HELLO")
+func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) (string, error) {
 	fileBody, err := ioutil.ReadAll(file)
 	if err != nil {
-		log.Println(err)
-		return errors.New("failed to read file body file")
+		return "", errors.New("failed to read file body file")
 	}
 	//contentType, err := checkFileContentType(file)
 	contentType := "png"
-	if err != nil {
-		log.Println("error while checking content type :", err)
-		return err
-	}
+	//if err != nil {
+	//	log.Println("error while checking content type :", err)
+	//	return err
+	//}
 	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
 	filePath := os.Getenv("MUSIC_PROJ_DIR") + uc.AvatarDir + fileName + "." + contentType
-	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		log.Println("failed to create file", err)
-		return errors.New("failed to create file")
+		return "", errors.New("failed to create file")
 	}
 	defer newFile.Close()
 	_, err = newFile.Write(fileBody)
 	if err != nil {
-		log.Println("error while writing to file", err)
-		return errors.New("error while writing to file")
+		return "", errors.New("error while writing to file")
 	}
 	uc.Repository.UpdateAvatar(user, uc.AvatarDir+fileName+"."+contentType)
-	return nil
+	return filePath, nil
 }
 
 func (uc *UserUseCase) GetUserByLogin(user string) (*models.User, error) {
