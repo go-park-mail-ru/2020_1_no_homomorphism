@@ -1,11 +1,14 @@
 package logger
 
 import (
+	"context"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"time"
 )
+
+const requestId int = 1
 
 type MainLogger struct {
 	*logrus.Logger
@@ -28,7 +31,19 @@ func (l *MainLogger) LogError(rid string, pkg string, funcName string, err error
 	}).Error(err)
 }
 
-//функция для access логов, возвращает сгенерированый id запроса
+func (l *MainLogger) GetIdFromContext(ctx context.Context) string {
+	rid, ok := ctx.Value(requestId).(string)
+	if !ok {
+		l.WithFields(logrus.Fields{
+			"id":       "NO_ID",
+			"package":  "logger",
+			"function": "GetIdFromContext",
+		}).Warn("can't get request id from context")
+		return ""
+	}
+	return rid
+}
+
 func (l *MainLogger) StartReq(r http.Request, rid string) {
 	l.WithFields(logrus.Fields{
 		"id":         rid,
@@ -39,23 +54,23 @@ func (l *MainLogger) StartReq(r http.Request, rid string) {
 	}).Info("request started")
 }
 
-func (l *MainLogger) EndReq(start time.Time, rid string) {
+func (l *MainLogger) EndReq(start time.Time, ctx context.Context) {
 	l.WithFields(logrus.Fields{
-		"id":              rid,
+		"id":              l.GetIdFromContext(ctx),
 		"elapsed_time,μs": time.Since(start).Microseconds(),
 	}).Info("request ended")
 }
 
-func (l *MainLogger) HttpInfo(rid string, msg string, status int) {
+func (l *MainLogger) HttpInfo(ctx context.Context, msg string, status int) {
 	l.WithFields(logrus.Fields{
-		"id":     rid,
+		"id":     l.GetIdFromContext(ctx),
 		"status": status,
 	}).Info(msg)
 }
 
-func (l *MainLogger) LogWarning(rid string, pkg string, funcName string, msg string) {
+func (l *MainLogger) LogWarning(ctx context.Context, pkg string, funcName string, msg string) {
 	l.WithFields(logrus.Fields{
-		"id":       rid,
+		"id":       l.GetIdFromContext(ctx),
 		"package":  pkg,
 		"function": funcName,
 	}).Warn(msg)

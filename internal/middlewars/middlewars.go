@@ -9,9 +9,7 @@ import (
 	"time"
 )
 
-type key int
-
-const requestId key = 1
+const requestId int = 1
 
 func AccessLogMiddleware(next http.Handler, log *logger.MainLogger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,15 +23,6 @@ func AccessLogMiddleware(next http.Handler, log *logger.MainLogger) http.Handler
 			rid,
 		)
 		next.ServeHTTP(w, r.WithContext(ctx))
-		log.EndReq(start, rid)
+		log.EndReq(start, ctx)
 	})
-}
-
-func GetIdFromContext(ctx context.Context, log *logger.MainLogger) string {
-	rid, ok := ctx.Value(requestId).(string)
-	if !ok {
-		log.LogWarning("error", "middlewars", "getIdFromContext", "no rid in context")
-		return ""
-	}
-	return rid
 }
