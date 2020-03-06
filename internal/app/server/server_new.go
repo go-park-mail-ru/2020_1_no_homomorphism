@@ -97,7 +97,7 @@ func StartNew() {
 		handler.Log = customLogger
 		trackHandler.Log = customLogger
 	} else {
-		customLogger := logger.NewLogger(f)
+		customLogger := logger.NewLogger(os.Stdout)
 		handler.Log = customLogger
 		trackHandler.Log = customLogger
 	}
