@@ -20,7 +20,6 @@ type Handler struct {
 	Log       *logger.MainLogger
 }
 
-//todo поставить id запроса всем логам
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
@@ -114,7 +113,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = h.SessionUC.Delete(sid) //todo handle error
+	err = h.SessionUC.Delete(sid)
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "delivery", "Logout", "Unable to delete session")
 		w.WriteHeader(http.StatusInternalServerError)

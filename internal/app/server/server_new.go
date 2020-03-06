@@ -6,7 +6,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"no_homomorphism/internal/middlewars"
+	"no_homomorphism/internal/middleware"
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/session/repository"
 	"no_homomorphism/internal/pkg/session/usecase"
@@ -97,7 +97,7 @@ func StartNew() {
 		handler.Log = customLogger
 		trackHandler.Log = customLogger
 	} else {
-		customLogger := logger.NewLogger(os.Stdout)
+		customLogger := logger.NewLogger(f)
 		handler.Log = customLogger
 		trackHandler.Log = customLogger
 	}
@@ -115,8 +115,8 @@ func StartNew() {
 	r.HandleFunc("/debug", handler.Debug)
 	r.HandleFunc("/user", handler.CheckAuth)
 
-	accessMiddleware := middlewars.AccessLogMiddleware(r, handler.Log)
-	panicMiddleware := middlewars.PanicMiddleware(accessMiddleware, handler.Log)
+	accessMiddleware := middleware.AccessLogMiddleware(r, handler.Log)
+	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, handler.Log)
 
 	if err := http.ListenAndServe(":8081", c.Handler(panicMiddleware)); err != nil {
 		logrus.Fatal(err)
