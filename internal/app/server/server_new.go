@@ -114,9 +114,11 @@ func StartNew() {
 	r.HandleFunc("/track/{id:[0-9]+}", trackHandler.GetTrack).Methods("GET")
 	r.HandleFunc("/debug", handler.Debug)
 	r.HandleFunc("/user", handler.CheckAuth)
-	accessMiddleware := middlewars.AccessLogMiddleware(r, handler.Log)
 
-	if err := http.ListenAndServe(":8081", c.Handler(accessMiddleware)); err != nil {
+	accessMiddleware := middlewars.AccessLogMiddleware(r, handler.Log)
+	panicMiddleware := middlewars.PanicMiddleware(accessMiddleware, handler.Log)
+
+	if err := http.ListenAndServe(":8081", c.Handler(panicMiddleware)); err != nil {
 		logrus.Fatal(err)
 		return
 	}

@@ -23,9 +23,9 @@ func NewLogger(writer io.Writer) *MainLogger {
 	standardLogger.SetOutput(writer)
 	return standardLogger
 }
-func (l *MainLogger) LogError(rid string, pkg string, funcName string, err error) {
+func (l *MainLogger) LogError(ctx context.Context, pkg string, funcName string, err error) {
 	l.WithFields(logrus.Fields{
-		"id":       rid,
+		"id":       l.GetIdFromContext(ctx),
 		"package":  pkg,
 		"function": funcName,
 	}).Error(err)

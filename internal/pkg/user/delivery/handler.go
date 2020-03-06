@@ -115,6 +115,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.SessionUC.Delete(sid) //todo handle error
+	panic("kek")
 	cookie.Expires = time.Now().AddDate(0, 0, -1)
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)

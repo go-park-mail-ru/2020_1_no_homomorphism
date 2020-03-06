@@ -3,6 +3,7 @@ module no_homomorphism
 go 1.13
 
 require (
+	github.com/VividCortex/godaemon v0.0.0-20150910212227-3d9f6e0b234f
 	github.com/gorilla/mux v1.7.4
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/rs/cors v1.7.0
