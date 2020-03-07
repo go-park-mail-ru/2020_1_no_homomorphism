@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -45,22 +44,20 @@ func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) err
 	return uc.Repository.Update(user, input)
 }
 
-func getFileContentType(file multipart.File) (string, error) {
-	buffer := make([]byte, 512)
-	n, err := file.Read(buffer)
-	if err != nil && err != io.EOF {
-		return "", err
-	}
-	contentType := http.DetectContentType(buffer[:n])
-	fmt.Println("CONTENT TYPE: ", contentType)
-	return contentType, nil
-}
-
 func checkFileContentType(file multipart.File) (string, error) {
-	contentType, err := getFileContentType(file)
-	if err != nil {
+	buffer := make([]byte, 512)
+
+	_, err := file.Read(buffer)
+	if err != nil || err == io.EOF {
 		return "", err
 	}
+
+	if _, err = file.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
+
+	contentType := http.DetectContentType(buffer)
+
 	for _, r := range allowedContentType {
 		if contentType == r {
 			return strings.Split(contentType, "/")[1], nil
@@ -69,18 +66,21 @@ func checkFileContentType(file multipart.File) (string, error) {
 	return "", errors.New("this content type is not allowed")
 }
 
-func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) error {
+func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeader) error {
 
-	fileBody, err := ioutil.ReadAll(file)
+	fileBody, err := file.Open()
 	if err != nil {
-		log.Println(err)
+		log.Println("can't read request body")
 		return errors.New("failed to read file body file")
 	}
-	contentType, err := checkFileContentType(file)
+	defer fileBody.Close()
+
+	contentType, err := checkFileContentType(fileBody)
 	if err != nil {
 		log.Println("error while checking content type :", err)
 		return err
 	}
+
 	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
 	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName + "." + contentType)
 	fmt.Println(filePath)
@@ -90,7 +90,7 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) erro
 		return errors.New("failed to create file")
 	}
 	defer newFile.Close()
-	_, err = newFile.Write(fileBody)
+	_, err = io.Copy(newFile, fileBody)
 	if err != nil {
 		log.Println("error while writing to file", err)
 		return errors.New("error while writing to file")

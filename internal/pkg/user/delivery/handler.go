@@ -179,29 +179,16 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 	}
 	user := r.Context().Value("user").(*models.User)
 
-	var buffer []byte
-	_, err := r.Body.Read(buffer)
-	if err != nil {
-		log.Println("can't read request body")
-		return
-	}
-
-	err = r.ParseMultipartForm(10 << 20)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Println("can't Parse Multipart Form ", err)
-		return
-	}
-
 	file, handler, err := r.FormFile("profile_image")
 	if err != nil || handler.Size == 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		log.Println("can't read profile_image : ", err)
 		return
 	}
+
 	defer file.Close()
 
-	err = h.UserUC.UpdateAvatar(user, file)
+	err = h.UserUC.UpdateAvatar(user, handler)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Println(err)
