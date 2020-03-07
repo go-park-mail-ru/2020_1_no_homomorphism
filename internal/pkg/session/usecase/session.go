@@ -15,16 +15,7 @@ type SessionUseCase struct {
 }
 
 func (uc *SessionUseCase) Create(user *models.User) (*http.Cookie, error) {
-	sid, err := uc.Repository.Create(user)
-	if err != nil {
-		for i := 0; i < 5; i++ {
-			sid, err = uc.Repository.Create(user)
-			if err == nil {
-				break
-			}
-		}
-		return nil, errors.New("could not create new session and cookie")
-	}
+	sid := uc.Repository.Create(user)
 	return &http.Cookie{
 		Name:     "session_id",
 		Value:    sid.String(),

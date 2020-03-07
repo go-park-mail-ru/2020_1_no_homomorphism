@@ -21,15 +21,13 @@ func NewSessionRepository() *SessionRepository {
 	}
 }
 
-func (sr *SessionRepository) Create(user *models.User) (uuid.UUID, error) {
+func (sr *SessionRepository) Create(user *models.User) uuid.UUID {
 	newUUID := uuid.NewV4()
-	if _, ok := sr.Sessions[newUUID]; ok {
-		return uuid.Nil, errors.New("can't create session with this uuid")
-	}
 	sr.mutex.Lock()
 	sr.Sessions[newUUID] = user
 	sr.mutex.Unlock()
-	return newUUID, nil
+
+	return newUUID
 }
 
 func (sr *SessionRepository) Delete(sessionID uuid.UUID) {
