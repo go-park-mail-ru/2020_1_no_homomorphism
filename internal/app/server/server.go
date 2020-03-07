@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"no_homomorphism/internal/pkg/middleware"
 	sessionRepo "no_homomorphism/internal/pkg/session/repository"
 	sessionUC "no_homomorphism/internal/pkg/session/usecase"
@@ -17,9 +18,10 @@ import (
 	userUC "no_homomorphism/internal/pkg/user/usecase"
 )
 
-func InitNewHandler() *userDelivery.Handler {
+func InitNewHandler() (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
 	sesRep := sessionRepo.NewSessionRepository()
 	userRep := userRepo.NewTestMemUserRepository()
+	trackRep := trackRepo.NewTestTrackRepo()
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,
@@ -28,39 +30,49 @@ func InitNewHandler() *userDelivery.Handler {
 		Repository: userRep,
 		AvatarDir:  "/static/img/avatar/",
 	}
+	TrackUC := trackUC.TrackUseCase{
+		Repository: trackRep,
+	}
+
 	h := &userDelivery.Handler{
 		SessionUC: &SessionUC,
 		UserUC:    &UserUC,
 	}
 
-	return h
+	trackHandler := &trackDelivery.TrackHandler{
+		TrackUC: &TrackUC,
+	}
+	m := middleware.NewMiddleware(&SessionUC, &UserUC, &TrackUC)
+
+	return h, trackHandler, m
 }
 
 func StartNew() {
 
 	r := mux.NewRouter()
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000"},
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		// Enable Debugging for testing, consider disabling in production
+		Debug: true,
+	})
 
-	c := middleware.InitCors()
+	handler, trackHandler, m := InitNewHandler()
 
-	handler := InitNewHandler()
-	trackHandler := &trackDelivery.TrackHandler{
-		TrackUC: &trackUC.TrackUseCase{
-			Repository: trackRepo.NewTestTrackRepo(),
-		},
-	}
-
-	fmt.Println("Starts server at 8081")
+	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
+	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
+	r.HandleFunc("/profiles/{profile}", handler.Profile)
+	r.HandleFunc("/image", handler.UpdateAvatar).Methods("POST")
+	r.HandleFunc("/user", handler.CheckAuth)
 	r.HandleFunc("/signup", handler.Create).Methods("POST")
 	r.HandleFunc("/login", handler.Login).Methods("POST")
 	r.HandleFunc("/logout", handler.Logout).Methods("DELETE")
-	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
-	r.HandleFunc("/profiles/{profile}", handler.Profile)
-	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
-	r.HandleFunc("/image", handler.UpdateAvatar).Methods("POST")
 	r.HandleFunc("/track/{id:[0-9]+}", trackHandler.GetTrack).Methods("GET")
-	// r.HandleFunc("/debug", handler.Debug)
-	r.HandleFunc("/user", handler.CheckAuth)
-	err := http.ListenAndServe(":8081", c.Handler(r))
+	authHandler := m.CheckAuthMiddleware(r)
+	fmt.Println("Starts server at 8081")
+	err := http.ListenAndServe(":8081", c.Handler(authHandler))
+
 	if err != nil {
 		log.Println(err)
 		return

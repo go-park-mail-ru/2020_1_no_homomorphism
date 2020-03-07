@@ -66,7 +66,7 @@ func checkFileContentType(file multipart.File) (string, error) {
 			return strings.Split(contentType, "/")[1], nil
 		}
 	}
-	return "", errors.New("this content type does not allowed")
+	return "", errors.New("this content type is not allowed")
 }
 
 func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) error {
@@ -76,14 +76,13 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) erro
 		log.Println(err)
 		return errors.New("failed to read file body file")
 	}
-	//contentType, err := checkFileContentType(file)
-	contentType := "png"
+	contentType, err := checkFileContentType(file)
 	if err != nil {
 		log.Println("error while checking content type :", err)
 		return err
 	}
 	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
-	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName, ".", contentType)
+	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName + "." + contentType)
 	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
@@ -96,7 +95,7 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file multipart.File) erro
 		log.Println("error while writing to file", err)
 		return errors.New("error while writing to file")
 	}
-	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName, ".", contentType))
+	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName + "." + contentType))
 	return nil
 }
 
