@@ -72,6 +72,7 @@ func (ur *MemUserRepository) Update(user *models.User, input *models.UserSetting
 		}
 		user.Password = string(hash)
 	}
+	user.Name = input.Name
 	user.Email = input.Email
 	return nil
 }
