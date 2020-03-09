@@ -16,13 +16,6 @@ type MemUserRepository struct {
 	mutex *sync.RWMutex
 }
 
-func NewMemUserRepository() *MemUserRepository {
-	return &MemUserRepository{
-		Users: make(map[string]*models.User),
-		count: 0,
-		mutex: &sync.RWMutex{},
-	}
-}
 func NewTestMemUserRepository() *MemUserRepository {
 	return &MemUserRepository{
 		Users: map[string]*models.User{
@@ -79,6 +72,7 @@ func (ur *MemUserRepository) Update(user *models.User, input *models.UserSetting
 		}
 		user.Password = string(hash)
 	}
+	user.Name = input.Name
 	user.Email = input.Email
 	return nil
 }

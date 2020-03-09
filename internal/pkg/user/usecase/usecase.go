@@ -7,6 +7,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"no_homomorphism/internal/pkg/user"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -14,7 +15,6 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
-	"no_homomorphism/internal/pkg/user"
 )
 
 type UserUseCase struct {
@@ -66,19 +66,19 @@ func checkFileContentType(file multipart.File) (string, error) {
 	return "", errors.New("this content type is not allowed")
 }
 
-func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeader) error {
+func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeader) (string, error) {
 
 	fileBody, err := file.Open()
 	if err != nil {
 		log.Println("can't read request body")
-		return errors.New("failed to read file body file")
+		return "", errors.New("failed to read file body file")
 	}
 	defer fileBody.Close()
 
 	contentType, err := checkFileContentType(fileBody)
 	if err != nil {
 		log.Println("error while checking content type :", err)
-		return err
+		return "", err
 	}
 
 	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
@@ -87,16 +87,16 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 	newFile, err := os.Create(filePath)
 	if err != nil {
 		log.Println("failed to create file", err)
-		return errors.New("failed to create file")
+		return "", errors.New("failed to create file")
 	}
 	defer newFile.Close()
 	_, err = io.Copy(newFile, fileBody)
 	if err != nil {
 		log.Println("error while writing to file", err)
-		return errors.New("error while writing to file")
+		return "", errors.New("error while writing to file")
 	}
 	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName + "." + contentType))
-	return nil
+	return filePath, nil
 }
 
 func (uc *UserUseCase) GetUserByLogin(user string) (*models.User, error) {
@@ -136,6 +136,3 @@ func (uc *UserUseCase) CheckUserPassword(user *models.User, password string) err
 	return nil
 }
 
-// func (uc *UserUseCase) PrintUserList() {
-// 	uc.Repository.PrintUserList()
-// }

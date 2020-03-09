@@ -19,7 +19,7 @@ type Profile struct {
 }
 
 type UserSettings struct {
-	NewPassword string `json:"newPassword"`
+	NewPassword string `json:"new_password"`
 	User
 }
 

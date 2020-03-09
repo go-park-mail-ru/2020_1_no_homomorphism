@@ -14,14 +14,14 @@ type SessionUseCase struct {
 	Repository session.Repository
 }
 
-func (uc *SessionUseCase) Create(user *models.User) (*http.Cookie, error) {
+func (uc *SessionUseCase) Create(user *models.User) *http.Cookie {
 	sid := uc.Repository.Create(user)
 	return &http.Cookie{
 		Name:     "session_id",
 		Value:    sid.String(),
 		HttpOnly: true,
-		Expires:  time.Now().Add(24 * 30 * time.Hour),
-	}, nil
+		Expires:  time.Now().Add(24*31 * time.Hour),
+	}
 }
 
 func (uc *SessionUseCase) Delete(sessionID uuid.UUID) error {
