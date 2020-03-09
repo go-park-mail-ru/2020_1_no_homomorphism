@@ -16,13 +16,6 @@ type MemUserRepository struct {
 	mutex *sync.RWMutex
 }
 
-func NewMemUserRepository() *MemUserRepository {
-	return &MemUserRepository{
-		Users: make(map[string]*models.User),
-		count: 0,
-		mutex: &sync.RWMutex{},
-	}
-}
 func NewTestMemUserRepository() *MemUserRepository {
 	return &MemUserRepository{
 		Users: map[string]*models.User{

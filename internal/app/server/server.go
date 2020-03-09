@@ -2,8 +2,11 @@ package server
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
+	"no_homomorphism/pkg/logger"
+	"os"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
@@ -18,7 +21,7 @@ import (
 	userUC "no_homomorphism/internal/pkg/user/usecase"
 )
 
-func InitNewHandler() (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
+func InitNewHandler(mainLogger *logger.MainLogger) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
 	sesRep := sessionRepo.NewSessionRepository()
 	userRep := userRepo.NewTestMemUserRepository()
 	trackRep := trackRepo.NewTestTrackRepo()
@@ -37,10 +40,12 @@ func InitNewHandler() (*userDelivery.Handler, *trackDelivery.TrackHandler, *midd
 	h := &userDelivery.Handler{
 		SessionUC: &SessionUC,
 		UserUC:    &UserUC,
+		Log:       mainLogger,
 	}
 
 	trackHandler := &trackDelivery.TrackHandler{
 		TrackUC: &TrackUC,
+		Log:     mainLogger,
 	}
 	m := middleware.NewMiddleware(&SessionUC, &UserUC, &TrackUC)
 
@@ -54,11 +59,22 @@ func StartNew() {
 		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		// Enable Debugging for testing, consider disabling in production
-		Debug: true,
+		Debug:            false,
 	})
 
-	handler, trackHandler, m := InitNewHandler()
+	var customLogger *logger.MainLogger
+
+	filename := "logfile.log"
+	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		logrus.Error("Failed to open logfile:", err)
+		customLogger = logger.NewLogger(os.Stdout)
+	} else {
+		customLogger = logger.NewLogger(f)
+	}
+	defer f.Close()
+
+	handler, trackHandler, m := InitNewHandler(customLogger)
 
 	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
 	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
@@ -71,8 +87,11 @@ func StartNew() {
 	r.HandleFunc("/track/{id:[0-9]+}", trackHandler.GetTrack).Methods("GET")
 	authHandler := m.CheckAuthMiddleware(r)
 	fmt.Println("Starts server at 8081")
-	err := http.ListenAndServe(":8081", c.Handler(authHandler))
 
+	accessMiddleware := middleware.AccessLogMiddleware(authHandler, handler.Log)
+	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, handler.Log)
+
+	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
 	if err != nil {
 		log.Println(err)
 		return

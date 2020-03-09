@@ -1,17 +1,18 @@
 package delivery
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
-	"time"
+	"no_homomorphism/internal/pkg/session"
+	"no_homomorphism/internal/pkg/user"
+
+	"no_homomorphism/pkg/logger"
 
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"no_homomorphism/internal/pkg/models"
-	"no_homomorphism/internal/pkg/session"
-	"no_homomorphism/internal/pkg/user"
+	"time"
 )
 
 type Handler struct {
@@ -21,8 +22,8 @@ type Handler struct {
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool)  {
-		h.Log.HttpInfo(r.Context(), "permission denied:"+err.Error(), http.StatusUnauthorized)
+	if !r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -42,8 +43,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
-	if r.Context().Value("isAuth").(bool)  {
-		h.Log.HttpInfo(r.Context(), "already auth"+err.Error(), http.StatusUnauthorized)
+	if r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -60,20 +61,16 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	cookie, err := h.SessionUC.Create(user)
-	if err != nil {
-		h.Log.HttpInfo(r.Context(), "error while creating cookie:"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	cookie := h.SessionUC.Create(user)
+
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
-	if r.Context().Value("isAuth").(bool)  {
-		log.Printf("already auth") //todo
-		w.WriteHeader(http.StatusUnauthorized)
+	if r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	input := &models.UserSignIn{}
@@ -94,23 +91,18 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		h.Log.HttpInfo(r.Context(), "Login: wrong password", http.StatusBadRequest)
 		return
 	}
-	cookie, err := h.SessionUC.Create(user)
-	if err != nil {
-		h.Log.HttpInfo(r.Context(), "error while creating session:"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	cookie := h.SessionUC.Create(user)
+
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool)  {
-		log.Printf("permission denied ")//todo
+	if !r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(*models.User)
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie || cookie == nil {
 		h.Log.HttpInfo(r.Context(), "could not find cookie", http.StatusBadRequest)
@@ -125,13 +117,13 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	}
 	h.SessionUC.Delete(sid)
 	cookie.Expires = time.Now().AddDate(0, 0, -1)
-	http.SetCookie(w, cookie)//check if has errors
+	http.SetCookie(w, cookie) //check if has errors
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
 func (h *Handler) Profile(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool)  {
-		log.Printf("permission denied ")
+	if !r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -149,25 +141,25 @@ func (h *Handler) Profile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	marshallAndWriteProfile(w, profile)//todo okay dobavit'
+	h.marshallAndWriteProfile(w, r.Context(), profile)
 }
 
 func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool)  {
-		log.Printf("permission denied ")//todo
+	if !r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	user := r.Context().Value("user").(*models.User)
 
-	profile := h.UserUC.GetProfileByUser(user)//todo
+	profile := h.UserUC.GetProfileByUser(user) //todo
 
-	marshallAndWriteProfile(w, profile)//todo okay in the end?
+	h.marshallAndWriteProfile(w, r.Context(), profile) //todo okay in the end?
 }
 
 func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool)  {
-		log.Printf("permission denied ")//todo
+	if !r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -182,43 +174,39 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 
 	defer file.Close()
 
-	err = h.UserUC.UpdateAvatar(user, handler)
+	path, err := h.UserUC.UpdateAvatar(user, handler)
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "delivery", "UpdateAvatar", "failed to update avatar:"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	h.Log.Info("new file created:", path)
+	h.Log.Info("new file created:", path) //add path
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
 func (h *Handler) CheckAuth(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool)  {
-		log.Printf("permission denied ")//todo
+	if !r.Context().Value("isAuth").(bool) {
+		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-// func (h *Handler) Debug(w http.ResponseWriter, r *http.Request) {
-// 	h.UserUC.PrintUserList()
-// 	h.SessionUC.PrintSessionList()
-// }
 
-func marshallAndWriteProfile(w http.ResponseWriter, profile *models.Profile) {
+func (h *Handler) marshallAndWriteProfile(w http.ResponseWriter, ctx context.Context, profile *models.Profile) {
 	profileJson, err := json.Marshal(profile)
 	if err != nil {
-		log.Println(err)//todo
+		h.Log.HttpInfo(ctx, "error while marshalling:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("content-type", "application/json")
 	_, err = w.Write(profileJson)
 	if err != nil {
+		h.Log.LogWarning(ctx, "delivery", "marshallAndWriteProfile", "failed to write result"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println(err)//todo
 		return
 	}
-	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+	h.Log.HttpInfo(ctx, "OK", http.StatusOK)
 }

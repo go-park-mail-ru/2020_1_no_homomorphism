@@ -23,6 +23,7 @@ func NewLogger(writer io.Writer) *MainLogger {
 	standardLogger.SetOutput(writer)
 	return standardLogger
 }
+
 func (l *MainLogger) LogError(ctx context.Context, pkg string, funcName string, err error) {
 	l.WithFields(logrus.Fields{
 		"id":       l.GetIdFromContext(ctx),

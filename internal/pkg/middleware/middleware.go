@@ -12,15 +12,15 @@ import (
 
 type Middleware struct {
 	SessionUC session.UseCase
-	UserUC user.UseCase
-	TrackUC track.UseCase
+	UserUC    user.UseCase
+	TrackUC   track.UseCase
 }
 
 func NewMiddleware(suc session.UseCase, uuc user.UseCase, tuc track.UseCase) *Middleware {
 	return &Middleware{
 		SessionUC: suc,
-		UserUC: uuc,
-		TrackUC: tuc,
+		UserUC:    uuc,
+		TrackUC:   tuc,
 	}
 }
 
@@ -51,4 +51,3 @@ func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
