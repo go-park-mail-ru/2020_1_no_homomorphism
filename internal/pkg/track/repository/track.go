@@ -10,7 +10,13 @@ type TrackRepository struct {
 	Repository []*models.Track
 }
 
-func NewTestRepo() *TrackRepository {
+func NewTrackRepo() *TrackRepository {
+	return &TrackRepository{
+		Repository: make([]*models.Track, 0),
+	}
+}
+
+func NewTestTrackRepo() *TrackRepository {
 	return &TrackRepository{
 		Repository: []*models.Track{
 			&models.Track{

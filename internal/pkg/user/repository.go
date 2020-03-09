@@ -1,13 +1,12 @@
-package user
+package session
 
 import (
+	uuid "github.com/satori/go.uuid"
 	"no_homomorphism/internal/pkg/models"
 )
 
 type Repository interface {
-	Create(user *models.User) error
-	Update(user *models.User, input *models.UserSettings) error
-	UpdateAvatar(user *models.User, avatarPath string)
-	GetUserByLogin(login string) (*models.User, error)
-	PrintUserList()
+	Create(user *models.User) uuid.UUID
+	Delete(sessionID uuid.UUID)
+	GetUserBySessionID(sessionID uuid.UUID) (*models.User, error)
 }

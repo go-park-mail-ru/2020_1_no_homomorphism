@@ -2,8 +2,9 @@ package delivery
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"net/http"
-	"no_homomorphism/pkg/logger"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -16,8 +17,8 @@ type TrackHandler struct {
 }
 
 func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
-	varId, e := mux.Vars(r)["id"]
-	if e == false {
+	varId, ok := mux.Vars(r)["id"]
+	if !ok {
 		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
