@@ -1,3 +1,0 @@
-time="2020-03-06T18:36:28+03:00" level=info msg="Starts server at 8081"
-time="2020-03-06T18:36:28+03:00" level=fatal msg="listen tcp :8081: bind: address already in use"
-time="2020-03-06T18:36:50+03:00" level=info msg="Starts server at 8081"
