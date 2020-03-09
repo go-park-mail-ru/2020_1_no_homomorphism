@@ -28,6 +28,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := r.Context().Value("user").(*models.User)
+	h.Log.Debug(user)
 	input := &models.UserSettings{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
@@ -115,9 +116,13 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	h.SessionUC.Delete(sid)
+	err = h.SessionUC.Delete(sid)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "can't delete session:"+err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 	cookie.Expires = time.Now().AddDate(0, 0, -1)
-	http.SetCookie(w, cookie) //check if has errors
+	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
@@ -152,9 +157,9 @@ func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	user := r.Context().Value("user").(*models.User)
 
-	profile := h.UserUC.GetProfileByUser(user) //todo
+	profile := h.UserUC.GetProfileByUser(user)
 
-	h.marshallAndWriteProfile(w, r.Context(), profile) //todo okay in the end?
+	h.marshallAndWriteProfile(w, r.Context(), profile)
 }
 
 func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +197,6 @@ func (h *Handler) CheckAuth(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
-
 
 func (h *Handler) marshallAndWriteProfile(w http.ResponseWriter, ctx context.Context, profile *models.Profile) {
 	profileJson, err := json.Marshal(profile)

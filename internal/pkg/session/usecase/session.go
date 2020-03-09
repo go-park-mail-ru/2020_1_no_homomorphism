@@ -14,7 +14,7 @@ type SessionUseCase struct {
 	Repository session.Repository
 }
 
-func (uc *SessionUseCase) Create(user *models.User) *http.Cookie {//todo error handle
+func (uc *SessionUseCase) Create(user *models.User) *http.Cookie {
 	sid := uc.Repository.Create(user)
 	return &http.Cookie{
 		Name:     "session_id",
