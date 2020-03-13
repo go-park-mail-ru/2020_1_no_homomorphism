@@ -20,7 +20,7 @@ func NewTestMemUserRepository() *MemUserRepository {
 	return &MemUserRepository{
 		Users: map[string]*models.User{
 			"test": &models.User{
-				Id:       0,
+				Id:       "0",
 				Login:    "test",
 				Name:     "Rita",
 				Email:    "rita@margarita.tyt",
@@ -28,7 +28,7 @@ func NewTestMemUserRepository() *MemUserRepository {
 				Image:    "/static/img/avatar/default.png",
 			},
 			"test2": &models.User{
-				Id:       1,
+				Id:       "1",
 				Login:    "test2",
 				Name:     "User2",
 				Email:    "user2@da.tu",
@@ -36,7 +36,7 @@ func NewTestMemUserRepository() *MemUserRepository {
 				Image:    "/static/img/avatar/default.png",
 			},
 			"test3": &models.User{
-				Id:       2,
+				Id:       "2",
 				Login:    "test3",
 				Name:     "User3",
 				Email:    "user3@da.tu",
@@ -50,7 +50,7 @@ func NewTestMemUserRepository() *MemUserRepository {
 }
 
 func (ur *MemUserRepository) Create(user *models.User) error {
-	user.Id = ur.count
+	user.Id = string(ur.count)
 	ur.count++
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
 	if err != nil {

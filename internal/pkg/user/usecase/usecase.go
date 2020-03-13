@@ -10,7 +10,6 @@ import (
 	"no_homomorphism/internal/pkg/user"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -30,7 +29,7 @@ var allowedContentType = []string{
 func (uc *UserUseCase) Create(user *models.User) error {
 	_, ok := uc.GetUserByLogin(user.Login)
 	if ok == nil {
-		return errors.New("user with this login is already exists")
+		return errors.New("user with this login is already exists")// не только такая ошибка
 	}
 	err := uc.Repository.Create(user)
 	uc.Repository.UpdateAvatar(user, uc.AvatarDir+"default.png")
@@ -38,9 +37,9 @@ func (uc *UserUseCase) Create(user *models.User) error {
 }
 
 func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) error {
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		return errors.New("old password is wrong")
-	}
+	//if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+	//	return errors.New("old password is wrong")
+	//}
 	return uc.Repository.Update(user, input)
 }
 
@@ -81,8 +80,8 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 		return "", err
 	}
 
-	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
-	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName + "." + contentType)
+	fileName := user.Id //todo good names for avatars
+	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName+"."+contentType)
 	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
@@ -95,7 +94,7 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 		log.Println("error while writing to file", err)
 		return "", errors.New("error while writing to file")
 	}
-	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName + "." + contentType))
+	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+contentType))
 	return filePath, nil
 }
 
@@ -135,4 +134,3 @@ func (uc *UserUseCase) CheckUserPassword(user *models.User, password string) err
 	}
 	return nil
 }
-

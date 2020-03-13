@@ -2,14 +2,13 @@ package server
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
+	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
-	"no_homomorphism/pkg/logger"
-	"os"
-
-	"github.com/gorilla/mux"
-	"github.com/rs/cors"
 	"no_homomorphism/internal/pkg/middleware"
 	sessionRepo "no_homomorphism/internal/pkg/session/repository"
 	sessionUC "no_homomorphism/internal/pkg/session/usecase"
@@ -19,18 +18,21 @@ import (
 	userDelivery "no_homomorphism/internal/pkg/user/delivery"
 	userRepo "no_homomorphism/internal/pkg/user/repository"
 	userUC "no_homomorphism/internal/pkg/user/usecase"
+	"no_homomorphism/pkg/logger"
+	"os"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
+func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
 	sesRep := sessionRepo.NewSessionRepository()
-	userRep := userRepo.NewTestMemUserRepository()
+	//userRep := userRepo.NewTestMemUserRepository()
 	trackRep := trackRepo.NewTestTrackRepo()
+	dbRep := userRepo.NewTestDbUserRepository(db)
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,
 	}
 	UserUC := userUC.UserUseCase{
-		Repository: userRep,
+		Repository: dbRep,
 		AvatarDir:  "/static/img/avatar/",
 	}
 	TrackUC := trackUC.TrackUseCase{
@@ -53,6 +55,13 @@ func InitNewHandler(mainLogger *logger.MainLogger) (*userDelivery.Handler, *trac
 }
 
 func StartNew() {
+	connStr := "user=postgres password=postgres dbname=music_app" //TODO получать из конфига
+
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal("Failed to start db: " + err.Error())
+	}
+	defer db.Close()
 
 	r := mux.NewRouter()
 	c := cors.New(cors.Options{
@@ -74,7 +83,7 @@ func StartNew() {
 	}
 	defer f.Close()
 
-	handler, trackHandler, m := InitNewHandler(customLogger)
+	handler, trackHandler, m := InitNewHandler(customLogger, db)
 
 	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
 	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
@@ -89,9 +98,9 @@ func StartNew() {
 	fmt.Println("Starts server at 8081")
 
 	accessMiddleware := middleware.AccessLogMiddleware(authHandler, handler.Log)
-	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, handler.Log)
+	//panicMiddleware := middleware.PanicMiddleware(accessMiddleware, handler.Log)
 
-	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
+	err = http.ListenAndServe(":8081", c.Handler(accessMiddleware))
 	if err != nil {
 		log.Println(err)
 		return
