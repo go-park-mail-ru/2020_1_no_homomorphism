@@ -6,7 +6,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"no_homomorphism/internal/pkg/user"
+	users "no_homomorphism/internal/pkg/user"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,7 +16,7 @@ import (
 )
 
 type UserUseCase struct {
-	Repository user.Repository
+	Repository users.Repository
 	AvatarDir  string
 }
 

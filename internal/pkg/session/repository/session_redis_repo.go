@@ -2,7 +2,6 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -27,7 +26,7 @@ func (sr *SessionManager) Create(login string, expire time.Duration) (uuid.UUID,
 		return uuid.UUID{}, errors.New("failed to write key: " + err.Error())
 	}
 	if result != "OK" {
-		return uuid.UUID{}, fmt.Errorf("result not OK")
+		return uuid.UUID{}, errors.New("result not OK")
 	}
 	return newUUID, nil
 }

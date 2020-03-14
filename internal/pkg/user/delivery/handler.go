@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"no_homomorphism/internal/pkg/session"
-	"no_homomorphism/internal/pkg/user"
+	users "no_homomorphism/internal/pkg/user"
 
 	"no_homomorphism/pkg/logger"
 
@@ -17,7 +17,7 @@ import (
 
 type Handler struct {
 	SessionUC session.UseCase
-	UserUC    user.UseCase
+	UserUC    users.UseCase
 	Log       *logger.MainLogger
 }
 
