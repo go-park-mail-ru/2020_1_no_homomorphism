@@ -40,7 +40,7 @@ func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
-		userInBase, err := m.SessionUC.GetUserBySessionID(sid)
+		userInBase, err := m.SessionUC.GetUserBySessionID(sid) //todo get users from db
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
 			next.ServeHTTP(w, r.WithContext(ctx))

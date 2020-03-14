@@ -1,8 +1,8 @@
 package repository
 
 import (
+	"errors"
 	"github.com/jinzhu/gorm"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
 )
@@ -14,28 +14,40 @@ type User struct {
 	Name     string
 	Email    string
 	Sex      string
-	Image    string `sql:"null"`
+	Image    string
 }
 
 type DbUserRepository struct {
-	db *gorm.DB
+	db           *gorm.DB
+	defaultImage string
 }
 
-func NewTestDbUserRepository(database *gorm.DB) *DbUserRepository {
+func NewTestDbUserRepository(database *gorm.DB, defaultImage string) *DbUserRepository {
 	return &DbUserRepository{
-		db: database,
+		db:           database,
+		defaultImage: defaultImage,
 	}
 }
 
-func toDbUserWithHash(user *models.User, hash []byte) *User {
+func (ur *DbUserRepository) prepareDbUser(user *models.User) (*User, error) {
+	ok := IsModelFieldsNotEmpty(user)
+	if !ok {
+		return nil, errors.New("some input fields are empty")
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	if err != nil {
+		return nil, err
+	}
 	return &User{
 		Login:    user.Login,
 		Password: hash,
 		Name:     user.Name,
 		Email:    user.Email,
 		Sex:      user.Sex,
-	}
+		Image:    ur.defaultImage,
+	}, nil
 }
+
 func toModel(user *User) *models.User {
 	return &models.User{
 		Id:       string(user.Id),
@@ -49,11 +61,10 @@ func toModel(user *User) *models.User {
 }
 
 func (ur *DbUserRepository) Create(user *models.User) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	dbUser, err := ur.prepareDbUser(user)
 	if err != nil {
 		return err
 	}
-	dbUser := toDbUserWithHash(user, hash)
 	db := ur.db.Create(&dbUser)
 	err = db.Error
 	if err != nil {
@@ -63,13 +74,12 @@ func (ur *DbUserRepository) Create(user *models.User) error {
 }
 
 func (ur *DbUserRepository) Update(user *models.User, input *models.UserSettings) error {
-	dbUser := User{}
-	db := ur.db.Find(&dbUser)
+	var dbUser User
+	db := ur.db.Raw("SELECT * FROM users WHERE login=?", user.Login).Scan(&dbUser)
 	err := db.Error
 	if err != nil {
 		return err
 	}
-
 	if input.NewPassword != "" {
 		hash, err := bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
 		if err != nil {
@@ -79,8 +89,10 @@ func (ur *DbUserRepository) Update(user *models.User, input *models.UserSettings
 	}
 	dbUser.Name = input.Name
 	dbUser.Email = input.Email
-
 	db = ur.db.Save(&dbUser)
+	//if db.RowsAffected < 1 {
+	//	return errors.New("user is not modified")
+	//}
 	err = db.Error
 	if err != nil {
 		return err
@@ -88,27 +100,51 @@ func (ur *DbUserRepository) Update(user *models.User, input *models.UserSettings
 	return nil
 }
 
-func (ur *DbUserRepository) UpdateAvatar(user *models.User, filePath string) {
-	user.Image = filePath
+func (ur *DbUserRepository) UpdateAvatar(user *models.User, filePath string) error {
+	var dbUser User
+	db := ur.db.Raw("SELECT * FROM users WHERE login=?", user.Login).Scan(&dbUser)
+	err := db.Error
+	if err != nil {
+		return err
+	}
+	dbUser.Image = filePath
+
+	db = ur.db.Save(&dbUser)
+	err = db.Error
+	if err != nil {
+		return err //todo error wrapper
+	}
+	return nil
 }
 
 func (ur *DbUserRepository) GetUserByLogin(login string) (*models.User, error) {
-	dbUser := User{}
-	db := ur.db.Find(dbUser)
-	logrus.Info(dbUser)
+	var results User
+	db := ur.db.Raw("SELECT * FROM users WHERE login=?", login).Scan(&results)
 	err := db.Error
 	if err != nil {
-		logrus.Warn(err)
 		return nil, err
 	}
-	user := toModel(&dbUser)
-	logrus.Info(user)
-	return user, nil //todo errors
+	user := toModel(&results)
+	return user, nil
 }
 
-func (ur *DbUserRepository) PrintUserList() {
-	//fmt.Println("[USERS LIST]")
-	//for _, r := range ur.Users {
-	//	fmt.Println(r)
-	//}
+func (ur *DbUserRepository) CheckIfExists(login string, email string) (bool, error) {
+	var results User
+	db := ur.db.Raw("SELECT * FROM users WHERE login=? or email=?", login, email).Scan(&results)
+	err := db.Error
+	if err == gorm.ErrRecordNotFound {
+		return false, nil
+	}
+	if err != nil {
+		return true, err
+	}
+	return true, nil
+}
+
+func IsModelFieldsNotEmpty(user *models.User) bool {
+	return len(user.Login) > 0 &&
+		len(user.Password) > 0 &&
+		len(user.Name) > 0 &&
+		len(user.Email) > 0 &&
+		len(user.Sex) > 0
 }

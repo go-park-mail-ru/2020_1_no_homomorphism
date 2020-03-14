@@ -26,7 +26,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB) (*userDelivery.H
 	sesRep := sessionRepo.NewSessionRepository()
 	//userRep := userRepo.NewTestMemUserRepository()
 	trackRep := trackRepo.NewTestTrackRepo()
-	dbRep := userRepo.NewTestDbUserRepository(db)
+	dbRep := userRepo.NewTestDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,
@@ -98,9 +98,9 @@ func StartNew() {
 	fmt.Println("Starts server at 8081")
 
 	accessMiddleware := middleware.AccessLogMiddleware(authHandler, handler.Log)
-	//panicMiddleware := middleware.PanicMiddleware(accessMiddleware, handler.Log)
+	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, handler.Log)
 
-	err = http.ListenAndServe(":8081", c.Handler(accessMiddleware))
+	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
 	if err != nil {
 		log.Println(err)
 		return

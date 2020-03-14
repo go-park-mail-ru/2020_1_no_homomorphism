@@ -77,8 +77,9 @@ func (ur *MemUserRepository) Update(user *models.User, input *models.UserSetting
 	return nil
 }
 
-func (ur *MemUserRepository) UpdateAvatar(user *models.User, filePath string) {
+func (ur *MemUserRepository) UpdateAvatar(user *models.User, filePath string) error {
 	user.Image = filePath
+	return nil
 }
 
 func (ur *MemUserRepository) GetUserByLogin(login string) (*models.User, error) {

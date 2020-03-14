@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"no_homomorphism/internal/pkg/user"
@@ -27,19 +26,19 @@ var allowedContentType = []string{
 }
 
 func (uc *UserUseCase) Create(user *models.User) error {
-	_, ok := uc.GetUserByLogin(user.Login)
-	if ok == nil {
-		return errors.New("user with this login is already exists")// не только такая ошибка
+	//_, ok := uc.GetUserByLogin(user.Login)
+	ok, err := uc.Repository.CheckIfExists(user.Login, user.Email)
+	if ok {
+		return errors.New("user with this login or email is already exists")//todo сообщать отдельно о логине или\и почте
 	}
-	err := uc.Repository.Create(user)
-	uc.Repository.UpdateAvatar(user, uc.AvatarDir+"default.png")
+	err = uc.Repository.Create(user)
 	return err
 }
 
 func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) error {
 	//if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
 	//	return errors.New("old password is wrong")
-	//}
+	//} убрали проверку на пароль
 	return uc.Repository.Update(user, input)
 }
 
@@ -69,14 +68,13 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 
 	fileBody, err := file.Open()
 	if err != nil {
-		log.Println("can't read request body")
 		return "", errors.New("failed to read file body file")
 	}
 	defer fileBody.Close()
 
 	contentType, err := checkFileContentType(fileBody)
 	if err != nil {
-		log.Println("error while checking content type :", err)
+		//log.Println("error while checking content type:", err)
 		return "", err
 	}
 
@@ -85,13 +83,13 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		log.Println("failed to create file", err)
+		//log.Println("failed to create file", err)
 		return "", errors.New("failed to create file")
 	}
 	defer newFile.Close()
 	_, err = io.Copy(newFile, fileBody)
 	if err != nil {
-		log.Println("error while writing to file", err)
+		//log.Println("error while writing to file", err)
 		return "", errors.New("error while writing to file")
 	}
 	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+contentType))
