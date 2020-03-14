@@ -29,7 +29,7 @@ func (uc *UserUseCase) Create(user *models.User) error {
 	//_, ok := uc.GetUserByLogin(user.Login)
 	ok, err := uc.Repository.CheckIfExists(user.Login, user.Email)
 	if ok {
-		return errors.New("user with this login or email is already exists")//todo сообщать отдельно о логине или\и почте
+		return errors.New("user with this login or email is already exists") //todo сообщать отдельно о логине или\и почте
 	}
 	err = uc.Repository.Create(user)
 	return err
@@ -92,7 +92,10 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 		//log.Println("error while writing to file", err)
 		return "", errors.New("error while writing to file")
 	}
-	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+contentType))
+	err = uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+contentType))
+	if err != nil {
+		return "", err
+	}
 	return filePath, nil
 }
 

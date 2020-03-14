@@ -8,7 +8,7 @@ import (
 )
 
 type UseCase interface {
-	Create(user *models.User) *http.Cookie
+	Create(user *models.User) (*http.Cookie, error)
 	Delete(sessionID uuid.UUID) error
-	GetUserBySessionID(sessionID uuid.UUID) (*models.User, error)
+	GetLoginBySessionID(sessionID uuid.UUID) (string, error)
 }

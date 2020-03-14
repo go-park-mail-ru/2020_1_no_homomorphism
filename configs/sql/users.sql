@@ -12,11 +12,6 @@ CREATE TABLE users
 );
 
 
--- защитить бд фаерволом или паролем
--- prepared statement
--- max open connect
--- easy json, рефлексия
-
 -- 	Id       uint   `json:"id"`
 -- 	Password string `json:"password"`
 -- 	Name     string `json:"name"`

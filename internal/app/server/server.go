@@ -1,7 +1,9 @@
 package server
 
 import (
+	"flag"
 	"fmt"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
@@ -20,16 +22,18 @@ import (
 	userUC "no_homomorphism/internal/pkg/user/usecase"
 	"no_homomorphism/pkg/logger"
 	"os"
+	"time"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
-	sesRep := sessionRepo.NewSessionRepository()
+func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
+	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	//userRep := userRepo.NewTestMemUserRepository()
 	trackRep := trackRepo.NewTestTrackRepo()
 	dbRep := userRepo.NewTestDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,
+		ExpireTime: 24 * 31 * time.Hour,
 	}
 	UserUC := userUC.UserUseCase{
 		Repository: dbRep,
@@ -63,6 +67,8 @@ func StartNew() {
 	}
 	defer db.Close()
 
+	db.DB().SetMaxOpenConns(10)
+
 	r := mux.NewRouter()
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000"},
@@ -83,7 +89,14 @@ func StartNew() {
 	}
 	defer f.Close()
 
-	handler, trackHandler, m := InitNewHandler(customLogger, db)
+	redisAddr := flag.String("addr", "redis://user:@localhost:6379/0", "redis addr")
+
+	redisConn, err := redis.DialURL(*redisAddr)
+	if err != nil {
+		log.Fatalf("cant connect to redis")
+	}
+
+	handler, trackHandler, m := InitNewHandler(customLogger, db, redisConn)
 
 	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
 	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
