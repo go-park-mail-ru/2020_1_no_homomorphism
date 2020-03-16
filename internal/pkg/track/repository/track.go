@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"errors"
-
 	"no_homomorphism/internal/pkg/models"
 )
 
@@ -15,7 +13,7 @@ func NewTestTrackRepo() *TrackRepository {
 	return &TrackRepository{
 		Repository: []*models.Track{
 			{
-				Id:       12345,
+				Id:       "12345",
 				Name:     "Symphony 40",
 				Artist:   "Mozart",
 				Duration: 37,
@@ -23,7 +21,7 @@ func NewTestTrackRepo() *TrackRepository {
 				Link:     "https://d4.hotplayer.ru/download/4219e191e9078c11d1e7825344da42b8/287373405_456239023/12a221000968e-51fb57871d78-d722a1dfefb/HIS%20NAME%20IS%20-%20JOHN%20CENA%20%232.mp3",
 			},
 			{
-				Id:       12346,
+				Id:       "12346",
 				Name:     "New year dubstep minimix",
 				Artist:   "DJ Epoxxin",
 				Duration: 123,
@@ -31,7 +29,7 @@ func NewTestTrackRepo() *TrackRepository {
 				Link:     "https://s3-us-west-2.amazonaws.com/s.cdpn.io/9473/new_year_dubstep_minimix.ogg",
 			},
 			{
-				Id:       12347,
+				Id:       "12347",
 				Name:     "Thirteen Thirty Five",
 				Artist:   "Dillon",
 				Duration: 223,
@@ -39,7 +37,7 @@ func NewTestTrackRepo() *TrackRepository {
 				Link:     "http://beloweb.ru/audio/dillon_-_thirteen_thirtyfive_.mp3",
 			},
 			{
-				Id:       12348,
+				Id:       "12348",
 				Name:     "Пчела",
 				Artist:   "Пчеловод",
 				Duration: 170,
@@ -47,7 +45,7 @@ func NewTestTrackRepo() *TrackRepository {
 				Link:     "https://ns1.topzaycevs.ru/files/dl/rasa_-_Tii_pchela_ya_pchelovod.mp3",
 			},
 			{
-				Id:       12349,
+				Id:       "12349",
 				Name:     "Крокодил",
 				Artist:   "Стас",
 				Duration: 40,
@@ -55,7 +53,7 @@ func NewTestTrackRepo() *TrackRepository {
 				Link:     "http://cdn1.pesnigoo.ru/uploads/files/2018-10/jekstaz-krokodil_456242584.mp3",
 			},
 			{
-				Id:       12344,
+				Id:       "12344",
 				Name:     "Самый лучший эмо панк",
 				Artist:   "Пошлая Молли",
 				Duration: 208,
@@ -66,11 +64,11 @@ func NewTestTrackRepo() *TrackRepository {
 	}
 }
 
-func (tr *TrackRepository) GetTrackById(id uint) (*models.Track, error) {
-	for _, r := range tr.Repository {
-		if r.Id == id {
-			return r, nil
-		}
-	}
-	return nil, errors.New("track with this id does not exist")
-}
+//func (tr *TrackRepository) GetTrackById(id uint) (*models.Track, error) {
+//	for _, r := range tr.Repository {
+//		if r.Id == id {
+//			return r, nil
+//		}
+//	}
+//	return nil, errors.New("track with this id does not exist")
+//}
