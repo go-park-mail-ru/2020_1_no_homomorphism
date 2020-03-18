@@ -19,7 +19,7 @@ func NewRedisSessionManager(conn redis.Conn) *SessionManager {
 }
 
 func (sr *SessionManager) Create(login string, expire time.Duration) (uuid.UUID, error) {
-	newUUID := uuid.NewV4()
+	newUUID := uuid.NewV4()//todo replace uuid gen
 	mKey := "sessions:" + newUUID.String()
 	result, err := redis.String(sr.redisConn.Do("SET", mKey, login, "EX", int(expire.Seconds())))
 	if err != nil {

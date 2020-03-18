@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
+	github.com/alicebob/miniredis/v2 v2.11.4
 	github.com/go-test/deep v1.0.5
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
@@ -13,7 +14,6 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/selvatico/go-mocket v1.0.7
 	github.com/sevlyar/go-daemon v0.1.5
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.5.1
