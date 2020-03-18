@@ -30,7 +30,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn
 	//userRep := userRepo.NewTestMemUserRepository()
 	//trackRep := trackRepo.NewTestTrackRepo()
 	trackRep := trackRepo.NewDbTrackRepo(db)
-	dbRep := userRepo.NewTestDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
+	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,

@@ -45,19 +45,19 @@ func (tr *DbTrackRepository) GetTrackById(id uint) (*models.Track, error) {
 	return toModel(track), nil
 }
 
-func (tr *DbTrackRepository) GetArtistTracks(artistId uint) ([]*models.Track, error) {
-	var track []DbTrack
-	db := tr.db.Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE artist_id = ?", artistId).Scan(&track)
-	err := db.Error
-	if err != nil {
-		return nil, errors.New("query error: " + err.Error())
-	}
-	var tracks []*models.Track
-
-	rowsNum := db.RowsAffected
-	var i int64
-	for i = 0; i < rowsNum; i++ {
-		tracks = append(tracks, toModel(track[i]))
-	}
-	return tracks, nil
-}
+//func (tr *DbTrackRepository) GetArtistTracks(artistId uint) ([]*models.Track, error) {
+//	var track []DbTrack
+//	db := tr.db.Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE artist_id = ?", artistId).Scan(&track)
+//	err := db.Error
+//	if err != nil {
+//		return nil, errors.New("query error: " + err.Error())
+//	}
+//	var tracks []*models.Track
+//
+//	rowsNum := db.RowsAffected
+//	var i int64
+//	for i = 0; i < rowsNum; i++ {
+//		tracks = append(tracks, toModel(track[i]))
+//	}
+//	return tracks, nil
+//}

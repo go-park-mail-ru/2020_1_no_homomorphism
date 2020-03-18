@@ -31,7 +31,11 @@ func (uc *UserUseCase) Create(user *models.User) error {
 	if ok {
 		return errors.New("user with this login or email is already exists") //todo сообщать отдельно о логине или\и почте
 	}
-	err = uc.Repository.Create(user)
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	err = uc.Repository.Create(user, hash)
 	return err
 }
 
@@ -39,7 +43,15 @@ func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) err
 	//if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
 	//	return errors.New("old password is wrong")
 	//} убрали проверку на пароль
-	return uc.Repository.Update(user, input)
+	var hash []byte
+	if input.NewPassword != "" {
+		var err error
+		hash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
+	}
+	return uc.Repository.Update(user, input, hash)
 }
 
 func checkFileContentType(file multipart.File) (string, error) {
