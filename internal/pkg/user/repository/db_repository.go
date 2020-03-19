@@ -31,7 +31,7 @@ func NewDbUserRepository(database *gorm.DB, defaultImage string) *DbUserReposito
 
 func (ur *DbUserRepository) getUser(login string) (*User, error) {
 	var results User
-	db := ur.db.Raw("SELECT (id, login, password, name, email, sex, image) FROM users WHERE login=?", login).Scan(&results)
+	db := ur.db.Raw("SELECT id, login, password, name, email, sex, image FROM users WHERE login=?", login).Scan(&results)
 	err := db.Error
 	if err != nil {
 		return nil, err

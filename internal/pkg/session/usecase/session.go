@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"errors"
-	"net/http"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -12,39 +11,35 @@ import (
 
 type SessionUseCase struct {
 	Repository session.Repository
-	ExpireTime time.Duration
 }
 
-func (uc *SessionUseCase) Create(user *models.User) (*http.Cookie, error) {
-	sid, err := uc.Repository.Create(user.Login, uc.ExpireTime)
+func addPrefix(id uuid.UUID) string {
+	return "sessions:" + id.String()
+}
+
+func (uc *SessionUseCase) Create(user *models.User, expires time.Duration) (uuid.UUID, error) {
+	id := uuid.NewV4()
+	sId := addPrefix(id)
+	err := uc.Repository.Create(sId, user.Login, expires)
 	if err != nil {
-		return nil, err
+		return uuid.UUID{}, err
 	}
-	return &http.Cookie{
-		Name:     "session_id",
-		Value:    sid.String(),
-		HttpOnly: true,
-		Expires:  time.Now().Add(uc.ExpireTime),
-	}, nil
+	return id, nil
 }
 
 func (uc *SessionUseCase) Delete(sessionID uuid.UUID) error {
-	_, err := uc.Repository.GetLoginBySessionID(sessionID)
+	sId := addPrefix(sessionID)
+	_, err := uc.Repository.GetLoginBySessionID(sId)
 	if err != nil {
 		return errors.New("can't find session: " + sessionID.String() + " error:" + err.Error())
 	}
-	err = uc.Repository.Delete(sessionID)
+	err = uc.Repository.Delete(sId)
 	if err != nil {
 		return errors.New("can't delete session: " + sessionID.String() + " error:" + err.Error())
-
 	}
 	return nil
 }
 
 func (uc *SessionUseCase) GetLoginBySessionID(sessionID uuid.UUID) (string, error) {
-	return uc.Repository.GetLoginBySessionID(sessionID)
+	return uc.Repository.GetLoginBySessionID(addPrefix(sessionID))
 }
-
-// func (uc *SessionUseCase) PrintSessionList() {
-// 	uc.Repository.PrintSessionList()
-// }

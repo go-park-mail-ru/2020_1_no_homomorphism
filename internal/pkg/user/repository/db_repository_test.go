@@ -58,7 +58,7 @@ func TestInit(t *testing.T) {
 }
 
 func (s *Suite) getMockSelectAll(user *models.User, hash []byte) {
-	s.mock.ExpectQuery("SELECT").WithArgs(user.Login).
+	s.mock.ExpectQuery("SELECT id, login, password, name, email, sex, image FROM users WHERE login=?").WithArgs(user.Login).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "login", "password", "name", "sex", "image", "email"}).
 			AddRow(user.Id, user.Login, hash, user.Name, user.Sex, user.Image, user.Email))
 }

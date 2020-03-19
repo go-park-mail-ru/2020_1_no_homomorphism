@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	uuid "github.com/satori/go.uuid"
 )
 
 type SessionManager struct {
@@ -18,31 +17,27 @@ func NewRedisSessionManager(conn redis.Conn) *SessionManager {
 	}
 }
 
-func (sr *SessionManager) Create(login string, expire time.Duration) (uuid.UUID, error) {
-	newUUID := uuid.NewV4()//todo replace uuid gen
-	mKey := "sessions:" + newUUID.String()
-	result, err := redis.String(sr.redisConn.Do("SET", mKey, login, "EX", int(expire.Seconds())))
+func (sr *SessionManager) Create(sId string, login string, expire time.Duration) error {
+	result, err := redis.String(sr.redisConn.Do("SET", sId, login, "EX", int(expire.Seconds())))
 	if err != nil {
-		return uuid.UUID{}, errors.New("failed to write key: " + err.Error())
+		return errors.New("failed to write key: " + err.Error())
 	}
 	if result != "OK" {
-		return uuid.UUID{}, errors.New("result not OK")
+		return errors.New("result not OK")
 	}
-	return newUUID, nil
+	return nil
 }
 
-func (sr *SessionManager) Delete(sessionID uuid.UUID) error {
-	mKey := "sessions:" + sessionID.String()
-	_, err := redis.Int(sr.redisConn.Do("DEL", mKey))
+func (sr *SessionManager) Delete(sId string) error {
+	_, err := redis.Int(sr.redisConn.Do("DEL", sId))
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (sr *SessionManager) GetLoginBySessionID(sessionID uuid.UUID) (string, error) {
-	mKey := "sessions:" + sessionID.String()
-	data, err := redis.String(sr.redisConn.Do("GET", mKey))
+func (sr *SessionManager) GetLoginBySessionID(sId string) (string, error) {
+	data, err := redis.String(sr.redisConn.Do("GET", sId))
 	if err != nil {
 		return "", errors.New("cant get data: " + err.Error())
 	}

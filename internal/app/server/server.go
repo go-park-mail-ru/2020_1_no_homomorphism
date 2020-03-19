@@ -12,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"no_homomorphism/internal/pkg/middleware"
+	sessionDelivery "no_homomorphism/internal/pkg/session/delivery"
 	sessionRepo "no_homomorphism/internal/pkg/session/repository"
 	sessionUC "no_homomorphism/internal/pkg/session/usecase"
 	trackDelivery "no_homomorphism/internal/pkg/track/delivery"
@@ -32,6 +33,10 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,
+	}
+
+	SessionDelivery := sessionDelivery.SessionDelivery{
+		UseCase:    &SessionUC,
 		ExpireTime: 24 * 31 * time.Hour,
 	}
 	UserUC := userUC.UserUseCase{
@@ -43,16 +48,16 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn
 	}
 
 	h := &userDelivery.Handler{
-		SessionUC: &SessionUC,
-		UserUC:    &UserUC,
-		Log:       mainLogger,
+		SessionDelivery: &SessionDelivery,
+		UserUC:          &UserUC,
+		Log:             mainLogger,
 	}
 
 	trackHandler := &trackDelivery.TrackHandler{
 		TrackUC: &TrackUC,
 		Log:     mainLogger,
 	}
-	m := middleware.NewMiddleware(&SessionUC, &UserUC, &TrackUC)
+	m := middleware.NewMiddleware(&SessionDelivery, &UserUC, &TrackUC)
 
 	return h, trackHandler, m
 }

@@ -11,16 +11,16 @@ import (
 )
 
 type Middleware struct {
-	SessionUC session.UseCase
-	UserUC    user.UseCase
-	TrackUC   track.UseCase
+	SessionDelivery session.Delivery
+	UserUC          user.UseCase
+	TrackUC         track.UseCase
 }
 
-func NewMiddleware(suc session.UseCase, uuc user.UseCase, tuc track.UseCase) *Middleware {
+func NewMiddleware(sd session.Delivery, uuc user.UseCase, tuc track.UseCase) *Middleware {
 	return &Middleware{
-		SessionUC: suc,
-		UserUC:    uuc,
-		TrackUC:   tuc,
+		SessionDelivery: sd,
+		UserUC:          uuc,
+		TrackUC:         tuc,
 	}
 }
 
@@ -40,7 +40,7 @@ func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler {//todo
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
-		userLogin, err := m.SessionUC.GetLoginBySessionID(sid)
+		userLogin, err := m.SessionDelivery.GetLoginBySessionID(sid)
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
 			next.ServeHTTP(w, r.WithContext(ctx))
