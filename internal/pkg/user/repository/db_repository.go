@@ -91,9 +91,6 @@ func (ur *DbUserRepository) Update(user *models.User, input *models.UserSettings
 	dbUser.Name = input.Name
 	dbUser.Email = input.Email
 	db := ur.db.Save(&dbUser)
-	//if db.RowsAffected < 1 {
-	//	return errors.New("user is not modified")
-	//}
 	err = db.Error
 	if err != nil {
 		return err
