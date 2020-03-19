@@ -27,8 +27,6 @@ import (
 
 func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
 	sesRep := sessionRepo.NewRedisSessionManager(redis)
-	//userRep := userRepo.NewTestMemUserRepository()
-	//trackRep := trackRepo.NewTestTrackRepo()
 	trackRep := trackRepo.NewDbTrackRepo(db)
 	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
 
