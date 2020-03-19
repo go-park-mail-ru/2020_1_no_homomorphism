@@ -12,8 +12,6 @@ import (
 	"testing"
 )
 
-// go test -coverprofile=cover.out && go tool cover -html=cover.out -o cover.html
-
 type Suite struct {
 	suite.Suite
 	DB   *gorm.DB

@@ -26,7 +26,6 @@ var allowedContentType = []string{
 }
 
 func (uc *UserUseCase) Create(user *models.User) error {
-	//_, ok := uc.GetUserByLogin(user.Login)
 	ok, err := uc.Repository.CheckIfExists(user.Login, user.Email)
 	if ok {
 		return errors.New("user with this login or email is already exists") //todo сообщать отдельно о логине или\и почте
@@ -40,9 +39,6 @@ func (uc *UserUseCase) Create(user *models.User) error {
 }
 
 func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) error {
-	//if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-	//	return errors.New("old password is wrong")
-	//} убрали проверку на пароль
 	var hash []byte
 	if input.NewPassword != "" {
 		var err error
@@ -86,7 +82,6 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 
 	contentType, err := checkFileContentType(fileBody)
 	if err != nil {
-		//log.Println("error while checking content type:", err)
 		return "", err
 	}
 
@@ -95,13 +90,11 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		//log.Println("failed to create file", err)
 		return "", errors.New("failed to create file")
 	}
 	defer newFile.Close()
 	_, err = io.Copy(newFile, fileBody)
 	if err != nil {
-		//log.Println("error while writing to file", err)
 		return "", errors.New("error while writing to file")
 	}
 	err = uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+contentType))
