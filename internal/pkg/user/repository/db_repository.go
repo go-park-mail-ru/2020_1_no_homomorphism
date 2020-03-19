@@ -8,13 +8,13 @@ import (
 )
 
 type User struct {
-	Id       uint64 `sql:"AUTO_INCREMENT"`
-	Login    string
-	Password []byte
-	Name     string
-	Email    string
-	Sex      string
-	Image    string
+	Id       uint64 `sql:"AUTO_INCREMENT" gorm:"column:id"`
+	Login    string `gorm:"column:login"`
+	Password []byte `gorm:"column:password"`
+	Name     string `gorm:"column:name"`
+	Email    string `gorm:"column:email"`
+	Sex      string `gorm:"column:sex"`
+	Image    string `gorm:"column:image"`
 }
 
 type DbUserRepository struct {
@@ -31,7 +31,7 @@ func NewDbUserRepository(database *gorm.DB, defaultImage string) *DbUserReposito
 
 func (ur *DbUserRepository) getUser(login string) (*User, error) {
 	var results User
-	db := ur.db.Raw("SELECT * FROM users WHERE login=?", login).Scan(&results)
+	db := ur.db.Raw("SELECT (id, login, password, name, email, sex, image) FROM users WHERE login=?", login).Scan(&results)
 	err := db.Error
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (ur *DbUserRepository) GetUserByLogin(login string) (*models.User, error) {
 
 func (ur *DbUserRepository) CheckIfExists(login string, email string) (bool, error) {
 	var results User
-	db := ur.db.Raw("SELECT * FROM users WHERE login=? or email=?", login, email).Scan(&results)
+	db := ur.db.Raw("SELECT id FROM users WHERE login=? or email=?", login, email).Scan(&results)
 	err := db.Error
 	if err == gorm.ErrRecordNotFound {
 		return false, nil
