@@ -15,7 +15,6 @@ type Suite struct {
 	suite.Suite
 	redisServer *miniredis.Miniredis
 	session     *SessionManager
-	keyPrefix   string
 }
 
 func (s *Suite) SetupSuite() {
@@ -25,7 +24,6 @@ func (s *Suite) SetupSuite() {
 
 	conn, err := redis.Dial("tcp", s.redisServer.Addr())
 	s.session = NewRedisSessionManager(conn)
-	s.keyPrefix = "sessions:"
 }
 
 //Need to restore connection after each func with closed connection testing
@@ -44,10 +42,12 @@ func TestSessions(t *testing.T) {
 func (s *Suite) TestCreate() {
 	login := "test_login"
 	expire := time.Hour * 8
-	sId, err := s.session.Create(login, expire)
+	sId := uuid.NewV4()
+
+	err := s.session.Create(sId.String(), login, expire)
 	require.NoError(s.T(), err)
 
-	value, err := s.redisServer.Get(s.keyPrefix + sId.String())
+	value, err := s.redisServer.Get(sId.String())
 	require.NoError(s.T(), err)
 
 	require.Equal(s.T(), value, login)
@@ -55,48 +55,48 @@ func (s *Suite) TestCreate() {
 	//test TTL
 	s.redisServer.FastForward(expire)
 
-	_, err = s.redisServer.Get(s.keyPrefix + sId.String())
+	_, err = s.redisServer.Get(sId.String())
 	require.Equal(s.T(), err, errors.New("ERR no such key"))
 
 	//test on closed connection
 	s.redisServer.Close()
 
-	_, err = s.session.Create(login, expire)
+	err = s.session.Create(sId.String(), login, expire)
 	require.Error(s.T(), err)
 }
 
 func (s *Suite) TestDelete() {
 	sId := uuid.NewV4()
 	testValue := "test_value"
-	require.NoError(s.T(), s.redisServer.Set(s.keyPrefix+sId.String(), testValue))
+	require.NoError(s.T(), s.redisServer.Set(sId.String(), testValue))
 
-	value, err := s.redisServer.Get(s.keyPrefix + sId.String())
+	value, err := s.redisServer.Get(sId.String())
 	require.Equal(s.T(), value, testValue)
 
-	require.NoError(s.T(), s.session.Delete(sId))
+	require.NoError(s.T(), s.session.Delete(sId.String()))
 
-	value, err = s.redisServer.Get(s.keyPrefix + sId.String())
+	value, err = s.redisServer.Get(sId.String())
 	require.Equal(s.T(), err, errors.New("ERR no such key"))
 
 	//test on closed connection
 	id := uuid.NewV4()
 
 	s.redisServer.Close()
-	require.Error(s.T(), s.session.Delete(id))
+	require.Error(s.T(), s.session.Delete(id.String()))
 }
 
 func (s *Suite) TestGetLoginBySessionID() {
 	sId := uuid.NewV4()
 	testValue := "test_value"
-	require.NoError(s.T(), s.redisServer.Set(s.keyPrefix+sId.String(), testValue))
+	require.NoError(s.T(), s.redisServer.Set(sId.String(), testValue))
 
-	val, err := s.session.GetLoginBySessionID(sId)
+	val, err := s.session.GetLoginBySessionID(sId.String())
 	require.NoError(s.T(), err)
 	require.Equal(s.T(), testValue, val)
 
 	//test on closed connection
 	s.redisServer.Close()
 
-	_, err = s.session.GetLoginBySessionID(sId)
+	_, err = s.session.GetLoginBySessionID(sId.String())
 	require.Error(s.T(), err)
 }

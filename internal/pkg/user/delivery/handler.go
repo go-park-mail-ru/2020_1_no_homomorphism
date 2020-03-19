@@ -16,9 +16,9 @@ import (
 )
 
 type Handler struct {
-	SessionUC session.UseCase
-	UserUC    users.UseCase
-	Log       *logger.MainLogger
+	SessionDelivery session.Delivery
+	UserUC          users.UseCase
+	Log             *logger.MainLogger
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +62,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	cookie, err := h.SessionUC.Create(user)
+	cookie, err := h.SessionDelivery.Create(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create session: "+err.Error())
@@ -97,7 +97,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		h.Log.HttpInfo(r.Context(), "Login: wrong password", http.StatusBadRequest)
 		return
 	}
-	cookie, err := h.SessionUC.Create(user)
+	cookie, err := h.SessionDelivery.Create(user)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create session: "+err.Error())
@@ -126,7 +126,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = h.SessionUC.Delete(sid)
+	err = h.SessionDelivery.Delete(sid)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "can't delete session:"+err.Error(), http.StatusInternalServerError)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -166,7 +166,6 @@ func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := r.Context().Value("user").(*models.User)
-
 	profile := h.UserUC.GetProfileByUser(user)
 
 	h.marshallAndWriteProfile(w, r.Context(), profile)
