@@ -24,7 +24,7 @@ func NewMiddleware(suc session.UseCase, uuc user.UseCase, tuc track.UseCase) *Mi
 	}
 }
 
-func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler {
+func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler {//todo write logs
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		ctx := r.Context()
@@ -40,14 +40,20 @@ func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
-		userInBase, err := m.SessionUC.GetUserBySessionID(sid)
+		userLogin, err := m.SessionUC.GetLoginBySessionID(sid)
+		if err != nil {
+			ctx = context.WithValue(ctx, "isAuth", false)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+		profile, err := m.UserUC.GetUserByLogin(userLogin)
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 		ctx = context.WithValue(ctx, "isAuth", true)
-		ctx = context.WithValue(ctx, "user", userInBase)
+		ctx = context.WithValue(ctx, "user", profile)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

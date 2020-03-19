@@ -4,13 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
-	"no_homomorphism/internal/pkg/user"
+	users "no_homomorphism/internal/pkg/user"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -18,7 +16,7 @@ import (
 )
 
 type UserUseCase struct {
-	Repository user.Repository
+	Repository users.Repository
 	AvatarDir  string
 }
 
@@ -28,20 +26,28 @@ var allowedContentType = []string{
 }
 
 func (uc *UserUseCase) Create(user *models.User) error {
-	_, ok := uc.GetUserByLogin(user.Login)
-	if ok == nil {
-		return errors.New("user with this login is already exists")
+	ok, err := uc.Repository.CheckIfExists(user.Login, user.Email)
+	if ok {
+		return errors.New("user with this login or email is already exists") //todo сообщать отдельно о логине или\и почте
 	}
-	err := uc.Repository.Create(user)
-	uc.Repository.UpdateAvatar(user, uc.AvatarDir+"default.png")
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	if err != nil {
+		return err
+	}
+	err = uc.Repository.Create(user, hash)
 	return err
 }
 
 func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) error {
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
-		return errors.New("old password is wrong")
+	var hash []byte
+	if input.NewPassword != "" {
+		var err error
+		hash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
+		if err != nil {
+			return err
+		}
 	}
-	return uc.Repository.Update(user, input)
+	return uc.Repository.Update(user, input, hash)
 }
 
 func checkFileContentType(file multipart.File) (string, error) {
@@ -70,32 +76,31 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 
 	fileBody, err := file.Open()
 	if err != nil {
-		log.Println("can't read request body")
 		return "", errors.New("failed to read file body file")
 	}
 	defer fileBody.Close()
 
 	contentType, err := checkFileContentType(fileBody)
 	if err != nil {
-		log.Println("error while checking content type :", err)
 		return "", err
 	}
 
-	fileName := strconv.Itoa(int(user.Id)) //todo good names for avatars
-	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName + "." + contentType)
+	fileName := user.Id //todo good names for avatars
+	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName+"."+contentType)
 	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
-		log.Println("failed to create file", err)
 		return "", errors.New("failed to create file")
 	}
 	defer newFile.Close()
 	_, err = io.Copy(newFile, fileBody)
 	if err != nil {
-		log.Println("error while writing to file", err)
 		return "", errors.New("error while writing to file")
 	}
-	uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName + "." + contentType))
+	err = uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+contentType))
+	if err != nil {
+		return "", err
+	}
 	return filePath, nil
 }
 
@@ -135,4 +140,3 @@ func (uc *UserUseCase) CheckUserPassword(user *models.User, password string) err
 	}
 	return nil
 }
-

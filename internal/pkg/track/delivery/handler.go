@@ -7,11 +7,11 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"no_homomorphism/internal/pkg/track"
+	tracks "no_homomorphism/internal/pkg/track"
 )
 
 type TrackHandler struct {
-	TrackUC track.UseCase
+	TrackUC tracks.UseCase
 	Log     *logger.MainLogger
 }
 

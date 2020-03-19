@@ -12,29 +12,37 @@ import (
 
 type SessionUseCase struct {
 	Repository session.Repository
+	ExpireTime time.Duration
 }
 
-func (uc *SessionUseCase) Create(user *models.User) *http.Cookie {
-	sid := uc.Repository.Create(user)
+func (uc *SessionUseCase) Create(user *models.User) (*http.Cookie, error) {
+	sid, err := uc.Repository.Create(user.Login, uc.ExpireTime)
+	if err != nil {
+		return nil, err
+	}
 	return &http.Cookie{
 		Name:     "session_id",
 		Value:    sid.String(),
 		HttpOnly: true,
-		Expires:  time.Now().Add(24*31 * time.Hour),
-	}
+		Expires:  time.Now().Add(uc.ExpireTime),
+	}, nil
 }
 
 func (uc *SessionUseCase) Delete(sessionID uuid.UUID) error {
-	_, err := uc.Repository.GetUserBySessionID(sessionID)
+	_, err := uc.Repository.GetLoginBySessionID(sessionID)
 	if err != nil {
-		return errors.New("can't delete session because it does not exists : " + sessionID.String())
+		return errors.New("can't find session: " + sessionID.String() + " error:" + err.Error())
 	}
-	uc.Repository.Delete(sessionID)
+	err = uc.Repository.Delete(sessionID)
+	if err != nil {
+		return errors.New("can't delete session: " + sessionID.String() + " error:" + err.Error())
+
+	}
 	return nil
 }
 
-func (uc *SessionUseCase) GetUserBySessionID(sessionID uuid.UUID) (*models.User, error) {
-	return uc.Repository.GetUserBySessionID(sessionID)
+func (uc *SessionUseCase) GetLoginBySessionID(sessionID uuid.UUID) (string, error) {
+	return uc.Repository.GetLoginBySessionID(sessionID)
 }
 
 // func (uc *SessionUseCase) PrintSessionList() {

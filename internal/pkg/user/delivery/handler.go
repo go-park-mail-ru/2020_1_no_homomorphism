@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"no_homomorphism/internal/pkg/session"
-	"no_homomorphism/internal/pkg/user"
+	users "no_homomorphism/internal/pkg/user"
 
 	"no_homomorphism/pkg/logger"
 
@@ -17,7 +17,7 @@ import (
 
 type Handler struct {
 	SessionUC session.UseCase
-	UserUC    user.UseCase
+	UserUC    users.UseCase
 	Log       *logger.MainLogger
 }
 
@@ -62,7 +62,12 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	cookie := h.SessionUC.Create(user)
+	cookie, err := h.SessionUC.Create(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create session: "+err.Error())
+		return
+	}
 
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
@@ -92,7 +97,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		h.Log.HttpInfo(r.Context(), "Login: wrong password", http.StatusBadRequest)
 		return
 	}
-	cookie := h.SessionUC.Create(user)
+	cookie, err := h.SessionUC.Create(user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create session: "+err.Error())
+		return
+	}
 
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)

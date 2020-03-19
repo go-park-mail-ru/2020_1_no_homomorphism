@@ -1,15 +1,16 @@
 package server
 
 import (
+	"flag"
 	"fmt"
+	"github.com/gomodule/redigo/redis"
+	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
+	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
-	"no_homomorphism/pkg/logger"
-	"os"
-
-	"github.com/gorilla/mux"
-	"github.com/rs/cors"
 	"no_homomorphism/internal/pkg/middleware"
 	sessionRepo "no_homomorphism/internal/pkg/session/repository"
 	sessionUC "no_homomorphism/internal/pkg/session/usecase"
@@ -19,18 +20,22 @@ import (
 	userDelivery "no_homomorphism/internal/pkg/user/delivery"
 	userRepo "no_homomorphism/internal/pkg/user/repository"
 	userUC "no_homomorphism/internal/pkg/user/usecase"
+	"no_homomorphism/pkg/logger"
+	"os"
+	"time"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
-	sesRep := sessionRepo.NewSessionRepository()
-	userRep := userRepo.NewTestMemUserRepository()
-	trackRep := trackRepo.NewTestTrackRepo()
+func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
+	sesRep := sessionRepo.NewRedisSessionManager(redis)
+	trackRep := trackRepo.NewDbTrackRepo(db)
+	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,
+		ExpireTime: 24 * 31 * time.Hour,
 	}
 	UserUC := userUC.UserUseCase{
-		Repository: userRep,
+		Repository: dbRep,
 		AvatarDir:  "/static/img/avatar/",
 	}
 	TrackUC := trackUC.TrackUseCase{
@@ -53,6 +58,15 @@ func InitNewHandler(mainLogger *logger.MainLogger) (*userDelivery.Handler, *trac
 }
 
 func StartNew() {
+	connStr := "user=postgres password=postgres dbname=music_app" //TODO получать из конфига
+
+	db, err := gorm.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal("Failed to start db: " + err.Error())
+	}
+	defer db.Close()
+
+	db.DB().SetMaxOpenConns(10)
 
 	r := mux.NewRouter()
 	c := cors.New(cors.Options{
@@ -74,7 +88,14 @@ func StartNew() {
 	}
 	defer f.Close()
 
-	handler, trackHandler, m := InitNewHandler(customLogger)
+	redisAddr := flag.String("addr", "redis://user:@localhost:6379/0", "redis addr")
+
+	redisConn, err := redis.DialURL(*redisAddr)
+	if err != nil {
+		log.Fatalf("cant connect to redis")
+	}
+
+	handler, trackHandler, m := InitNewHandler(customLogger, db, redisConn)
 
 	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
 	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
