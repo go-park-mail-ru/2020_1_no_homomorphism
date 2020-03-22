@@ -4,15 +4,12 @@ DROP TABLE IF EXISTS playlist_tracks CASCADE;
 DROP VIEW IF EXISTS tracks_in_playlist CASCADE;
 DROP VIEW IF EXISTS user_albums CASCADE;
 DROP VIEW IF EXISTS user_artists CASCADE;
-
-
-
-
-
--- 	Id       uint   `json:"id"`
--- 	Password string `json:"password"`
--- 	Name     string `json:"name"`
--- 	Login    string `json:"login"`
--- 	Sex      string `json:"sex"`
--- 	Image    string `json:"image"`
--- 	Email    string `json:"email"`
+DROP TABLE IF EXISTS tracks CASCADE;
+DROP TABLE IF EXISTS albums CASCADE;
+DROP TABLE IF EXISTS artists CASCADE;
+DROP TABLE IF EXISTS liked_artists CASCADE;
+DROP TABLE IF EXISTS liked_albums CASCADE;
+DROP VIEW IF EXISTS track_with_artist CASCADE;
+DROP TABLE IF EXISTS artist_tracks CASCADE;
+DROP TABLE IF EXISTS album_tracks CASCADE;
+DROP VIEW IF EXISTS full_track_info CASCADE;
