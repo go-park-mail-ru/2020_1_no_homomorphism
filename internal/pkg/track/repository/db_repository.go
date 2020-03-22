@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"github.com/jinzhu/gorm"
 	"no_homomorphism/internal/pkg/models"
 )
@@ -35,7 +36,7 @@ func toModel(dbTrack DbTrack) *models.Track {
 	}
 }
 
-func (tr *DbTrackRepository) GetTrackById(id uint) (*models.Track, error) {
+func (tr *DbTrackRepository) GetTrackById(id uint64) (*models.Track, error) {
 	var track DbTrack
 	db := tr.db.Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE track_id = ?", id).Scan(&track)
 	err := db.Error
@@ -45,7 +46,7 @@ func (tr *DbTrackRepository) GetTrackById(id uint) (*models.Track, error) {
 	return toModel(track), nil
 }
 
-func (tr *DbTrackRepository) GetArtistTracks(artistId uint) ([]*models.Track, error) {
+func (tr *DbTrackRepository) GetArtistTracks(artistId uint64) ([]*models.Track, error) {
 	var track []DbTrack
 	db := tr.db.Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE artist_id = ?", artistId).Scan(&track)
 	err := db.Error
@@ -60,4 +61,20 @@ func (tr *DbTrackRepository) GetArtistTracks(artistId uint) ([]*models.Track, er
 		tracks = append(tracks, toModel(track[i]))
 	}
 	return tracks, nil
+}
+
+func (tr *DbTrackRepository) GetPlaylistTracks(plId uint64) ([]*models.Track, error) {
+	var tracks []DbTrack
+	db := tr.db.Raw("SELECT track_id, track_name, artist_name, duration, link FROM tracks_in_playlist WHERE playlist_id = ?", plId).
+		Scan(&tracks)
+	err := db.Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to select query: %e", err)
+	}
+	modTracks := make([]*models.Track, db.RowsAffected)
+
+	for i, elem := range tracks {
+		modTracks[i] = toModel(elem)
+	}
+	return modTracks, nil
 }

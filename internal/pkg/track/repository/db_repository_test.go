@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
@@ -48,7 +49,8 @@ func (s *Suite) TestGetTrackByID() {
 	name := "test-name"
 	artist := "artist-name"
 	link := "test_link"
-	var id, duration uint
+	var id uint64
+	var duration uint
 	duration = 123
 	id = 12345
 
@@ -67,4 +69,57 @@ func (s *Suite) TestGetTrackByID() {
 		Duration: duration,
 		Link:     link,
 	}, res))
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WithArgs(id).WillReturnError(dbError)
+
+	_, err = s.repository.GetTrackById(id)
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestGetPlaylistTracks() {
+	var id, id2 uint64
+	id = 12345
+	id2 = 4532
+
+	tr1 := &models.Track{
+		Id:       fmt.Sprint(id),
+		Name:     "test-name",
+		Artist:   "artist-name",
+		Duration: 123,
+		Link:     "test_link1",
+	}
+	tr2 := &models.Track{
+		Id:       fmt.Sprint(id2),
+		Name:     "test-namqweqwee",
+		Artist:   "artist-name",
+		Duration: 5235,
+		Link:     "test_link2",
+	}
+
+	trs := []*models.Track{tr1, tr2}
+
+	s.mock.ExpectQuery("SELECT track_id, track_name, artist_name, duration, link FROM tracks_in_playlist WHERE playlist_id = ?").
+		WithArgs(id).
+		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link"}).
+			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link).AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link))
+
+	res, err := s.repository.GetPlaylistTracks(id)
+
+	require.NoError(s.T(), err)
+	for i, elem := range res {
+		require.Nil(s.T(), deep.Equal(trs[i], elem))
+	}
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WithArgs(id).WillReturnError(dbError)
+
+	_, err = s.repository.GetPlaylistTracks(id)
+
+	require.Error(s.T(), err)
 }
