@@ -33,11 +33,13 @@ func toModel(pl *Playlists) *models.Playlist {
 
 func (pr *DbPlaylistRepository) GetUserPlaylists(uId uint64) ([]*models.Playlist, error) {
 	var dbPlaylists []Playlists
+
 	db := pr.db.Where("user_ID = ?", uId).Find(&dbPlaylists)
 	err := db.Error
 	if err != nil {
 		return nil, err
 	}
+
 	var playlists []*models.Playlist
 
 	for _, elem := range dbPlaylists {
@@ -48,6 +50,7 @@ func (pr *DbPlaylistRepository) GetUserPlaylists(uId uint64) ([]*models.Playlist
 
 func (pr *DbPlaylistRepository) GetPlaylistById(pId uint64) (*models.Playlist, error) {
 	var dbPlaylists Playlists
+
 	db := pr.db.Where("id = ?", pId).First(&dbPlaylists)
 	err := db.Error
 	if err != nil {
