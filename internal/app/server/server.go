@@ -12,6 +12,9 @@ import (
 	"log"
 	"net/http"
 	"no_homomorphism/internal/pkg/middleware"
+	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
+	playlistRepo "no_homomorphism/internal/pkg/playlist/repository"
+	playlistUC "no_homomorphism/internal/pkg/playlist/usecase"
 	sessionDelivery "no_homomorphism/internal/pkg/session/delivery"
 	sessionRepo "no_homomorphism/internal/pkg/session/repository"
 	sessionUC "no_homomorphism/internal/pkg/session/usecase"
@@ -26,10 +29,20 @@ import (
 	"time"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn) (*userDelivery.Handler, *trackDelivery.TrackHandler, *middleware.Middleware) {
+func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn) (
+	*userDelivery.Handler,
+	*trackDelivery.TrackHandler,
+	*playlistDelivery.PlaylistHandler,
+	*middleware.Middleware) {
 	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	trackRep := trackRepo.NewDbTrackRepo(db)
+	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
+
+	PlaylistUC := playlistUC.PlaylistUseCase{
+		PlRepository:    playlistRep,
+		TrackRepository: trackRep,
+	}
 
 	SessionUC := sessionUC.SessionUseCase{
 		Repository: sesRep,
@@ -47,6 +60,11 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn
 		Repository: trackRep,
 	}
 
+	playlistHandler := &playlistDelivery.PlaylistHandler{
+		PlaylistUC: &PlaylistUC,
+		Log:        mainLogger,
+	}
+
 	h := &userDelivery.Handler{
 		SessionDelivery: &SessionDelivery,
 		UserUC:          &UserUC,
@@ -57,9 +75,10 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn
 		TrackUC: &TrackUC,
 		Log:     mainLogger,
 	}
-	m := middleware.NewMiddleware(&SessionDelivery, &UserUC, &TrackUC)
 
-	return h, trackHandler, m
+	m := middleware.NewMiddleware(&SessionDelivery, &UserUC, &TrackUC, &PlaylistUC)
+
+	return h, trackHandler, playlistHandler, m
 }
 
 func StartNew() {
@@ -100,22 +119,24 @@ func StartNew() {
 		log.Fatalf("cant connect to redis")
 	}
 
-	handler, trackHandler, m := InitNewHandler(customLogger, db, redisConn)
+	user, track, playlist, m := InitNewHandler(customLogger, db, redisConn)
 
-	r.HandleFunc("/profile/settings", handler.Update).Methods("PUT")
-	r.HandleFunc("/profile/me", handler.SelfProfile).Methods("GET")
-	r.HandleFunc("/profiles/{profile}", handler.Profile)
-	r.HandleFunc("/image", handler.UpdateAvatar).Methods("POST")
-	r.HandleFunc("/user", handler.CheckAuth)
-	r.HandleFunc("/signup", handler.Create).Methods("POST")
-	r.HandleFunc("/login", handler.Login).Methods("POST")
-	r.HandleFunc("/logout", handler.Logout).Methods("DELETE")
-	r.HandleFunc("/track/{id:[0-9]+}", trackHandler.GetTrack).Methods("GET")
+	r.HandleFunc("/profile/settings", user.Update).Methods("PUT")
+	r.HandleFunc("/profile/me", user.SelfProfile).Methods("GET")
+	r.HandleFunc("/profile/playlists", playlist.GetUserPlaylists).Methods("GET")
+	r.HandleFunc("/playlists/{id:[0-9]+}", playlist.GetPlaylistTracks).Methods("GET")
+	r.HandleFunc("/profiles/{profile}", user.Profile)
+	r.HandleFunc("/image", user.UpdateAvatar).Methods("POST")
+	r.HandleFunc("/user", user.CheckAuth)
+	r.HandleFunc("/signup", user.Create).Methods("POST")
+	r.HandleFunc("/login", user.Login).Methods("POST")
+	r.HandleFunc("/logout", user.Logout).Methods("DELETE")
+	r.HandleFunc("/track/{id:[0-9]+}", track.GetTrack).Methods("GET")
 	authHandler := m.CheckAuthMiddleware(r)
 	fmt.Println("Starts server at 8081")
 
-	accessMiddleware := middleware.AccessLogMiddleware(authHandler, handler.Log)
-	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, handler.Log)
+	accessMiddleware := middleware.AccessLogMiddleware(authHandler, user.Log)
+	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, user.Log)
 
 	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
 	if err != nil {

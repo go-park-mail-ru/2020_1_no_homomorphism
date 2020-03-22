@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"no_homomorphism/internal/pkg/playlist"
 
 	uuid "github.com/satori/go.uuid"
 	"no_homomorphism/internal/pkg/session"
@@ -14,17 +15,19 @@ type Middleware struct {
 	SessionDelivery session.Delivery
 	UserUC          user.UseCase
 	TrackUC         track.UseCase
+	PlaylistUC      playlist.UseCase
 }
 
-func NewMiddleware(sd session.Delivery, uuc user.UseCase, tuc track.UseCase) *Middleware {
+func NewMiddleware(sd session.Delivery, uuc user.UseCase, tuc track.UseCase, puc playlist.UseCase) *Middleware {
 	return &Middleware{
 		SessionDelivery: sd,
 		UserUC:          uuc,
 		TrackUC:         tuc,
+		PlaylistUC:      puc,
 	}
 }
 
-func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler {//todo write logs
+func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler { //todo write logs
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		ctx := r.Context()
