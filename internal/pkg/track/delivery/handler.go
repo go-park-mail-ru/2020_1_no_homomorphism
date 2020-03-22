@@ -2,12 +2,10 @@ package delivery
 
 import (
 	"encoding/json"
-	"net/http"
-	"no_homomorphism/pkg/logger"
-	"strconv"
-
 	"github.com/gorilla/mux"
+	"net/http"
 	tracks "no_homomorphism/internal/pkg/track"
+	"no_homomorphism/pkg/logger"
 )
 
 type TrackHandler struct {
@@ -22,13 +20,7 @@ func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	ID, err := strconv.Atoi(varId)
-	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to parse id:"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	track, err := h.TrackUC.GetTrackById(uint(ID))
+	track, err := h.TrackUC.GetTrackById(varId)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "failed get track"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
