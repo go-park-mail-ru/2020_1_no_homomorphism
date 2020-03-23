@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"log"
 	"testing"
 	"time"
 )
@@ -22,8 +23,20 @@ func (s *Suite) SetupSuite() {
 	s.redisServer, err = miniredis.Run()
 	require.NoError(s.T(), err)
 
-	conn, err := redis.Dial("tcp", s.redisServer.Addr())
-	s.session = NewRedisSessionManager(conn)
+	redisConn := &redis.Pool{
+		MaxIdle:   80,
+		MaxActive: 12000,
+		Dial: func() (redis.Conn, error) {
+			conn, err := redis.Dial("tcp", s.redisServer.Addr())
+			if err != nil {
+				log.Fatal("fail init redis pool: ", err)
+			}
+			return conn, err
+		},
+	}
+	defer redisConn.Close()
+
+	s.session = NewRedisSessionManager(redisConn)
 }
 
 //Need to restore connection after each func with closed connection testing

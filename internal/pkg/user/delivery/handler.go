@@ -52,6 +52,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	user := &models.User{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
+	h.Log.Debug(user)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -81,6 +82,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	input := &models.UserSignIn{}
 	err := json.NewDecoder(r.Body).Decode(&input)
+	h.Log.Debug(input)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)

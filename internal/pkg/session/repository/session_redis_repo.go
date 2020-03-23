@@ -8,17 +8,18 @@ import (
 )
 
 type SessionManager struct {
-	redisConn redis.Conn
+	redisPool redis.Pool
 }
 
-func NewRedisSessionManager(conn redis.Conn) *SessionManager {
+func NewRedisSessionManager(conn *redis.Pool) *SessionManager {
 	return &SessionManager{
-		redisConn: conn,
+		redisPool: *conn,
 	}
 }
 
 func (sr *SessionManager) Create(sId string, login string, expire time.Duration) error {
-	result, err := redis.String(sr.redisConn.Do("SET", sId, login, "EX", int(expire.Seconds())))
+	conn := sr.redisPool.Get()
+	result, err := redis.String(conn.Do("SET", sId, login, "EX", int(expire.Seconds())))
 	if err != nil {
 		return errors.New("failed to write key: " + err.Error())
 	}
@@ -29,7 +30,8 @@ func (sr *SessionManager) Create(sId string, login string, expire time.Duration)
 }
 
 func (sr *SessionManager) Delete(sId string) error {
-	_, err := redis.Int(sr.redisConn.Do("DEL", sId))
+	conn := sr.redisPool.Get()
+	_, err := redis.Int(conn.Do("DEL", sId))
 	if err != nil {
 		return err
 	}
@@ -37,7 +39,8 @@ func (sr *SessionManager) Delete(sId string) error {
 }
 
 func (sr *SessionManager) GetLoginBySessionID(sId string) (string, error) {
-	data, err := redis.String(sr.redisConn.Do("GET", sId))
+	conn := sr.redisPool.Get()
+	data, err := redis.String(conn.Do("GET", sId))
 	if err != nil {
 		return "", errors.New("cant get data: " + err.Error())
 	}

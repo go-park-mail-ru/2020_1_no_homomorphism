@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis redis.Conn) (
+func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool) (
 	*userDelivery.Handler,
 	*trackDelivery.TrackHandler,
 	*playlistDelivery.PlaylistHandler,
@@ -114,10 +114,18 @@ func StartNew() {
 
 	redisAddr := flag.String("addr", "redis://user:@localhost:6379/0", "redis addr")
 
-	redisConn, err := redis.DialURL(*redisAddr)
-	if err != nil {
-		log.Fatalf("cant connect to redis")
+	redisConn := &redis.Pool{
+		MaxIdle:   80,
+		MaxActive: 12000,
+		Dial: func() (redis.Conn, error) {
+			conn, err := redis.DialURL(*redisAddr)
+			if err != nil {
+				log.Fatal("fail init redis pool: ", err)
+			}
+			return conn, err
+		},
 	}
+	defer redisConn.Close()
 
 	user, track, playlist, m := InitNewHandler(customLogger, db, redisConn)
 
