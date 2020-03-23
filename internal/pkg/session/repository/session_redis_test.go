@@ -22,8 +22,14 @@ func (s *Suite) SetupSuite() {
 	s.redisServer, err = miniredis.Run()
 	require.NoError(s.T(), err)
 
-	conn, err := redis.Dial("tcp", s.redisServer.Addr())
-	s.session = NewRedisSessionManager(conn)
+	addr := s.redisServer.Addr()
+	redisConn := &redis.Pool{
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial("tcp", addr)
+		},
+	}
+
+	s.session = NewRedisSessionManager(redisConn)
 }
 
 //Need to restore connection after each func with closed connection testing
@@ -49,7 +55,6 @@ func (s *Suite) TestCreate() {
 
 	value, err := s.redisServer.Get(sId.String())
 	require.NoError(s.T(), err)
-
 	require.Equal(s.T(), value, login)
 
 	//test TTL
