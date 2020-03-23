@@ -7,7 +7,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"log"
 	"testing"
 	"time"
 )
@@ -23,18 +22,12 @@ func (s *Suite) SetupSuite() {
 	s.redisServer, err = miniredis.Run()
 	require.NoError(s.T(), err)
 
+	addr := s.redisServer.Addr()
 	redisConn := &redis.Pool{
-		MaxIdle:   80,
-		MaxActive: 12000,
 		Dial: func() (redis.Conn, error) {
-			conn, err := redis.Dial("tcp", s.redisServer.Addr())
-			if err != nil {
-				log.Fatal("fail init redis pool: ", err)
-			}
-			return conn, err
+			return redis.Dial("tcp", addr)
 		},
 	}
-	defer redisConn.Close()
 
 	s.session = NewRedisSessionManager(redisConn)
 }
@@ -62,7 +55,6 @@ func (s *Suite) TestCreate() {
 
 	value, err := s.redisServer.Get(sId.String())
 	require.NoError(s.T(), err)
-
 	require.Equal(s.T(), value, login)
 
 	//test TTL
