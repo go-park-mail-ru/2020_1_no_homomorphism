@@ -19,8 +19,8 @@ type DbTrackRepository struct {
 	db *gorm.DB
 }
 
-func NewDbTrackRepo(db *gorm.DB) *DbTrackRepository {
-	return &DbTrackRepository{
+func NewDbTrackRepo(db *gorm.DB) DbTrackRepository {
+	return DbTrackRepository{
 		db: db,
 	}
 }
