@@ -51,7 +51,7 @@ func (h *AlbumHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
 
 	albums, err := h.AlbumUC.GetUserAlbums(user.Id)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to get album' tracks"+err.Error(), http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "failed to get user' albums"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -60,7 +60,7 @@ func (h *AlbumHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
 	writer := json.NewEncoder(w)
 	err = writer.Encode(albums)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "can't write album' tracks into json:"+err.Error(), http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "can't write album into json:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
