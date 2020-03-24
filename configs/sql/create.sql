@@ -101,6 +101,7 @@ CREATE TABLE playlist_tracks
     playlist_ID BIGSERIAL NOT NULL,
     track_ID    BIGSERIAL NOT NULL,
     index       SMALLINT  NOT NULL,
+    image       VARCHAR DEFAULT '/static/img/album/default.png',
     FOREIGN KEY (playlist_ID) REFERENCES playlists (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
@@ -115,38 +116,47 @@ CREATE TABLE playlist_tracks
 
 CREATE VIEW tracks_in_playlist AS
 SELECT p.ID       as playlist_id,
-       p.name     as album_name,
-       p.image    as album_image,
+       p.name     as playlist_name,
+       p.image    as playlist_image,
        t.track_id as track_id,
        t.track_name,
        t.duration,
        t.artist_name,
        t.link,
-       pt.index   as index
+       pt.index   as index,
+       pt.image   as track_image
 FROM playlists p,
      playlist_tracks pt,
      full_track_info t
 WHERE p.ID = pt.playlist_ID
   AND t.track_id = pt.track_ID;
 
-SELECT track_id, track_name, artist_name, duration, link FROM tracks_in_playlist WHERE playlist_id = 4;
+SELECT track_id, track_name, artist_name, duration, link
+FROM tracks_in_playlist
+WHERE playlist_id = 4;
 
 -- Список лайкнутых альбомов
 
 CREATE VIEW user_albums AS
 SELECT u.id     as user_ID,
-       a.ID     as artist_ID,
-       a.name   as artist_name, -- TODO Мб нужна аватарочка артиста??
        al.id    as album_id,
        al.name  as album_name,
-       al.image as album_image
+       al.image as album_image,
+       ar.ID    as artist_id,
+       ar.name  as artist_name,
+       ar.image as artist_image,
+       ar.genre as artist_genre
 FROM users u,
-     artists a,
      albums al,
-     liked_albums liked
+     liked_albums liked,
+     artists ar
 WHERE liked.user_id = u.id
   AND liked.album_id = al.id
-  AND a.ID = al.artist_id;
+  AND ar.ID = al.artist_ID;
+
+SELECT album_id as id, album_name as name, album_image as image, artist_id, artist_name, artist_genre, artist_image
+FROM user_albums
+WHERE user_id = 5;
 
 -- Список пописок
 
@@ -160,6 +170,30 @@ FROM users u,
      liked_artists liked
 WHERE u.id = liked.user_id
   AND a.id = liked.artist_id;
+
+CREATE VIEW full_album_info AS
+SELECT al.id    as album_id,
+       al.name  as album_name,
+       al.image as album_image,
+       ar.ID    as artist_id,
+       ar.name  as artist_name,
+       ar.genre as artist_genre,
+       ar.image as artist_image
+FROM albums as al
+         JOIN artists as ar ON al.artist_ID = ar.ID;
+
+CREATE VIEW tracks_in_album AS
+SELECT a.ID as album_id,
+       t.track_id,
+       t.artist_name,
+       t.track_name,
+       t.duration,
+       t.link
+FROM album_tracks as at,
+     albums as a,
+     full_track_info as t
+WHERE at.track_id = t.track_id
+  AND at.album_id = a.ID;
 
 -- Полная информация, необходимая для отображения трека
 
