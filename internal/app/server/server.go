@@ -11,6 +11,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"log"
 	"net/http"
+	albumDelivery "no_homomorphism/internal/pkg/album/delivery"
+	albumRepo "no_homomorphism/internal/pkg/album/repository"
+	albumUC "no_homomorphism/internal/pkg/album/usecase"
 	"no_homomorphism/internal/pkg/middleware"
 	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
 	playlistRepo "no_homomorphism/internal/pkg/playlist/repository"
@@ -33,11 +36,23 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	*userDelivery.Handler,
 	*trackDelivery.TrackHandler,
 	*playlistDelivery.PlaylistHandler,
+	*albumDelivery.AlbumHandler,
 	*middleware.Middleware) {
 	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	trackRep := trackRepo.NewDbTrackRepo(db)
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
+	albumRep := albumRepo.NewDbAlbumRepository(db)
 	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
+
+	AlbumUC := albumUC.AlbumUseCase{
+		AlbumRepository: albumRep,
+		TrackRepository: trackRep,
+	}
+
+	albumHandler := &albumDelivery.AlbumHandler{
+		AlbumUC: AlbumUC,
+		Log:     mainLogger,
+	}
 
 	PlaylistUC := playlistUC.PlaylistUseCase{
 		PlRepository:    playlistRep,
@@ -61,7 +76,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	}
 
 	playlistHandler := &playlistDelivery.PlaylistHandler{
-		PlaylistUC: &PlaylistUC,
+		PlaylistUC: PlaylistUC,
 		Log:        mainLogger,
 	}
 
@@ -78,7 +93,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 
 	m := middleware.NewMiddleware(&SessionDelivery, &UserUC, &TrackUC, &PlaylistUC)
 
-	return h, trackHandler, playlistHandler, m
+	return h, trackHandler, playlistHandler, albumHandler, m
 }
 
 func StartNew() {
@@ -126,13 +141,14 @@ func StartNew() {
 		},
 	}
 	defer redisConn.Close()
-
-	user, track, playlist, m := InitNewHandler(customLogger, db, redisConn)
+	user, track, playlist, album, m := InitNewHandler(customLogger, db, redisConn)
 
 	r.HandleFunc("/profile/settings", user.Update).Methods("PUT")
 	r.HandleFunc("/profile/me", user.SelfProfile).Methods("GET")
 	r.HandleFunc("/profile/playlists", playlist.GetUserPlaylists).Methods("GET")
+	r.HandleFunc("/profile/albums", album.GetUserAlbums).Methods("GET")
 	r.HandleFunc("/playlists/{id:[0-9]+}", playlist.GetPlaylistTracks).Methods("GET")
+	r.HandleFunc("/albums/{id:[0-9]+}", album.GetAlbumTracks).Methods("GET")
 	r.HandleFunc("/profiles/{profile}", user.Profile)
 	r.HandleFunc("/image", user.UpdateAvatar).Methods("POST")
 	r.HandleFunc("/user", user.CheckAuth)
