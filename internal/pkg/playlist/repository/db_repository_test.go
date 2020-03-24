@@ -52,17 +52,17 @@ func (s *Suite) TestGetUserPlaylists() {
 	id2 = 124
 	userId = 12345
 
-	pl1 := &models.Playlist{
+	pl1 := models.Playlist{
 		Id:    fmt.Sprint(id),
 		Name:  "name",
 		Image: "custom/img",
 	}
-	pl2 := &models.Playlist{
+	pl2 := models.Playlist{
 		Id:    fmt.Sprint(id2),
 		Name:  "my_second_playlist",
 		Image: "custom/img/2",
 	}
-	pls := []*models.Playlist{pl1, pl2}
+	pls := []models.Playlist{pl1, pl2}
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "playlists" WHERE (user_ID = $1)`)).
 		WithArgs(userId).
@@ -93,7 +93,7 @@ func (s *Suite) TestGetPlaylistById() {
 	id = 123
 	userId = 12345
 
-	pl1 := &models.Playlist{
+	pl1 := models.Playlist{
 		Id:    fmt.Sprint(id),
 		Name:  "name",
 		Image: "custom/img",

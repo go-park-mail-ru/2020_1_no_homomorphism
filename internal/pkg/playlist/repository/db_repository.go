@@ -17,21 +17,21 @@ type DbPlaylistRepository struct {
 	db *gorm.DB
 }
 
-func NewDbPlaylistRepository(database *gorm.DB) *DbPlaylistRepository {
-	return &DbPlaylistRepository{
+func NewDbPlaylistRepository(database *gorm.DB) DbPlaylistRepository {
+	return DbPlaylistRepository{
 		db: database,
 	}
 }
 
-func toModel(pl *Playlists) *models.Playlist {
-	return &models.Playlist{
+func toModel(pl Playlists) models.Playlist {
+	return models.Playlist{
 		Id:    fmt.Sprint(pl.Id),
 		Name:  pl.Name,
 		Image: pl.Image,
 	}
 }
 
-func (pr *DbPlaylistRepository) GetUserPlaylists(uId uint64) ([]*models.Playlist, error) {
+func (pr *DbPlaylistRepository) GetUserPlaylists(uId uint64) ([]models.Playlist, error) {
 	var dbPlaylists []Playlists
 
 	db := pr.db.Where("user_ID = ?", uId).Find(&dbPlaylists)
@@ -40,21 +40,21 @@ func (pr *DbPlaylistRepository) GetUserPlaylists(uId uint64) ([]*models.Playlist
 		return nil, err
 	}
 
-	var playlists []*models.Playlist
+	playlists := make([]models.Playlist, len(dbPlaylists))
 
-	for _, elem := range dbPlaylists {
-		playlists = append(playlists, toModel(&elem))
+	for i, elem := range dbPlaylists {
+		playlists[i] = toModel(elem)
 	}
 	return playlists, nil
 }
 
-func (pr *DbPlaylistRepository) GetPlaylistById(pId uint64) (*models.Playlist, error) {
+func (pr *DbPlaylistRepository) GetPlaylistById(pId uint64) (models.Playlist, error) {
 	var dbPlaylists Playlists
 
 	db := pr.db.Where("id = ?", pId).First(&dbPlaylists)
 	err := db.Error
 	if err != nil {
-		return nil, err
+		return models.Playlist{}, err
 	}
-	return toModel(&dbPlaylists), nil
+	return toModel(dbPlaylists), nil
 }
