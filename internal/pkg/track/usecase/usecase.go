@@ -11,10 +11,10 @@ type TrackUseCase struct {
 	Repository track.Repository
 }
 
-func (uc TrackUseCase) GetTrackById(id string) (*models.Track, error) {
+func (uc TrackUseCase) GetTrackById(id string) (models.Track, error) {
 	tId, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert id: %e", err)
+		return models.Track{}, fmt.Errorf("failed to convert id: %e", err)
 	}
 	return uc.Repository.GetTrackById(tId)
 }
