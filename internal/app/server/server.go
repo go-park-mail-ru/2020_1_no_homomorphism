@@ -33,11 +33,11 @@ import (
 )
 
 func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool) (
-	*userDelivery.Handler,
-	*trackDelivery.TrackHandler,
-	*playlistDelivery.PlaylistHandler,
-	*albumDelivery.AlbumHandler,
-	*middleware.Middleware) {
+	userDelivery.Handler,
+	trackDelivery.TrackHandler,
+	playlistDelivery.PlaylistHandler,
+	albumDelivery.AlbumHandler,
+	middleware.Middleware) {
 	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	trackRep := trackRepo.NewDbTrackRepo(db)
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
@@ -45,22 +45,22 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
 
 	AlbumUC := albumUC.AlbumUseCase{
-		AlbumRepository: albumRep,
-		TrackRepository: trackRep,
+		AlbumRepository: &albumRep,
+		TrackRepository: &trackRep,
 	}
 
-	albumHandler := &albumDelivery.AlbumHandler{
+	albumHandler := albumDelivery.AlbumHandler{
 		AlbumUC: AlbumUC,
 		Log:     mainLogger,
 	}
 
 	PlaylistUC := playlistUC.PlaylistUseCase{
-		PlRepository:    playlistRep,
-		TrackRepository: trackRep,
+		PlRepository:    &playlistRep,
+		TrackRepository: &trackRep,
 	}
 
 	SessionUC := sessionUC.SessionUseCase{
-		Repository: sesRep,
+		Repository: &sesRep,
 	}
 
 	SessionDelivery := sessionDelivery.SessionDelivery{
@@ -68,32 +68,32 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 		ExpireTime: 24 * 31 * time.Hour,
 	}
 	UserUC := userUC.UserUseCase{
-		Repository: dbRep,
+		Repository: &dbRep,
 		AvatarDir:  "/static/img/avatar/",
 	}
 	TrackUC := trackUC.TrackUseCase{
-		Repository: trackRep,
+		Repository: &trackRep,
 	}
 
-	playlistHandler := &playlistDelivery.PlaylistHandler{
+	playlistHandler := playlistDelivery.PlaylistHandler{
 		PlaylistUC: PlaylistUC,
 		Log:        mainLogger,
 	}
 
-	h := &userDelivery.Handler{
+	userHandler := userDelivery.Handler{
 		SessionDelivery: &SessionDelivery,
 		UserUC:          &UserUC,
 		Log:             mainLogger,
 	}
 
-	trackHandler := &trackDelivery.TrackHandler{
+	trackHandler := trackDelivery.TrackHandler{
 		TrackUC: &TrackUC,
 		Log:     mainLogger,
 	}
 
 	m := middleware.NewMiddleware(&SessionDelivery, &UserUC, &TrackUC, &PlaylistUC)
 
-	return h, trackHandler, playlistHandler, albumHandler, m
+	return userHandler, trackHandler, playlistHandler, albumHandler, m
 }
 
 func StartNew() {
