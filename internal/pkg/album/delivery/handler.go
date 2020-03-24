@@ -47,7 +47,7 @@ func (h *AlbumHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(*models.User)
+	user := r.Context().Value("user").(models.User)
 
 	albums, err := h.AlbumUC.GetUserAlbums(user.Id)
 	if err != nil {
