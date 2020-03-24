@@ -17,7 +17,7 @@ func addPrefix(id uuid.UUID) string {
 	return "sessions:" + id.String()
 }
 
-func (uc *SessionUseCase) Create(user *models.User, expires time.Duration) (uuid.UUID, error) {
+func (uc *SessionUseCase) Create(user models.User, expires time.Duration) (uuid.UUID, error) {
 	id := uuid.NewV4()
 	sId := addPrefix(id)
 	err := uc.Repository.Create(sId, user.Login, expires)

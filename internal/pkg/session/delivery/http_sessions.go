@@ -14,12 +14,12 @@ type SessionDelivery struct {
 	ExpireTime time.Duration
 }
 
-func (uc *SessionDelivery) Create(user *models.User) (*http.Cookie, error) {
+func (uc *SessionDelivery) Create(user models.User) (http.Cookie, error) {
 	sid, err := uc.UseCase.Create(user, uc.ExpireTime)
 	if err != nil {
-		return nil, err
+		return http.Cookie{}, err
 	}
-	return &http.Cookie{
+	return http.Cookie{
 		Name:     "session_id",
 		Value:    sid.String(),
 		HttpOnly: true,
