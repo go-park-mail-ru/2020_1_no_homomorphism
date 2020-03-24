@@ -25,7 +25,7 @@ var allowedContentType = []string{
 	"image/jpeg",
 }
 
-func (uc *UserUseCase) Create(user *models.User) error {
+func (uc *UserUseCase) Create(user models.User) error {
 	ok, err := uc.Repository.CheckIfExists(user.Login, user.Email)
 	if ok {
 		return errors.New("user with this login or email is already exists") //todo сообщать отдельно о логине или\и почте
@@ -38,7 +38,7 @@ func (uc *UserUseCase) Create(user *models.User) error {
 	return err
 }
 
-func (uc *UserUseCase) Update(user *models.User, input *models.UserSettings) error {
+func (uc *UserUseCase) Update(user models.User, input models.UserSettings) error {
 	var hash []byte
 	if input.NewPassword != "" {
 		var err error
@@ -72,7 +72,7 @@ func checkFileContentType(file multipart.File) (string, error) {
 	return "", errors.New("this content type is not allowed")
 }
 
-func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeader) (string, error) {
+func (uc *UserUseCase) UpdateAvatar(user models.User, file *multipart.FileHeader) (string, error) {
 
 	fileBody, err := file.Open()
 	if err != nil {
@@ -104,16 +104,16 @@ func (uc *UserUseCase) UpdateAvatar(user *models.User, file *multipart.FileHeade
 	return filePath, nil
 }
 
-func (uc *UserUseCase) GetUserByLogin(user string) (*models.User, error) {
+func (uc *UserUseCase) GetUserByLogin(user string) (models.User, error) {
 	return uc.Repository.GetUserByLogin(user)
 }
 
-func (uc *UserUseCase) GetProfileByLogin(login string) (*models.Profile, error) {
+func (uc *UserUseCase) GetProfileByLogin(login string) (models.Profile, error) {
 	user, err := uc.Repository.GetUserByLogin(login)
 	if err != nil {
-		return nil, err
+		return models.Profile{}, err
 	}
-	profile := &models.Profile{
+	profile := models.Profile{
 		Name:  user.Name,
 		Login: user.Login,
 		Sex:   user.Sex,
@@ -123,8 +123,8 @@ func (uc *UserUseCase) GetProfileByLogin(login string) (*models.Profile, error) 
 	return profile, nil
 }
 
-func (uc *UserUseCase) GetProfileByUser(user *models.User) *models.Profile {
-	profile := &models.Profile{
+func (uc *UserUseCase) GetProfileByUser(user models.User) models.Profile {
+	profile := models.Profile{
 		Name:  user.Name,
 		Login: user.Login,
 		Sex:   user.Sex,
@@ -134,7 +134,7 @@ func (uc *UserUseCase) GetProfileByUser(user *models.User) *models.Profile {
 	return profile
 }
 
-func (uc *UserUseCase) CheckUserPassword(user *models.User, password string) error {
+func (uc *UserUseCase) CheckUserPassword(user models.User, password string) error {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return errors.New("wrong password")
 	}

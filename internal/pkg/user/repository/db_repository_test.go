@@ -17,7 +17,7 @@ type Suite struct {
 	suite.Suite
 	DB         *gorm.DB
 	mock       sqlmock.Sqlmock
-	user       *models.User
+	user       models.User
 	repository *DbUserRepository
 	bdError    error
 }
@@ -27,7 +27,7 @@ func (s *Suite) SetupSuite() {
 		db  *sql.DB
 		err error
 	)
-	s.user = &models.User{
+	s.user = models.User{
 		Id:       "1",
 		Password: "12345678",
 		Name:     "Vasya",
@@ -57,7 +57,7 @@ func TestInit(t *testing.T) {
 	suite.Run(t, new(Suite))
 }
 
-func (s *Suite) getMockSelectAll(user *models.User, hash []byte) {
+func (s *Suite) getMockSelectAll(user models.User, hash []byte) {
 	s.mock.ExpectQuery("SELECT id, login, password, name, email, sex, image FROM users WHERE login=?").WithArgs(user.Login).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "login", "password", "name", "sex", "image", "email"}).
 			AddRow(user.Id, user.Login, hash, user.Name, user.Sex, user.Image, user.Email))
@@ -89,7 +89,7 @@ func (s *Suite) TestGetUserByLogin() {
 func (s *Suite) TestUpdate() {
 	user := s.user
 
-	userSettings := &models.UserSettings{
+	userSettings := models.UserSettings{
 		NewPassword: "",
 		User: models.User{
 			Name:  "lol",

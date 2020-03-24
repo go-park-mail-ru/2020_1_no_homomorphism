@@ -27,9 +27,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(*models.User)
+	user := r.Context().Value("user").(models.User)
 	h.Log.Debug(user)
-	input := &models.UserSettings{}
+	input := models.UserSettings{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -49,7 +49,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := &models.User{}
+	user := models.User{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
 	h.Log.Debug(user)
@@ -70,7 +70,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, &cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
@@ -106,7 +106,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, cookie)
+	http.SetCookie(w, &cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
@@ -167,7 +167,7 @@ func (h *Handler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(*models.User)
+	user := r.Context().Value("user").(models.User)
 	profile := h.UserUC.GetProfileByUser(user)
 
 	h.marshallAndWriteProfile(w, r.Context(), profile)
@@ -179,7 +179,7 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(*models.User)
+	user := r.Context().Value("user").(models.User)
 
 	file, handler, err := r.FormFile("profile_image")
 	if err != nil || handler.Size == 0 {
@@ -209,7 +209,7 @@ func (h *Handler) CheckAuth(w http.ResponseWriter, r *http.Request) {
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-func (h *Handler) marshallAndWriteProfile(w http.ResponseWriter, ctx context.Context, profile *models.Profile) {
+func (h *Handler) marshallAndWriteProfile(w http.ResponseWriter, ctx context.Context, profile models.Profile) {
 	profileJson, err := json.Marshal(profile)
 	if err != nil {
 		h.Log.HttpInfo(ctx, "error while marshalling:"+err.Error(), http.StatusBadRequest)

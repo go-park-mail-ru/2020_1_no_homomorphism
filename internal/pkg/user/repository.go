@@ -5,9 +5,9 @@ import (
 )
 
 type Repository interface {
-	Create(user *models.User, hash []byte) error
-	Update(user *models.User, input *models.UserSettings, hash []byte) error//todo переделать сигнатуру (убрать userSettings)
-	UpdateAvatar(user *models.User, avatarPath string) error
-	GetUserByLogin(login string) (*models.User, error)
+	Create(user models.User, hash []byte) error
+	Update(user models.User, input models.UserSettings, hash []byte) error//todo переделать сигнатуру (убрать userSettings)
+	UpdateAvatar(user models.User, avatarPath string) error
+	GetUserByLogin(login string) (models.User, error)
 	CheckIfExists(login string, email string) (bool, error)
 }

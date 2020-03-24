@@ -22,29 +22,29 @@ type DbUserRepository struct {
 	defaultImage string
 }
 
-func NewDbUserRepository(database *gorm.DB, defaultImage string) *DbUserRepository {
-	return &DbUserRepository{
+func NewDbUserRepository(database *gorm.DB, defaultImage string) DbUserRepository {
+	return DbUserRepository{
 		db:           database,
 		defaultImage: defaultImage,
 	}
 }
 
-func (ur *DbUserRepository) getUser(login string) (*User, error) {
+func (ur *DbUserRepository) getUser(login string) (User, error) {
 	var results User
 	db := ur.db.Raw("SELECT id, login, password, name, email, sex, image FROM users WHERE login=?", login).Scan(&results)
 	err := db.Error
 	if err != nil {
-		return nil, err
+		return User{}, err
 	}
-	return &results, nil
+	return results, nil
 }
 
-func (ur *DbUserRepository) prepareDbUser(user *models.User, hash []byte) (*User, error) {
+func (ur *DbUserRepository) prepareDbUser(user models.User, hash []byte) (User, error) {
 	ok := IsModelFieldsNotEmpty(user)
 	if !ok {
-		return nil, errors.New("some input fields are empty")
+		return User{}, errors.New("some input fields are empty")
 	}
-	return &User{
+	return User{
 		Login:    user.Login,
 		Password: hash,
 		Name:     user.Name,
@@ -54,8 +54,8 @@ func (ur *DbUserRepository) prepareDbUser(user *models.User, hash []byte) (*User
 	}, nil
 }
 
-func ToModel(user *User) *models.User {
-	return &models.User{
+func ToModel(user User) models.User {
+	return models.User{
 		Id:       fmt.Sprint(user.Id),
 		Login:    user.Login,
 		Password: string(user.Password),
@@ -66,7 +66,7 @@ func ToModel(user *User) *models.User {
 	}
 }
 
-func (ur *DbUserRepository) Create(user *models.User, hash []byte) error {
+func (ur *DbUserRepository) Create(user models.User, hash []byte) error {
 	dbUser, err := ur.prepareDbUser(user, hash)
 	if err != nil {
 		return err
@@ -79,7 +79,7 @@ func (ur *DbUserRepository) Create(user *models.User, hash []byte) error {
 	return nil
 }
 
-func (ur *DbUserRepository) Update(user *models.User, input *models.UserSettings, hash []byte) error {
+func (ur *DbUserRepository) Update(user models.User, input models.UserSettings, hash []byte) error {
 	dbUser, err := ur.getUser(user.Login)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (ur *DbUserRepository) Update(user *models.User, input *models.UserSettings
 	return nil
 }
 
-func (ur *DbUserRepository) UpdateAvatar(user *models.User, filePath string) error {
+func (ur *DbUserRepository) UpdateAvatar(user models.User, filePath string) error {
 	dbUser, err := ur.getUser(user.Login)
 	if err != nil {
 		return err
@@ -113,10 +113,10 @@ func (ur *DbUserRepository) UpdateAvatar(user *models.User, filePath string) err
 	return nil
 }
 
-func (ur *DbUserRepository) GetUserByLogin(login string) (*models.User, error) {
+func (ur *DbUserRepository) GetUserByLogin(login string) (models.User, error) {
 	dbUser, err := ur.getUser(login)
 	if err != nil {
-		return nil, err
+		return models.User{}, err
 	}
 	user := ToModel(dbUser)
 	return user, nil
@@ -135,7 +135,7 @@ func (ur *DbUserRepository) CheckIfExists(login string, email string) (bool, err
 	return true, nil
 }
 
-func IsModelFieldsNotEmpty(user *models.User) bool {
+func IsModelFieldsNotEmpty(user models.User) bool {
 	return len(user.Login) > 0 &&
 		len(user.Password) > 0 &&
 		len(user.Name) > 0 &&
