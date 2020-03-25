@@ -11,8 +11,8 @@ type SessionManager struct {
 	redisPool redis.Pool
 }
 
-func NewRedisSessionManager(conn *redis.Pool) *SessionManager {
-	return &SessionManager{
+func NewRedisSessionManager(conn *redis.Pool) SessionManager {
+	return SessionManager{
 		redisPool: *conn,
 	}
 }

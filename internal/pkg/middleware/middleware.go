@@ -18,8 +18,8 @@ type Middleware struct {
 	PlaylistUC      playlist.UseCase
 }
 
-func NewMiddleware(sd session.Delivery, uuc user.UseCase, tuc track.UseCase, puc playlist.UseCase) *Middleware {
-	return &Middleware{
+func NewMiddleware(sd session.Delivery, uuc user.UseCase, tuc track.UseCase, puc playlist.UseCase) Middleware {
+	return Middleware{
 		SessionDelivery: sd,
 		UserUC:          uuc,
 		TrackUC:         tuc,

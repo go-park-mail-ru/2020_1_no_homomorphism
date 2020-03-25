@@ -20,7 +20,7 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(*models.User)
+	user := r.Context().Value("user").(models.User)
 
 	playlists, err := h.PlaylistUC.GetUserPlaylists(user.Id)
 	if err != nil {

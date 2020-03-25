@@ -13,34 +13,34 @@ type PlaylistUseCase struct {
 	TrackRepository track.Repository
 }
 
-func (uc PlaylistUseCase) GetUserPlaylists(id string) (*models.UserPlaylists, error) {
+func (uc PlaylistUseCase) GetUserPlaylists(id string) (models.UserPlaylists, error) {
 	plId, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert id: %e", err)
+		return models.UserPlaylists{}, fmt.Errorf("failed to convert id: %e", err)
 	}
 	playlists, err := uc.PlRepository.GetUserPlaylists(plId)
-	return &models.UserPlaylists{
+	return models.UserPlaylists{
 		Count:     len(playlists),
 		Playlists: playlists,
 	}, err
 }
 
-func (uc PlaylistUseCase) GetPlaylistWithTracks(id string) (*models.PlaylistTracks, error) {
+func (uc PlaylistUseCase) GetPlaylistWithTracks(id string) (models.PlaylistTracks, error) {
 	plId, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert id: %s", err)
+		return models.PlaylistTracks{}, fmt.Errorf("failed to convert id: %s", err)
 	}
 	dbPlaylist, err := uc.PlRepository.GetPlaylistById(plId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get dbPlaylist: %s", err)
+		return models.PlaylistTracks{}, fmt.Errorf("failed to get dbPlaylist: %s", err)
 	}
 
 	tracks, err := uc.TrackRepository.GetPlaylistTracks(plId)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get dbPlaylist' tracks: %s", err)
+		return models.PlaylistTracks{}, fmt.Errorf("failed to get dbPlaylist' tracks: %s", err)
 	}
 
-	return &models.PlaylistTracks{
+	return models.PlaylistTracks{
 		Playlist: dbPlaylist,
 		Count:    len(tracks),
 		Tracks:   tracks,

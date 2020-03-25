@@ -7,12 +7,12 @@ type Playlist struct {
 }
 
 type UserPlaylists struct {
-	Count     int         `json:"count"`
-	Playlists []*Playlist `json:"playlists"`
+	Count     int        `json:"count"`
+	Playlists []Playlist `json:"playlists"`
 }
 
 type PlaylistTracks struct {
-	Playlist *Playlist `json:"playlist"`
-	Count    int       `json:"count"`
-	Tracks   []*Track  `json:"tracks"`
+	Playlist Playlist `json:"playlist"`
+	Count    int      `json:"count"`
+	Tracks   []Track  `json:"tracks"`
 }

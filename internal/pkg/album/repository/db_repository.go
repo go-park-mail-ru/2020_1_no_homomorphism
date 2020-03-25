@@ -28,8 +28,8 @@ type DbAlbumRepository struct {
 	db *gorm.DB
 }
 
-func NewDbAlbumRepository(database *gorm.DB) *DbAlbumRepository {
-	return &DbAlbumRepository{
+func NewDbAlbumRepository(database *gorm.DB) DbAlbumRepository {
+	return DbAlbumRepository{
 		db: database,
 	}
 }
