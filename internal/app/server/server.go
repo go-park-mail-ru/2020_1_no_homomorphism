@@ -46,17 +46,10 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 
 	AlbumUC := albumUC.AlbumUseCase{
 		AlbumRepository: &albumRep,
-		TrackRepository: &trackRep,
-	}
-
-	albumHandler := albumDelivery.AlbumHandler{
-		AlbumUC: AlbumUC,
-		Log:     mainLogger,
 	}
 
 	PlaylistUC := playlistUC.PlaylistUseCase{
-		PlRepository:    &playlistRep,
-		TrackRepository: &trackRep,
+		PlRepository: &playlistRep,
 	}
 
 	SessionUC := sessionUC.SessionUseCase{
@@ -76,7 +69,8 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	}
 
 	playlistHandler := playlistDelivery.PlaylistHandler{
-		PlaylistUC: PlaylistUC,
+		PlaylistUC: &PlaylistUC,
+		TrackUC:    &TrackUC,
 		Log:        mainLogger,
 	}
 
@@ -87,6 +81,12 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	}
 
 	trackHandler := trackDelivery.TrackHandler{
+		TrackUC: &TrackUC,
+		Log:     mainLogger,
+	}
+
+	albumHandler := albumDelivery.AlbumHandler{
+		AlbumUC: &AlbumUC,
 		TrackUC: &TrackUC,
 		Log:     mainLogger,
 	}

@@ -8,10 +8,11 @@ CREATE TABLE artists -- TODO Подумать над полями
 
 CREATE TABLE albums
 (
-    ID        BIGSERIAL PRIMARY KEY,
-    name      VARCHAR(50) NOT NULL,
-    image     VARCHAR(100) DEFAULT '/static/img/default.png',
-    artist_ID BIGSERIAL   NOT NULL,
+    ID          BIGSERIAL PRIMARY KEY,
+    name        VARCHAR(50) NOT NULL,
+    image       VARCHAR(100) DEFAULT '/static/img/default.png',
+    artist_name VARCHAR(50) NOT NULL,
+    artist_ID   BIGSERIAL   NOT NULL,
     FOREIGN KEY (artist_ID) REFERENCES artists (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -138,23 +139,19 @@ WHERE playlist_id = 4;
 -- Список лайкнутых альбомов
 
 CREATE VIEW user_albums AS
-SELECT u.id     as user_ID,
-       al.id    as album_id,
-       al.name  as album_name,
-       al.image as album_image,
-       ar.ID    as artist_id,
-       ar.name  as artist_name,
-       ar.image as artist_image,
-       ar.genre as artist_genre
+SELECT u.id           as user_ID,
+       al.id          as album_id,
+       al.name        as album_name,
+       al.image       as album_image,
+       al.artist_name as artist_name,
+       al.artist_ID   as artist_id
 FROM users u,
      albums al,
-     liked_albums liked,
-     artists ar
+     liked_albums liked
 WHERE liked.user_id = u.id
-  AND liked.album_id = al.id
-  AND ar.ID = al.artist_ID;
+  AND liked.album_id = al.id;
 
-SELECT album_id as id, album_name as name, album_image as image, artist_id, artist_name, artist_genre, artist_image
+SELECT album_id as id, album_name as name, album_image as image, artist_id
 FROM user_albums
 WHERE user_id = 5;
 

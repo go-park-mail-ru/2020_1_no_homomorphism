@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
 	"github.com/jinzhu/gorm"
@@ -19,7 +18,7 @@ type Suite struct {
 	DB   *gorm.DB
 	mock sqlmock.Sqlmock
 
-	repository *DbAlbumRepository
+	repository DbAlbumRepository
 }
 
 func (s *Suite) SetupSuite() {
@@ -47,23 +46,19 @@ func TestInit(t *testing.T) {
 }
 
 func (s *Suite) TestAlbumById() {
-	var id, artistId uint64
-	artistId = 123
-	id = 12345
-
 	album := models.Album{
-		Id:       fmt.Sprint(id),
+		Id:       "2434234",
 		Name:     "test-name",
 		Image:    "img-test",
-		ArtistId: fmt.Sprint(artistId),
+		ArtistId: "3487919",
 	}
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "albums" WHERE (id = $1)`)).
-		WithArgs(id).
+		WithArgs(album.Id).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "artist_id"}).
-			AddRow(id, album.Name, album.Image, artistId))
+			AddRow(album.Id, album.Name, album.Image, album.ArtistId))
 
-	res, err := s.repository.GetAlbumById(id)
+	res, err := s.repository.GetAlbumById(album.Id)
 
 	require.NoError(s.T(), err)
 	require.Nil(s.T(), deep.Equal(album, res))
@@ -71,37 +66,29 @@ func (s *Suite) TestAlbumById() {
 	//test on db error
 	dbError := errors.New("db_error")
 	s.mock.ExpectQuery("SELECT").
-		WithArgs(id).WillReturnError(dbError)
+		WithArgs(album.Id).WillReturnError(dbError)
 
-	_, err = s.repository.GetAlbumById(id)
+	_, err = s.repository.GetAlbumById(album.Id)
 
 	require.Error(s.T(), err)
 }
 
 func (s *Suite) TestGetUserAlbums() {
-	var id, artistId uint64
-	artistId = 123
-	id = 12345
-
-	album := []models.AlbumWithArtist{{
-		Id:    fmt.Sprint(id),
-		Name:  "test-name",
-		Image: "img-test",
-		Artist: models.Artist{
-			Id:    fmt.Sprint(artistId),
-			Name:  "curName",
-			Image: "keklol123",
-			Genre: "rock",
-		},
+	album := []models.Album{{
+		Id:         "123",
+		Name:       "test-name",
+		Image:      "img-test",
+		ArtistName: "artist_name",
+		ArtistId:   "1234123",
 	},
 	}
 
-	s.mock.ExpectQuery("SELECT album_id as id, album_name as name, album_image as image, artist_id as artists_id, artist_id, artist_name, artist_genre, artist_image FROM user_albums WHERE user_id = ?").
-		WithArgs(id).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "artist_id","artists_id", "artist_name", "artist_genre", "artist_image"}).
-			AddRow(id, album[0].Name, album[0].Image, artistId, artistId, album[0].Artist.Name, album[0].Artist.Genre, album[0].Artist.Image))
+	s.mock.ExpectQuery("SELECT album_id as id, album_name as name, album_image as image, artist_name, artist_id FROM user_albums WHERE user_id = ?").
+		WithArgs(album[0].Id).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "artist_id", "artist_name"}).
+			AddRow(album[0].Id, album[0].Name, album[0].Image, album[0].ArtistId, album[0].ArtistName))
 
-	res, err := s.repository.GetUserAlbums(id)
+	res, err := s.repository.GetUserAlbums(album[0].Id)
 
 	require.NoError(s.T(), err)
 	require.Nil(s.T(), deep.Equal(album, res))
@@ -109,9 +96,9 @@ func (s *Suite) TestGetUserAlbums() {
 	//test on db error
 	dbError := errors.New("db_error")
 	s.mock.ExpectQuery("SELECT").
-		WithArgs(id).WillReturnError(dbError)
+		WithArgs(album[0].Id).WillReturnError(dbError)
 
-	_, err = s.repository.GetUserAlbums(id)
+	_, err = s.repository.GetUserAlbums(album[0].Id)
 
 	require.Error(s.T(), err)
 }

@@ -3,6 +3,6 @@ package album
 import "no_homomorphism/internal/pkg/models"
 
 type Repository interface {
-	GetUserAlbums(uId uint64) ([]models.AlbumWithArtist, error)
-	GetAlbumById(aId uint64) (models.Album, error)
+	GetUserAlbums(uId string) ([]models.Album, error)
+	GetAlbumById(aId string) (models.Album, error)
 }

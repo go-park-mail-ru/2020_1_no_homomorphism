@@ -14,7 +14,7 @@ import (
 type Suite struct {
 	suite.Suite
 	redisServer *miniredis.Miniredis
-	session     *SessionManager
+	session     SessionManager
 }
 
 func (s *Suite) SetupSuite() {
