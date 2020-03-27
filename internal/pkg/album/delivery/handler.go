@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"no_homomorphism/internal/pkg/album"
 	"no_homomorphism/internal/pkg/models"
+	"no_homomorphism/internal/pkg/track"
 	"no_homomorphism/pkg/logger"
 )
 
 type AlbumHandler struct {
 	AlbumUC album.UseCase
+	TrackUC track.UseCase
 	Log     *logger.MainLogger
 }
 
@@ -22,7 +24,14 @@ func (h *AlbumHandler) GetAlbumTracks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playlists, err := h.AlbumUC.GetAlbumTracks(varId)
+	albumData, err := h.AlbumUC.GetAlbumById(varId)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get album data"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tracks, err := h.TrackUC.GetTracksByAlbumId(varId)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "failed to get album' tracks"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -31,7 +40,12 @@ func (h *AlbumHandler) GetAlbumTracks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
-	err = writer.Encode(playlists)
+	err = writer.Encode(struct {
+		Album  models.Album   `json:"album"`
+		Count  int            `json:"count"`
+		Tracks []models.Track `json:"tracks"`
+	}{albumData, len(tracks), tracks})
+
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "can't write album' tracks into json:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -58,7 +72,10 @@ func (h *AlbumHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
-	err = writer.Encode(albums)
+	err = writer.Encode(struct {
+		Albums []models.Album `json:"albums"`
+	}{albums})
+
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "can't write album into json:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)

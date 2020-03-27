@@ -18,7 +18,7 @@ type Suite struct {
 	DB         *gorm.DB
 	mock       sqlmock.Sqlmock
 	user       models.User
-	repository *DbUserRepository
+	repository DbUserRepository
 	bdError    error
 }
 

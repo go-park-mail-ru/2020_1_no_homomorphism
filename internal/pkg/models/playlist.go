@@ -6,13 +6,3 @@ type Playlist struct {
 	Image string `json:"image"`
 }
 
-type UserPlaylists struct {
-	Count     int        `json:"count"`
-	Playlists []Playlist `json:"playlists"`
-}
-
-type PlaylistTracks struct {
-	Playlist Playlist `json:"playlist"`
-	Count    int      `json:"count"`
-	Tracks   []Track  `json:"tracks"`
-}

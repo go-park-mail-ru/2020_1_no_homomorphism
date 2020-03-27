@@ -6,11 +6,13 @@ import (
 	"net/http"
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/playlist"
+	"no_homomorphism/internal/pkg/track"
 	"no_homomorphism/pkg/logger"
 )
 
 type PlaylistHandler struct {
 	PlaylistUC playlist.UseCase
+	TrackUC    track.UseCase
 	Log        *logger.MainLogger
 }
 
@@ -31,7 +33,10 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
-	err = writer.Encode(playlists)
+	err = writer.Encode(struct {
+		Playlists []models.Playlist `json:"playlists"`
+	}{playlists})
+
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "can't write playlists info into json:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -54,19 +59,30 @@ func (h *PlaylistHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
-	playlists, err := h.PlaylistUC.GetPlaylistWithTracks(varId)
+	playlistData, err := h.PlaylistUC.GetPlaylistById(varId)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to get playlists: "+err.Error(), http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "failed to get playlistData: "+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tracks, err := h.TrackUC.GetTracksByPlaylistId(varId)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get tracks: "+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
-	err = writer.Encode(playlists)
+	err = writer.Encode(struct {
+		Playlist models.Playlist `json:"playlist"`
+		Count    int             `json:"count"`
+		Tracks   []models.Track  `json:"tracks"`
+	}{playlistData, len(tracks), tracks})
+
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "can't write playlists info into json: "+err.Error(), http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "can't write tracks info into json: "+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}

@@ -3,7 +3,6 @@ package repository
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
 	"github.com/jinzhu/gorm"
@@ -19,7 +18,7 @@ type Suite struct {
 	DB   *gorm.DB
 	mock sqlmock.Sqlmock
 
-	repository *DbPlaylistRepository
+	repository DbPlaylistRepository
 }
 
 func (s *Suite) SetupSuite() {
@@ -47,18 +46,15 @@ func TestInit(t *testing.T) {
 }
 
 func (s *Suite) TestGetUserPlaylists() {
-	var userId, id, id2 uint64
-	id = 123
-	id2 = 124
-	userId = 12345
+	userId := "24123"
 
 	pl1 := models.Playlist{
-		Id:    fmt.Sprint(id),
+		Id:    "342354",
 		Name:  "name",
 		Image: "custom/img",
 	}
 	pl2 := models.Playlist{
-		Id:    fmt.Sprint(id2),
+		Id:    "423516514",
 		Name:  "my_second_playlist",
 		Image: "custom/img/2",
 	}
@@ -67,7 +63,7 @@ func (s *Suite) TestGetUserPlaylists() {
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "playlists" WHERE (user_ID = $1)`)).
 		WithArgs(userId).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "user_ID"}).
-			AddRow(id, pl1.Name, pl1.Image, userId).AddRow(id2, pl2.Name, pl2.Image, userId))
+			AddRow(pl1.Id, pl1.Name, pl1.Image, userId).AddRow(pl2.Id, pl2.Name, pl2.Image, userId))
 
 	res, err := s.repository.GetUserPlaylists(userId)
 
@@ -89,22 +85,19 @@ func (s *Suite) TestGetUserPlaylists() {
 }
 
 func (s *Suite) TestGetPlaylistById() {
-	var userId, id uint64
-	id = 123
-	userId = 12345
-
+	userId := "4123123"
 	pl1 := models.Playlist{
-		Id:    fmt.Sprint(id),
+		Id:    "5234523",
 		Name:  "name",
 		Image: "custom/img",
 	}
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "playlists" WHERE (id = $1) ORDER BY "playlists"."id" ASC LIMIT 1`)).
-		WithArgs(id).
+		WithArgs(pl1.Id).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "user_ID"}).
-			AddRow(id, pl1.Name, pl1.Image, userId))
+			AddRow(pl1.Id, pl1.Name, pl1.Image, userId))
 
-	res, err := s.repository.GetPlaylistById(id)
+	res, err := s.repository.GetPlaylistById(pl1.Id)
 
 	require.NoError(s.T(), err)
 	require.Nil(s.T(), deep.Equal(pl1, res))
@@ -112,9 +105,9 @@ func (s *Suite) TestGetPlaylistById() {
 	//test on db error
 	dbError := errors.New("db_error")
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT`)).
-		WithArgs(id).WillReturnError(dbError)
+		WithArgs(pl1.Id).WillReturnError(dbError)
 
-	_, err = s.repository.GetPlaylistById(id)
+	_, err = s.repository.GetPlaylistById(pl1.Id)
 
 	require.Error(s.T(), err)
 	require.Equal(s.T(), err, dbError)

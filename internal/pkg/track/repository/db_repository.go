@@ -8,7 +8,7 @@ import (
 )
 
 type DbTrack struct {
-	Id       string `gorm:"column:track_id"`
+	Id       uint64 `gorm:"column:track_id"`
 	Name     string `gorm:"column:track_name"`
 	Artist   string `gorm:"column:artist_name"`
 	Duration uint   `gorm:"column:duration"`
@@ -27,7 +27,7 @@ func NewDbTrackRepo(db *gorm.DB) DbTrackRepository {
 
 func toModel(dbTrack DbTrack) models.Track {
 	return models.Track{
-		Id:       dbTrack.Id,
+		Id:       fmt.Sprint(dbTrack.Id),
 		Name:     dbTrack.Name,
 		Artist:   dbTrack.Artist,
 		Duration: dbTrack.Duration,
@@ -36,7 +36,7 @@ func toModel(dbTrack DbTrack) models.Track {
 	}
 }
 
-func (tr *DbTrackRepository) GetTrackById(id uint64) (models.Track, error) {
+func (tr *DbTrackRepository) GetTrackById(id string) (models.Track, error) {
 	var track DbTrack
 	db := tr.db.Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE track_id = ?", id).Scan(&track)
 	err := db.Error
@@ -46,7 +46,7 @@ func (tr *DbTrackRepository) GetTrackById(id uint64) (models.Track, error) {
 	return toModel(track), nil
 }
 
-func (tr *DbTrackRepository) GetArtistTracks(artistId uint64) ([]models.Track, error) {
+func (tr *DbTrackRepository) GetArtistTracks(artistId string) ([]models.Track, error) {
 	var tracks []DbTrack
 	db := tr.db.Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE artist_id = ?", artistId).Scan(&tracks)
 	err := db.Error
@@ -61,7 +61,7 @@ func (tr *DbTrackRepository) GetArtistTracks(artistId uint64) ([]models.Track, e
 	return modTracks, nil
 }
 
-func (tr *DbTrackRepository) GetPlaylistTracks(plId uint64) ([]models.Track, error) {
+func (tr *DbTrackRepository) GetPlaylistTracks(plId string) ([]models.Track, error) {
 	var tracks []DbTrack
 	db := tr.db.Raw("SELECT track_id, track_name, artist_name, duration, link FROM tracks_in_playlist WHERE playlist_id = ?", plId).
 		Scan(&tracks)
@@ -77,7 +77,7 @@ func (tr *DbTrackRepository) GetPlaylistTracks(plId uint64) ([]models.Track, err
 	return modTracks, nil
 }
 
-func (tr *DbTrackRepository) GetAlbumTracks(aId uint64) ([]models.Track, error) {
+func (tr *DbTrackRepository) GetTracksByAlbumId(aId string) ([]models.Track, error) {
 	var tracks []DbTrack
 	db := tr.db.Raw("SELECT track_id, track_name, artist_name, duration, link FROM tracks_in_album WHERE album_id = ?", aId).
 		Scan(&tracks)

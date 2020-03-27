@@ -18,7 +18,7 @@ type Suite struct {
 	DB   *gorm.DB
 	mock sqlmock.Sqlmock
 
-	repository *DbTrackRepository
+	repository DbTrackRepository
 }
 
 func (s *Suite) SetupSuite() {
@@ -49,10 +49,9 @@ func (s *Suite) TestGetTrackByID() {
 	name := "test-name"
 	artist := "artist-name"
 	link := "test_link"
-	var id uint64
+	id := "12345"
 	var duration uint
 	duration = 123
-	id = 12345
 
 	s.mock.ExpectQuery("SELECT track_id, track_name, artist_name, duration, link FROM full_track_info WHERE track_id = ?").
 		WithArgs(id).
@@ -81,19 +80,17 @@ func (s *Suite) TestGetTrackByID() {
 }
 
 func (s *Suite) TestGetPlaylistTracks() {
-	var id, id2 uint64
-	id = 12345
-	id2 = 4532
+	plId := "4123"
 
 	tr1 := models.Track{
-		Id:       fmt.Sprint(id),
+		Id:       "12345",
 		Name:     "test-name",
 		Artist:   "artist-name",
 		Duration: 123,
 		Link:     "test_link1",
 	}
 	tr2 := models.Track{
-		Id:       fmt.Sprint(id2),
+		Id:       "4532",
 		Name:     "test-namqweqwee",
 		Artist:   "artist-name",
 		Duration: 5235,
@@ -103,11 +100,11 @@ func (s *Suite) TestGetPlaylistTracks() {
 	trs := []models.Track{tr1, tr2}
 
 	s.mock.ExpectQuery("SELECT track_id, track_name, artist_name, duration, link FROM tracks_in_playlist WHERE playlist_id = ?").
-		WithArgs(id).
+		WithArgs(plId).
 		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link"}).
 			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link).AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link))
 
-	res, err := s.repository.GetPlaylistTracks(id)
+	res, err := s.repository.GetPlaylistTracks(plId)
 
 	require.NoError(s.T(), err)
 	for i, elem := range res {
@@ -117,27 +114,25 @@ func (s *Suite) TestGetPlaylistTracks() {
 	//test on db error
 	dbError := errors.New("db_error")
 	s.mock.ExpectQuery("SELECT").
-		WithArgs(id).WillReturnError(dbError)
+		WithArgs(plId).WillReturnError(dbError)
 
-	_, err = s.repository.GetPlaylistTracks(id)
+	_, err = s.repository.GetPlaylistTracks(plId)
 
 	require.Error(s.T(), err)
 }
 
 func (s *Suite) TestGetAlbumTracks() {
-	var id, id2 uint64
-	id = 12345
-	id2 = 4532
+	aId := "4123"
 
 	tr1 := models.Track{
-		Id:       fmt.Sprint(id),
+		Id:       "12345",
 		Name:     "test-name",
 		Artist:   "artist-name",
 		Duration: 123,
 		Link:     "test_link1",
 	}
 	tr2 := models.Track{
-		Id:       fmt.Sprint(id2),
+		Id:       "4532",
 		Name:     "test-namqweqwee",
 		Artist:   "artist-name",
 		Duration: 5235,
@@ -147,11 +142,11 @@ func (s *Suite) TestGetAlbumTracks() {
 	trs := []models.Track{tr1, tr2}
 
 	s.mock.ExpectQuery("SELECT track_id, track_name, artist_name, duration, link FROM tracks_in_album WHERE album_id = ?").
-		WithArgs(id).
+		WithArgs(aId).
 		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link"}).
 			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link).AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link))
 
-	res, err := s.repository.GetAlbumTracks(id)
+	res, err := s.repository.GetTracksByAlbumId(aId)
 
 	require.NoError(s.T(), err)
 	for i, elem := range res {
@@ -161,9 +156,9 @@ func (s *Suite) TestGetAlbumTracks() {
 	//test on db error
 	dbError := errors.New("db_error")
 	s.mock.ExpectQuery("SELECT").
-		WithArgs(id).WillReturnError(dbError)
+		WithArgs(aId).WillReturnError(dbError)
 
-	_, err = s.repository.GetAlbumTracks(id)
+	_, err = s.repository.GetTracksByAlbumId(aId)
 
 	require.Error(s.T(), err)
 }
