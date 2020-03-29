@@ -6,6 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
 	github.com/alicebob/miniredis/v2 v2.11.4
 	github.com/go-test/deep v1.0.5
+	github.com/golang/mock v1.4.3
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/jinzhu/gorm v1.9.12
