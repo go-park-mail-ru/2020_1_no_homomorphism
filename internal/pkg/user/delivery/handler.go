@@ -71,8 +71,8 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	user := models.User{}
@@ -107,7 +107,8 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 		response.LoginExists = true
 	}
 	if response.LoginExists || response.EmailExists {
-		h.Log.HttpInfo(r.Context(), "user with same data is already exists", http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "user with same data is already exists", http.StatusConflict)
+		w.WriteHeader(http.StatusConflict)
 		err = writer.Encode(response)
 		if err != nil {
 			h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to encode: "+err.Error())
@@ -262,7 +263,7 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	h.Log.Info("new file created:", path) //add path
+	h.Log.Info("new file created:", path)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
