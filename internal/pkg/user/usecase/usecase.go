@@ -4,15 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
-	"net/http"
+	"no_homomorphism/internal/pkg/models"
 	users "no_homomorphism/internal/pkg/user"
 	"os"
 	"path/filepath"
-	"strings"
-
-	"golang.org/x/crypto/bcrypt"
-	"no_homomorphism/internal/pkg/models"
 )
 
 type UserUseCase struct {
@@ -20,87 +15,56 @@ type UserUseCase struct {
 	AvatarDir  string
 }
 
-var allowedContentType = []string{
-	"image/png",
-	"image/jpeg",
-}
-
-func (uc *UserUseCase) Create(user models.User) error {
-	ok, err := uc.Repository.CheckIfExists(user.Login, user.Email)
-	if ok {
-		return errors.New("user with this login or email is already exists") //todo сообщать отдельно о логине или\и почте
-	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+func (uc *UserUseCase) Create(user models.User) (users.SameUserExists, error) {
+	loginExists, emailExists, err := uc.Repository.CheckIfExists(user.Login, user.Email)
 	if err != nil {
-		return err
+		return users.FULL, err
 	}
-	err = uc.Repository.Create(user, hash)
-	return err
+	if loginExists && emailExists {
+		return users.FULL, nil
+	}
+	if loginExists {
+		return users.LOGIN, nil
+	}
+	if emailExists {
+		return users.EMAIL, nil
+	}
+	return users.NO, uc.Repository.Create(user)
 }
 
-func (uc *UserUseCase) Update(user models.User, input models.UserSettings) error {
-	var hash []byte
-	if input.NewPassword != "" {
-		var err error
-		hash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
+func (uc *UserUseCase) Update(user models.User, input models.UserSettings) (users.SameUserExists, error) {
+	if user.Email != input.Email {
+		_, emailExists, err := uc.Repository.CheckIfExists("", input.Email)
 		if err != nil {
-			return err
+			return users.FULL, fmt.Errorf("failed to check email existing: %v", err)
+		}
+		if emailExists {
+			return users.EMAIL, nil
 		}
 	}
-	return uc.Repository.Update(user, input, hash)
+	return users.NO, uc.Repository.Update(user, input)
 }
 
-func checkFileContentType(file multipart.File) (string, error) {
-	buffer := make([]byte, 512)
+func (uc *UserUseCase) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
+	fileName := user.Id
+	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName+"."+fileType)
 
-	_, err := file.Read(buffer)
-	if err != nil || err == io.EOF {
-		return "", err
-	}
-
-	if _, err = file.Seek(0, io.SeekStart); err != nil {
-		return "", err
-	}
-
-	contentType := http.DetectContentType(buffer)
-
-	for _, r := range allowedContentType {
-		if contentType == r {
-			return strings.Split(contentType, "/")[1], nil
-		}
-	}
-	return "", errors.New("this content type is not allowed")
-}
-
-func (uc *UserUseCase) UpdateAvatar(user models.User, file *multipart.FileHeader) (string, error) {
-
-	fileBody, err := file.Open()
-	if err != nil {
-		return "", errors.New("failed to read file body file")
-	}
-	defer fileBody.Close()
-
-	contentType, err := checkFileContentType(fileBody)
-	if err != nil {
-		return "", err
-	}
-
-	fileName := user.Id //todo good names for avatars
-	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName+"."+contentType)
-	fmt.Println(filePath)
 	newFile, err := os.Create(filePath)
 	if err != nil {
 		return "", errors.New("failed to create file")
 	}
 	defer newFile.Close()
-	_, err = io.Copy(newFile, fileBody)
+
+	_, err = io.Copy(newFile, file)
 	if err != nil {
 		return "", errors.New("error while writing to file")
 	}
-	err = uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+contentType))
+
+	err = uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+fileType))
 	if err != nil {
 		return "", err
 	}
+
 	return filePath, nil
 }
 
@@ -113,30 +77,19 @@ func (uc *UserUseCase) GetProfileByLogin(login string) (models.Profile, error) {
 	if err != nil {
 		return models.Profile{}, err
 	}
-	profile := models.Profile{
-		Name:  user.Name,
-		Login: user.Login,
-		Sex:   user.Sex,
-		Image: user.Image,
-		Email: user.Email,
-	}
-	return profile, nil
+	return uc.GetProfileByUser(user), nil
 }
 
 func (uc *UserUseCase) GetProfileByUser(user models.User) models.Profile {
-	profile := models.Profile{
+	return models.Profile{
 		Name:  user.Name,
 		Login: user.Login,
 		Sex:   user.Sex,
 		Image: user.Image,
 		Email: user.Email,
 	}
-	return profile
 }
 
-func (uc *UserUseCase) CheckUserPassword(user models.User, password string) error {
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
-		return errors.New("wrong password")
-	}
-	return nil
+func (uc *UserUseCase) CheckUserPassword(userPassword string, inputPassword string) error {
+	return uc.Repository.CheckUserPassword(userPassword, inputPassword)
 }

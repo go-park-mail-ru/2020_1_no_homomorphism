@@ -78,6 +78,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 		SessionDelivery: &SessionDelivery,
 		UserUC:          &UserUC,
 		Log:             mainLogger,
+		ImgTypes:        map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif"},
 	}
 
 	trackHandler := trackDelivery.TrackHandler{

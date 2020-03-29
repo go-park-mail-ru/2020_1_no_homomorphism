@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
 )
 
@@ -66,7 +67,11 @@ func ToModel(user User) models.User {
 	}
 }
 
-func (ur *DbUserRepository) Create(user models.User, hash []byte) error {
+func (ur *DbUserRepository) Create(user models.User) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
+	if err != nil {
+		return fmt.Errorf("error while password hashing: %v", err)
+	}
 	dbUser, err := ur.prepareDbUser(user, hash)
 	if err != nil {
 		return err
@@ -79,13 +84,18 @@ func (ur *DbUserRepository) Create(user models.User, hash []byte) error {
 	return nil
 }
 
-func (ur *DbUserRepository) Update(user models.User, input models.UserSettings, hash []byte) error {
+func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) error {
 	dbUser, err := ur.getUser(user.Login)
 	if err != nil {
 		return err
 	}
 
-	if len(hash) > 0 {
+	var hash []byte
+	if input.NewPassword != "" {
+		hash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
+		if err != nil {
+			return fmt.Errorf("error while password hashing: %v", err)
+		}
 		dbUser.Password = hash
 	}
 	dbUser.Name = input.Name
@@ -122,17 +132,32 @@ func (ur *DbUserRepository) GetUserByLogin(login string) (models.User, error) {
 	return user, nil
 }
 
-func (ur *DbUserRepository) CheckIfExists(login string, email string) (bool, error) {
-	var results User
-	db := ur.db.Raw("SELECT id FROM users WHERE login=? or email=?", login, email).Scan(&results)
-	err := db.Error
+func (ur *DbUserRepository) CheckIfExists(login string, email string) (loginExists bool, emailExists bool, err error) {
+	var results []User
+	db := ur.db.Raw("SELECT id, login, email FROM users WHERE login=? or email=?", login, email).Scan(&results)
+	err = db.Error
 	if err == gorm.ErrRecordNotFound {
-		return false, nil
+		return false, false, nil
 	}
 	if err != nil {
-		return true, err
+		return true, true, err
 	}
-	return true, nil
+	for _, elem := range results {
+		if elem.Login == login {
+			loginExists = true
+		}
+		if elem.Email == email {
+			emailExists = true
+		}
+	}
+	return loginExists, emailExists, nil
+}
+
+func (ur *DbUserRepository) CheckUserPassword(userPassword string, InputPassword string) error {
+	if err := bcrypt.CompareHashAndPassword([]byte(userPassword), []byte(InputPassword)); err != nil {
+		return errors.New("wrong password")
+	}
+	return nil
 }
 
 func IsModelFieldsNotEmpty(user models.User) bool {

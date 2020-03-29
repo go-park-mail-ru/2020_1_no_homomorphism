@@ -19,6 +19,7 @@ type Handler struct {
 	SessionDelivery session.Delivery
 	UserUC          users.UseCase
 	Log             *logger.MainLogger
+	ImgTypes        map[string]string
 }
 
 func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
@@ -35,9 +36,34 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err := h.UserUC.Update(user, input); err != nil {
-		h.Log.HttpInfo(r.Context(), "can't update user:"+err.Error(), http.StatusForbidden)
-		w.WriteHeader(http.StatusForbidden)
+	emailExists, err := h.UserUC.Update(user, input)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "can't update user:"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	writer := json.NewEncoder(w)
+
+	type updateResponse struct {
+		EmailExists bool `json:"email_exists"`
+	}
+	if emailExists != users.NO {
+		response := updateResponse{true}
+		err = writer.Encode(response)
+		if err != nil {
+			h.Log.LogWarning(r.Context(), "delivery", "Update", "failed to encode: "+err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+	response := updateResponse{false}
+	err = writer.Encode(response)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "Update", "failed to encode: "+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
@@ -45,33 +71,68 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
+		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	user := models.User{}
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&user)
-	h.Log.Debug(user)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err := h.UserUC.Create(user); err != nil {
+	exists, err := h.UserUC.Create(user)
+	if err != nil {
 		h.Log.HttpInfo(r.Context(), "error while creating User:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	cookie, err := h.SessionDelivery.Create(user)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create session: "+err.Error())
+	w.Header().Set("Content-Type", "application/json")
+
+	writer := json.NewEncoder(w)
+	type createResponse struct {
+		LoginExists bool `json:"login_exists"`
+		EmailExists bool `json:"email_exists"`
+	}
+	response := createResponse{false, false}
+	switch exists {
+	case users.EMAIL:
+		response.EmailExists = true
+	case users.LOGIN:
+		response.LoginExists = true
+	case users.FULL:
+		response.EmailExists = true
+		response.LoginExists = true
+	}
+	if response.LoginExists || response.EmailExists {
+		h.Log.HttpInfo(r.Context(), "user with same data is already exists", http.StatusConflict)
+		w.WriteHeader(http.StatusConflict)
+		err = writer.Encode(response)
+		if err != nil {
+			h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to encode: "+err.Error())
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		return
 	}
-
+	cookie, err := h.SessionDelivery.Create(user)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to create session: "+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	http.SetCookie(w, &cookie)
-	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
+
+	err = writer.Encode(response)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to encode: "+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreated)
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
@@ -94,15 +155,15 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if err := h.UserUC.CheckUserPassword(user, input.Password); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+	if err := h.UserUC.CheckUserPassword(user.Password, input.Password); err != nil {
 		h.Log.HttpInfo(r.Context(), "Login: wrong password", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	cookie, err := h.SessionDelivery.Create(user)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create session: "+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
@@ -187,16 +248,22 @@ func (h *Handler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	defer file.Close()
 
-	path, err := h.UserUC.UpdateAvatar(user, handler)
+	mimeType := handler.Header.Get("Content-Type")
+	elem, ok := h.ImgTypes[mimeType]
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "wrong file content-type", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	path, err := h.UserUC.UpdateAvatar(user, file, elem)
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "delivery", "UpdateAvatar", "failed to update avatar:"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	h.Log.Info("new file created:", path) //add path
+	h.Log.Info("new file created:", path)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
