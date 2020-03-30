@@ -80,6 +80,18 @@ func (uc *UserUseCase) GetProfileByLogin(login string) (models.Profile, error) {
 	return uc.GetProfileByUser(user), nil
 }
 
+func (uc *UserUseCase) Login(input models.UserSignIn) (models.User, error) {
+	user, err := uc.GetUserByLogin(input.Login)
+	if err != nil {
+		return models.User{}, fmt.Errorf("failed to get user: %v", err)
+	}
+	err = uc.CheckUserPassword(user.Password, input.Password)
+	if err != nil {
+		return models.User{}, fmt.Errorf("wrong password: %v", err)
+	}
+	return user, nil
+}
+
 func (uc *UserUseCase) GetProfileByUser(user models.User) models.Profile {
 	return models.Profile{
 		Name:  user.Name,

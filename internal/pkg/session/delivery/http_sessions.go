@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -27,8 +28,12 @@ func (uc *SessionDelivery) Create(user models.User) (http.Cookie, error) {
 	}, nil
 }
 
-func (uc *SessionDelivery) Delete(sessionID uuid.UUID) error {
-	return uc.UseCase.Delete(sessionID)
+func (uc *SessionDelivery) Delete(sessionID string) error {
+	sid, err := uuid.FromString(sessionID)
+	if err != nil {
+		return fmt.Errorf("can't parse uuid from string")
+	}
+	return uc.UseCase.Delete(sid)
 }
 
 func (uc *SessionDelivery) GetLoginBySessionID(sessionID uuid.UUID) (string, error) {
