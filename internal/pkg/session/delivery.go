@@ -8,6 +8,6 @@ import (
 
 type Delivery interface {
 	Create(user models.User) (http.Cookie, error)
-	Delete(sessionID uuid.UUID) error
+	Delete(sessionID string) error
 	GetLoginBySessionID(sessionID uuid.UUID) (string, error)
 }

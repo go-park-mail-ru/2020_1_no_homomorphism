@@ -17,6 +17,7 @@ const (
 type UseCase interface {
 	Create(user models.User) (SameUserExists, error)
 	Update(user models.User, input models.UserSettings) (SameUserExists, error)
+	Login(input models.UserSignIn) (models.User, error)
 	UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error)
 	GetUserByLogin(login string) (models.User, error)
 	GetProfileByLogin(login string) (models.Profile, error)

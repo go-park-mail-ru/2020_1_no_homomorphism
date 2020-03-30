@@ -33,7 +33,7 @@ import (
 )
 
 func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool) (
-	userDelivery.Handler,
+	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
 	albumDelivery.AlbumHandler,
@@ -74,7 +74,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 		Log:        mainLogger,
 	}
 
-	userHandler := userDelivery.Handler{
+	userHandler := userDelivery.UserHandler{
 		SessionDelivery: &SessionDelivery,
 		UserUC:          &UserUC,
 		Log:             mainLogger,

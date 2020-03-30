@@ -10,17 +10,17 @@ import (
 	"testing"
 )
 
-func TestCreate(t *testing.T) {
-	testUser := models.User{
-		Id:       "1234",
-		Password: "76453647fvd",
-		Name:     "TestName",
-		Login:    "nnnagibator",
-		Sex:      "Man",
-		Image:    "/static/avatar/default.png",
-		Email:    "klsJDLKfj@mail.ru",
-	}
+var testUser = models.User{
+	Id:       "1234",
+	Password: "76453647fvd",
+	Name:     "TestName",
+	Login:    "nnnagibator",
+	Sex:      "Man",
+	Image:    "/static/avatar/default.png",
+	Email:    "klsJDLKfj@mail.ru",
+}
 
+func TestCreate(t *testing.T) {
 	testError := errors.New("something go wrong")
 
 	t.Run("Create-OK", func(t *testing.T) {
@@ -156,16 +156,6 @@ func TestCreate(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	testUser := models.User{
-		Id:       "1234",
-		Password: "76453647fvd",
-		Name:     "TestName",
-		Login:    "nnnagibator",
-		Sex:      "Man",
-		Image:    "/static/avatar/default.png",
-		Email:    "klsJDLKfj@mail.ru",
-	}
-
 	testInput := models.UserSettings{
 		NewPassword: "01238401ksjdf20934",
 		User:        testUser,
@@ -284,16 +274,6 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestGetProfileByLogin(t *testing.T) {
-	testUser := models.User{
-		Id:       "1234",
-		Password: "76453647fvd",
-		Name:     "TestName",
-		Login:    "nnnagibator",
-		Sex:      "Man",
-		Image:    "/static/avatar/default.png",
-		Email:    "klsJDLKfj@mail.ru",
-	}
-
 	testProfile := models.Profile{
 		Name:  testUser.Name,
 		Login: testUser.Login,
@@ -345,16 +325,6 @@ func TestGetProfileByLogin(t *testing.T) {
 }
 
 func TestGetUserByLogin(t *testing.T) {
-	testUser := models.User{
-		Id:       "1234",
-		Password: "76453647fvd",
-		Name:     "TestName",
-		Login:    "nnnagibator",
-		Sex:      "Man",
-		Image:    "/static/avatar/default.png",
-		Email:    "klsJDLKfj@mail.ru",
-	}
-
 	t.Run("GetProfileByLogin-OK", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -394,5 +364,80 @@ func TestGetUserByLogin(t *testing.T) {
 		_, err := useCase.GetUserByLogin(testUser.Login)
 		assert.Error(t, err)
 		assert.Equal(t, err, testError)
+	})
+}
+
+func TestLogin(t *testing.T) {
+	testError := errors.New("some test error")
+
+	testInput := models.UserSignIn{
+		Login:    testUser.Login,
+		Password: testUser.Password,
+	}
+
+	t.Run("GetLogin-OK", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := user.NewMockRepository(ctrl)
+		m.
+			EXPECT().
+			GetUserByLogin(testInput.Login).
+			Return(testUser, nil)
+		m.
+			EXPECT().
+			CheckUserPassword(testUser.Password, testInput.Password).
+			Return(nil)
+
+		useCase := UserUseCase{
+			Repository: m,
+			AvatarDir:  "/test",
+		}
+
+		userData, err := useCase.Login(testInput)
+		assert.NoError(t, err)
+		assert.Equal(t, userData, testUser)
+	})
+
+	t.Run("GetLogin-NoSuchUser", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := user.NewMockRepository(ctrl)
+		m.
+			EXPECT().
+			GetUserByLogin(testInput.Login).
+			Return(models.User{}, testError)
+
+		useCase := UserUseCase{
+			Repository: m,
+			AvatarDir:  "/test",
+		}
+
+		_, err := useCase.Login(testInput)
+		assert.Error(t, err)
+	})
+
+	t.Run("GetLogin-WrongPassword", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := user.NewMockRepository(ctrl)
+		m.
+			EXPECT().
+			GetUserByLogin(testInput.Login).
+			Return(testUser, nil)
+		m.
+			EXPECT().
+			CheckUserPassword(testUser.Password, testInput.Password).
+			Return(testError)
+
+		useCase := UserUseCase{
+			Repository: m,
+			AvatarDir:  "/test",
+		}
+
+		_, err := useCase.Login(testInput)
+		assert.Error(t, err)
 	})
 }
