@@ -16,7 +16,7 @@
     "url" : "http://89.208.199.170:3001/"
   } ],
   "paths" : {
-    "/users/login" : {
+    "/api/v1/users/login" : {
       "post" : {
         "summary" : "Login request",
         "requestBody" : {
@@ -42,7 +42,7 @@
         }
       }
     },
-    "/tracks/{id}" : {
+    "/api/v1/tracks/{id}" : {
       "post" : {
         "summary" : "get track",
         "parameters" : [ {
@@ -74,7 +74,7 @@
         }
       }
     },
-    "/users/logout" : {
+    "/api/v1/users/logout" : {
       "delete" : {
         "summary" : "Logout",
         "parameters" : [ {
@@ -100,7 +100,7 @@
         }
       }
     },
-    "/users/signup" : {
+    "/api/v1/users/signup" : {
       "post" : {
         "summary" : "Signup request",
         "requestBody" : {
@@ -129,7 +129,7 @@
         }
       }
     },
-    "/users/me" : {
+    "/api/v1/users/me" : {
       "get" : {
         "summary" : "authorized user's profile",
         "parameters" : [ {
@@ -162,7 +162,7 @@
         }
       }
     },
-    "/users/settings" : {
+    "/api/v1/users/settings" : {
       "put" : {
         "summary" : "edit user's profile",
         "parameters" : [ {
@@ -203,7 +203,7 @@
         }
       }
     },
-    "/users/images" : {
+    "/api/v1/users/images" : {
       "post" : {
         "summary" : "Add user's image",
         "requestBody" : {
@@ -231,7 +231,7 @@
         }
       }
     },
-    "/users/profiles/{login}" : {
+    "/api/v1/users/profiles/{login}" : {
       "get" : {
         "summary" : "profile with login",
         "parameters" : [ {
@@ -269,7 +269,7 @@
         }
       }
     },
-    "/playlists/{id}" : {
+    "/api/v1/playlists/{id}" : {
       "get" : {
         "summary" : "get playlist by id",
         "parameters" : [ {
@@ -307,7 +307,7 @@
         }
       }
     },
-    "/users/playlists" : {
+    "/api/v1/users/playlists" : {
       "get" : {
         "summary" : "get list of user playlists",
         "parameters" : [ {
@@ -342,7 +342,7 @@
         }
       }
     },
-    "/albums/{id}" : {
+    "/api/v1/albums/{id}" : {
       "get" : {
         "summary" : "get list of user playlists",
         "parameters" : [ {
@@ -374,7 +374,7 @@
         }
       }
     },
-    "/users/albums" : {
+    "/api/v1/users/albums" : {
       "get" : {
         "summary" : "get list of user playlists",
         "parameters" : [ {

@@ -11,7 +11,7 @@ info:
 servers:
   - url: http://89.208.199.170:3001/
 paths:
-  /users/login:
+  /api/v1/users/login:
     post:
       summary: Login request
       requestBody:
@@ -27,7 +27,7 @@ paths:
           description: Bad request - wrong data
         "500":
           description: Internal server error
-  /tracks/{id}:
+  /api/v1/tracks/{id}:
     post:
       summary: get track
       parameters:
@@ -49,7 +49,7 @@ paths:
                 $ref: '#/components/schemas/Track'
         "400":
           description: Bad request - wrong data
-  /users/logout:
+  /api/v1/users/logout:
     delete:
       summary: Logout
       parameters:
@@ -67,7 +67,7 @@ paths:
           description: Bad request - wrong data
         "401":
           description: User unauthorized
-  /users/signup:
+  /api/v1/users/signup:
     post:
       summary: Signup request
       requestBody:
@@ -85,7 +85,7 @@ paths:
           description: User already exists
         "500":
           description: Internal server error
-  /users/me:
+  /api/v1/users/me:
     get:
       summary: authorized user's profile
       parameters:
@@ -107,7 +107,7 @@ paths:
           description: user unauthtorized
         "500":
           description: Internal server error
-  /users/settings:
+  /api/v1/users/settings:
     put:
       summary: edit user's profile
       parameters:
@@ -134,7 +134,7 @@ paths:
           description: user with new email already exists
         "500":
           description: Internal server error
-  /users/images:
+  /api/v1/users/images:
     post:
       summary: Add user's image
       requestBody:
@@ -151,7 +151,7 @@ paths:
           description: bad request - wrong data
         "500":
           description: internal server error
-  /users/profiles/{login}:
+  /api/v1/users/profiles/{login}:
     get:
       summary: profile with login
       parameters:
@@ -177,7 +177,7 @@ paths:
           description: user unauthtorized
         "500":
           description: internal server error
-  /playlists/{id}:
+  /api/v1/playlists/{id}:
     get:
       summary: get playlist by id
       parameters:
@@ -203,7 +203,7 @@ paths:
           description: user unauthtorized
         "403":
           description: user cant access to this playlist
-  /users/playlists:
+  /api/v1/users/playlists:
     get:
       summary: get list of user playlists
       parameters:
@@ -227,7 +227,7 @@ paths:
           description: bad request - wrong data
         "401":
           description: user unauthtorized
-  /albums/{id}:
+  /api/v1/albums/{id}:
     get:
       summary: get list of user playlists
       parameters:
@@ -249,7 +249,7 @@ paths:
                 $ref: '#/components/schemas/FullAlbum'
         "400":
           description: bad request - wrong data
-  /users/albums:
+  /api/v1/users/albums:
     get:
       summary: get list of user playlists
       parameters:
