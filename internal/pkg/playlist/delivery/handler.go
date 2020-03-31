@@ -52,11 +52,22 @@ func (h *PlaylistHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Reque
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-
+	user := r.Context().Value("user").(models.User)
 	varId, ok := mux.Vars(r)["id"]
 	if !ok {
 		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, varId)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to check access: "+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "current user doesnt have access to the playlist", http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	playlistData, err := h.PlaylistUC.GetPlaylistById(varId)
