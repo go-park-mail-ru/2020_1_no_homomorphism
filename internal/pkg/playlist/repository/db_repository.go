@@ -25,9 +25,10 @@ func NewDbPlaylistRepository(database *gorm.DB) DbPlaylistRepository {
 
 func toModel(pl Playlists) models.Playlist {
 	return models.Playlist{
-		Id:    fmt.Sprint(pl.Id),
-		Name:  pl.Name,
-		Image: pl.Image,
+		Id:     fmt.Sprint(pl.Id),
+		Name:   pl.Name,
+		Image:  pl.Image,
+		UserId: fmt.Sprint(pl.UserId),
 	}
 }
 

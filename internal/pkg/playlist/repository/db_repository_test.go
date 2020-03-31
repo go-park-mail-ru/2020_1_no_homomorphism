@@ -46,26 +46,26 @@ func TestInit(t *testing.T) {
 }
 
 func (s *Suite) TestGetUserPlaylists() {
-	userId := "24123"
-
 	pl1 := models.Playlist{
-		Id:    "342354",
-		Name:  "name",
-		Image: "custom/img",
+		Id:     "342354",
+		Name:   "name",
+		Image:  "custom/img",
+		UserId: "24123",
 	}
 	pl2 := models.Playlist{
-		Id:    "423516514",
-		Name:  "my_second_playlist",
-		Image: "custom/img/2",
+		Id:     "423516514",
+		Name:   "my_second_playlist",
+		Image:  "custom/img/2",
+		UserId: "24123",
 	}
 	pls := []models.Playlist{pl1, pl2}
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "playlists" WHERE (user_ID = $1)`)).
-		WithArgs(userId).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "user_ID"}).
-			AddRow(pl1.Id, pl1.Name, pl1.Image, userId).AddRow(pl2.Id, pl2.Name, pl2.Image, userId))
+		WithArgs(pl1.UserId).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "user_id"}).
+			AddRow(pl1.Id, pl1.Name, pl1.Image, pl1.UserId).AddRow(pl2.Id, pl2.Name, pl2.Image, pl2.UserId))
 
-	res, err := s.repository.GetUserPlaylists(userId)
+	res, err := s.repository.GetUserPlaylists(pl1.UserId)
 
 	require.NoError(s.T(), err)
 
@@ -76,26 +76,26 @@ func (s *Suite) TestGetUserPlaylists() {
 	//test on db error
 	dbError := errors.New("db_error")
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT`)).
-		WithArgs(userId).WillReturnError(dbError)
+		WithArgs(pl1.UserId).WillReturnError(dbError)
 
-	_, err = s.repository.GetUserPlaylists(userId)
+	_, err = s.repository.GetUserPlaylists(pl1.UserId)
 
 	require.Error(s.T(), err)
 	require.Equal(s.T(), err, dbError)
 }
 
 func (s *Suite) TestGetPlaylistById() {
-	userId := "4123123"
 	pl1 := models.Playlist{
-		Id:    "5234523",
-		Name:  "name",
-		Image: "custom/img",
+		Id:     "5234523",
+		Name:   "name",
+		Image:  "custom/img",
+		UserId: "4123123",
 	}
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "playlists" WHERE (id = $1) ORDER BY "playlists"."id" ASC LIMIT 1`)).
 		WithArgs(pl1.Id).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "user_ID"}).
-			AddRow(pl1.Id, pl1.Name, pl1.Image, userId))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "user_id"}).
+			AddRow(pl1.Id, pl1.Name, pl1.Image, pl1.UserId))
 
 	res, err := s.repository.GetPlaylistById(pl1.Id)
 
