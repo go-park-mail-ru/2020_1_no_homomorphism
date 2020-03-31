@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -26,8 +27,7 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 
 	playlists, err := h.PlaylistUC.GetUserPlaylists(user.Id)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to get playlists"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "failed to get playlists"+err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -38,15 +38,14 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 	}{playlists})
 
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "can't write playlists info into json:"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "can't write playlists info into json:"+err.Error())
 		return
 	}
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-func (h *PlaylistHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Request) {
+func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Request) {
 	if !r.Context().Value("isAuth").(bool) {
 		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -55,14 +54,12 @@ func (h *PlaylistHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Reque
 	user := r.Context().Value("user").(models.User)
 	varId, ok := mux.Vars(r)["id"]
 	if !ok {
-		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
 		return
 	}
 	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, varId)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to check access: "+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "failed to check access: "+err.Error())
 		return
 	}
 	if !ok {
@@ -72,15 +69,13 @@ func (h *PlaylistHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Reque
 	}
 	playlistData, err := h.PlaylistUC.GetPlaylistById(varId)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to get playlistData: "+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "failed to get playlistData: "+err.Error())
 		return
 	}
 
 	tracks, err := h.TrackUC.GetTracksByPlaylistId(varId)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to get tracks: "+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "failed to get tracks: "+err.Error())
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -93,10 +88,14 @@ func (h *PlaylistHandler) GetPlaylistTracks(w http.ResponseWriter, r *http.Reque
 	}{playlistData, len(tracks), tracks})
 
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "can't write tracks info into json: "+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "can't write tracks info into json: "+err.Error())
 		return
 	}
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Context, msg string) {
+	h.Log.HttpInfo(ctx, msg, http.StatusBadRequest)
+	w.WriteHeader(http.StatusBadRequest)
 }

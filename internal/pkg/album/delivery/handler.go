@@ -16,14 +16,13 @@ type AlbumHandler struct {
 	Log     *logger.MainLogger
 }
 
-func (h *AlbumHandler) GetAlbumTracks(w http.ResponseWriter, r *http.Request) {
+func (h *AlbumHandler) GetFullAlbum(w http.ResponseWriter, r *http.Request) {
 	varId, ok := mux.Vars(r)["id"]
 	if !ok {
 		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	albumData, err := h.AlbumUC.GetAlbumById(varId)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "failed to get album data"+err.Error(), http.StatusBadRequest)
@@ -51,7 +50,6 @@ func (h *AlbumHandler) GetAlbumTracks(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 

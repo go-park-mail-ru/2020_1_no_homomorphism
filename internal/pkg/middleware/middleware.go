@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"no_homomorphism/internal/pkg/playlist"
 
-	uuid "github.com/satori/go.uuid"
 	"no_homomorphism/internal/pkg/session"
 	"no_homomorphism/internal/pkg/track"
 	"no_homomorphism/internal/pkg/user"
@@ -37,13 +36,7 @@ func (m *Middleware) CheckAuthMiddleware(next http.Handler) http.Handler { //tod
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
-		sid, err := uuid.FromString(cookie.Value)
-		if err != nil {
-			ctx = context.WithValue(ctx, "isAuth", false)
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
-		}
-		userLogin, err := m.SessionDelivery.GetLoginBySessionID(sid)
+		userLogin, err := m.SessionDelivery.GetLoginBySessionID(cookie.Value)
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
 			next.ServeHTTP(w, r.WithContext(ctx))

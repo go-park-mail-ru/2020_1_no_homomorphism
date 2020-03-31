@@ -27,6 +27,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := r.Context().Value("user").(models.User)
+
 	h.Log.Debug(user)
 	input := models.UserSettings{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -55,6 +56,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+		w.WriteHeader(http.StatusConflict)
 		return
 	}
 	response := updateResponse{false}
@@ -67,7 +69,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {//todo разбить на мелкие функции
 	if r.Context().Value("isAuth").(bool) {
 		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusForbidden)
 		w.WriteHeader(http.StatusForbidden)
@@ -111,7 +113,6 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to encode: "+err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
-			return
 		}
 		return
 	}
