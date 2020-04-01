@@ -1,0 +1,449 @@
+openapi: 3.0.0
+info:
+  title: no_homomorphism
+  description: music app api
+  contact:
+    email: no-reply@mail.ru
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 0.1.0
+servers:
+  - url: http://89.208.199.170:3001/
+paths:
+  /api/v1/users/login:
+    post:
+      summary: Login request
+      requestBody:
+        description: user info for login
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "200":
+          description: CORRECT, user loged in
+        "400":
+          description: Bad request - wrong data
+        "500":
+          description: Internal server error
+  /api/v1/tracks/{id}:
+    post:
+      summary: get track
+      parameters:
+        - name: id
+          in: path
+          description: ID трека
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: identity
+      responses:
+        "200":
+          description: CORRECT, item loged in
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Track'
+        "400":
+          description: Bad request - wrong data
+  /api/v1/users/logout:
+    delete:
+      summary: Logout
+      parameters:
+        - name: session_id
+          in: cookie
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CORRECT, item loged out
+        "400":
+          description: Bad request - wrong data
+        "401":
+          description: User unauthorized
+  /api/v1/users/signup:
+    post:
+      summary: Signup request
+      requestBody:
+        description: user info for login
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "201":
+          description: CORRECT, user added to db
+        "400":
+          description: Bad request - wrong data
+        "409":
+          description: User already exists
+        "500":
+          description: Internal server error
+  /api/v1/users/me:
+    get:
+      summary: authorized user's profile
+      parameters:
+        - name: session_id
+          in: cookie
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CORRECT, found profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        "401":
+          description: user unauthtorized
+        "500":
+          description: Internal server error
+  /api/v1/users/settings:
+    put:
+      summary: edit user's profile
+      parameters:
+        - name: session_id
+          in: cookie
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSettings'
+      responses:
+        "200":
+          description: CORRECT item updated
+        "400":
+          description: Bad request - wrong data
+        "401":
+          description: Unauthtorized
+        "409":
+          description: user with new email already exists
+        "500":
+          description: Internal server error
+  /api/v1/users/images:
+    post:
+      summary: Add user's image
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Image'
+      responses:
+        "200":
+          description: CORRECT image updated
+        "400":
+          description: user unathtorized
+        "401":
+          description: bad request - wrong data
+        "500":
+          description: internal server error
+  /api/v1/users/profiles/{login}:
+    get:
+      summary: profile with login
+      parameters:
+        - name: login
+          in: path
+          description: Логин пользователя
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: identity
+      responses:
+        "200":
+          description: CORRECT profile exists and user is authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+        "400":
+          description: user does not exists
+        "401":
+          description: user unauthtorized
+        "500":
+          description: internal server error
+  /api/v1/playlists/{id}:
+    get:
+      summary: get playlist by id
+      parameters:
+        - name: id
+          in: path
+          description: playlist id
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: identity
+      responses:
+        "200":
+          description: CORRECT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullPlaylist'
+        "400":
+          description: user does not exists
+        "401":
+          description: user unauthtorized
+        "403":
+          description: user cant access to this playlist
+  /api/v1/users/playlists:
+    get:
+      summary: get list of user playlists
+      parameters:
+        - name: session_id
+          in: cookie
+          description: user's session id
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: identity
+      responses:
+        "200":
+          description: CORRECT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+        "400":
+          description: bad request - wrong data
+        "401":
+          description: user unauthtorized
+  /api/v1/albums/{id}:
+    get:
+      summary: get list of user playlists
+      parameters:
+        - name: id
+          in: path
+          description: id of album
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: identity
+      responses:
+        "200":
+          description: CORRECT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FullAlbum'
+        "400":
+          description: bad request - wrong data
+  /api/v1/users/albums:
+    get:
+      summary: get list of user playlists
+      parameters:
+        - name: session_id
+          in: cookie
+          description: user's session id
+          required: true
+          style: form
+          explode: true
+          schema:
+            type: string
+            format: identity
+      responses:
+        "200":
+          description: CORRECT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200_1'
+        "400":
+          description: bad request - wrong data
+        "401":
+          description: user unauthtorized
+components:
+  schemas:
+    Image:
+      required:
+        - image
+      type: object
+      properties:
+        profile_image:
+          type: object
+          example: pupa.jpg
+    Profile:
+      required:
+        - login
+      type: object
+      properties:
+        id:
+          type: string
+          format: uint
+          example: "4012034"
+        name:
+          type: string
+          example: Vladimir
+        login:
+          type: string
+          example: Vovo4ka
+        email:
+          type: string
+          example: vov@edin.ru
+        image:
+          type: string
+          example: /topkek.img
+    User:
+      required:
+        - login
+        - password
+      type: object
+      properties:
+        id:
+          type: string
+          format: uint
+          example: "0938423"
+        name:
+          type: string
+          example: Vladimir
+        login:
+          type: string
+          example: Vovo4ka
+        email:
+          type: string
+          example: vov@edin.ru
+        password:
+          type: string
+          example: qwertyQWERTY
+        image:
+          type: string
+          example: /topkek.img
+    UserSettings:
+      required:
+        - user
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        new_password:
+          type: string
+          example: newSecret
+    FullPlaylist:
+      type: object
+      properties:
+        playlist:
+          $ref: '#/components/schemas/Playlist'
+        count:
+          type: integer
+          description: number of tracks in playlist
+          example: 1
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+    Playlist:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+          example: 123
+        name:
+          type: string
+          example: Best Hits Ever
+        image:
+          type: string
+          example: /static/image
+    Album:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+          example: 123
+        name:
+          type: string
+          example: Best Hits Ever
+        image:
+          type: string
+          example: /static/image
+        artist_name:
+          type: string
+          example: Eminem
+        artist_id:
+          type: integer
+          format: uint
+          example: 4124
+    FullAlbum:
+      type: object
+      properties:
+        album:
+          $ref: '#/components/schemas/Album'
+        count:
+          type: integer
+          description: number of tracks in album
+          example: 1
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Track'
+    Track:
+      required:
+        - artist
+        - artistId
+        - duration
+        - id
+        - image
+        - link
+        - name
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint
+          example: 1
+        name:
+          type: string
+          example: Пчеловод
+        artist:
+          type: string
+          example: Пчела
+        duration:
+          type: integer
+          format: uint
+          example: 1000
+        image:
+          type: string
+          example: album.png
+        link:
+          type: string
+          example: /music.mp3
+        artistId:
+          type: integer
+          format: uint
+          example: 31245
+    inline_response_200:
+      type: object
+      properties:
+        playlists:
+          type: array
+          items:
+            $ref: '#/components/schemas/Playlist'
+    inline_response_200_1:
+      type: object
+      properties:
+        albums:
+          type: array
+          items:
+            $ref: '#/components/schemas/Album'

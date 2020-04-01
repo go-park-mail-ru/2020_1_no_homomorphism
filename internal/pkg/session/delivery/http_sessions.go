@@ -36,6 +36,10 @@ func (uc *SessionDelivery) Delete(sessionID string) error {
 	return uc.UseCase.Delete(sid)
 }
 
-func (uc *SessionDelivery) GetLoginBySessionID(sessionID uuid.UUID) (string, error) {
-	return uc.UseCase.GetLoginBySessionID(sessionID)
+func (uc *SessionDelivery) GetLoginBySessionID(sessionID string) (string, error) {
+	sid, err := uuid.FromString(sessionID)
+	if err != nil {
+		return "", fmt.Errorf("can't parse uuid from string")
+	}
+	return uc.UseCase.GetLoginBySessionID(sid)
 }

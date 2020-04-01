@@ -6,7 +6,6 @@ package session
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	uuid "github.com/satori/go.uuid"
 	http "net/http"
 	models "no_homomorphism/internal/pkg/models"
 	reflect "reflect"
@@ -65,7 +64,7 @@ func (mr *MockDeliveryMockRecorder) Delete(sessionID interface{}) *gomock.Call {
 }
 
 // GetLoginBySessionID mocks base method
-func (m *MockDelivery) GetLoginBySessionID(sessionID uuid.UUID) (string, error) {
+func (m *MockDelivery) GetLoginBySessionID(sessionID string) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLoginBySessionID", sessionID)
 	ret0, _ := ret[0].(string)
