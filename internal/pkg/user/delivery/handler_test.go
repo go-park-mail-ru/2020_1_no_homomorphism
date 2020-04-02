@@ -607,7 +607,6 @@ func TestUpdate(t *testing.T) {
 				inputData.NewPassword,
 			)).
 			Expect(t).
-			Body(`{"email_exists":false}`).
 			Status(http.StatusOK).
 			End()
 	})
@@ -660,8 +659,7 @@ func TestUpdate(t *testing.T) {
 				inputData.NewPassword,
 			)).
 			Expect(t).
-			Body(`{"email_exists":true}`).
-			Status(http.StatusOK).
+			Status(http.StatusConflict).
 			End()
 	})
 
