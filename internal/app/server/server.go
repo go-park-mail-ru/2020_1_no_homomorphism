@@ -34,7 +34,7 @@ import (
 	"no_homomorphism/pkg/logger"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool) (
+func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken  csrf.CryptToken) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
@@ -45,10 +45,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") // todo add to config
-	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
-	if err != nil {
-		// todo ERROR WRAP ???
-	}
+
 	AlbumUC := albumUC.AlbumUseCase{
 		AlbumRepository: &albumRep,
 	}
@@ -149,7 +146,13 @@ func StartNew() {
 		},
 	}
 	defer redisConn.Close()
-	user, track, playlist, album, m := InitNewHandler(customLogger, db, redisConn)
+
+	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
+	if err != nil {
+		log.Fatal("fail init csrf token")
+	}
+
+	user, track, playlist, album, m := InitNewHandler(customLogger, db, redisConn, csrfToken)
 
 	r.HandleFunc("/api/v1/users/settings", user.Update).Methods("PUT")
 	r.HandleFunc("/api/v1/users/me", user.SelfProfile).Methods("GET")
