@@ -3,15 +3,17 @@ package delivery
 import (
 	"encoding/json"
 	"net/http"
+
 	"no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/session"
 	users "no_homomorphism/internal/pkg/user"
 
 	"no_homomorphism/pkg/logger"
 
+	"time"
+
 	"github.com/gorilla/mux"
 	"no_homomorphism/internal/pkg/models"
-	"time"
 )
 
 type UserHandler struct {
@@ -140,10 +142,9 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {//todo Ñ€Ð
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	token, err := h.CSRF.Create(cookie.Value, cookie.Expires.Unix())
 	if err != nil {
-		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to create csrf token: "+err.Error())
+		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to create csrf token: " + err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -177,16 +178,15 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &cookie)
-
 	token, err := h.CSRF.Create(cookie.Value, cookie.Expires.Unix())
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create csrf token: "+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("csrf-token", token)
-
+	w.Header().Set("Access-Control-Expose-Headers", "Csrf-Token")
+	w.Header().Set("Csrf-Token", token)
+	http.SetCookie(w, &cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
@@ -197,11 +197,11 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !r.Context().Value("isCSRFTokenCorrect").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	// if !r.Context().Value("isCSRFTokenCorrect").(bool) {
+	// 	h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
+	// 	w.WriteHeader(http.StatusUnauthorized)
+	// 	return
+	// }
 
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie || cookie == nil {
@@ -327,10 +327,10 @@ func (h *UserHandler) CheckAuth(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	if !r.Context().Value("isCSRFTokenCorrect").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	// if !r.Context().Value("isCSRFTokenCorrect").(bool) {
+	// 	h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
+	// 	w.WriteHeader(http.StatusUnauthorized)
+	// 	return
+	// }
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }

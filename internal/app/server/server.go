@@ -3,14 +3,17 @@ package server
 import (
 	"flag"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-	"log"
-	"net/http"
 	albumDelivery "no_homomorphism/internal/pkg/album/delivery"
 	albumRepo "no_homomorphism/internal/pkg/album/repository"
 	albumUC "no_homomorphism/internal/pkg/album/usecase"
@@ -29,8 +32,6 @@ import (
 	userRepo "no_homomorphism/internal/pkg/user/repository"
 	userUC "no_homomorphism/internal/pkg/user/usecase"
 	"no_homomorphism/pkg/logger"
-	"os"
-	"time"
 )
 
 func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool) (
@@ -44,7 +45,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") // todo add to config
-	csrfToken, err := csrf.NewAesCryptHashToken("antivirus")
+	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
 	if err != nil {
 		// todo ERROR WRAP ???
 	}
@@ -118,6 +119,7 @@ func StartNew() {
 		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000"},
 		AllowCredentials: true,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type", "X-Content-Type-Options", "Csrf-Token"},
 		Debug:            false,
 	})
 
@@ -163,14 +165,13 @@ func StartNew() {
 	r.HandleFunc("/api/v1/users/logout", user.Logout).Methods("DELETE")
 	r.HandleFunc("/api/v1/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
 
-	authHandler := m.CheckAuthMiddleware(r)
-	csrfMiddleware := m.CSRFCheckMiddleware(authHandler)
+	csrfMiddleware := m.CSRFCheckMiddleware(r)
+	authHandler := m.CheckAuthMiddleware(csrfMiddleware)
 
-	fmt.Println("Starts server at 8081")
-
-	accessMiddleware := middleware.AccessLogMiddleware(csrfMiddleware, user.Log)
+	accessMiddleware := middleware.AccessLogMiddleware(authHandler, user.Log)
 	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, user.Log)
 
+	fmt.Println("Starts server at 8081")
 	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
 	if err != nil {
 		log.Println(err)
