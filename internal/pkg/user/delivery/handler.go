@@ -183,6 +183,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie.Expires = time.Now().AddDate(0, 0, -1)
+	cookie.Path = "/"
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
