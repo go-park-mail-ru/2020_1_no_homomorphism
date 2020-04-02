@@ -59,7 +59,6 @@ func (tk *CryptToken) Create(sid string, tokenExpTime int64) (string, error) {
 }
 
 func (tk *CryptToken) Check(sid string, inputToken string) (bool, error) {
-	fmt.Println("sid : ", sid, " token : ", inputToken)
 	block, err := aes.NewCipher(tk.Secret)
 	if err != nil {
 		return false, err
