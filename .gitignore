@@ -2,3 +2,4 @@
 images/*
 coverage.out
 cmd/server/logfile.log
+/logfile.log

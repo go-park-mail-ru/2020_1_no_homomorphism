@@ -14,6 +14,7 @@ import (
 	albumDelivery "no_homomorphism/internal/pkg/album/delivery"
 	albumRepo "no_homomorphism/internal/pkg/album/repository"
 	albumUC "no_homomorphism/internal/pkg/album/usecase"
+	"no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/middleware"
 	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
 	playlistRepo "no_homomorphism/internal/pkg/playlist/repository"
@@ -37,13 +38,16 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
 	albumDelivery.AlbumHandler,
-	middleware.Middleware) {
+	middleware.MiddlewareManager) {
 	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	trackRep := trackRepo.NewDbTrackRepo(db)
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") //todo add to config
-
+	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") // todo add to config
+	csrfToken, err := csrf.NewAesCryptHashToken("antivirus")
+	if err != nil {
+		// todo ERROR WRAP ???
+	}
 	AlbumUC := albumUC.AlbumUseCase{
 		AlbumRepository: &albumRep,
 	}
@@ -79,6 +83,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 		UserUC:          &UserUC,
 		Log:             mainLogger,
 		ImgTypes:        map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif"},
+		CSRF:            csrfToken,
 	}
 
 	trackHandler := trackDelivery.TrackHandler{
@@ -92,7 +97,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 		Log:     mainLogger,
 	}
 
-	m := middleware.NewMiddleware(&SessionDelivery, &UserUC, &TrackUC, &PlaylistUC)
+	m := middleware.NewMiddlewareManager(&SessionDelivery, &UserUC, &TrackUC, &PlaylistUC, csrfToken)
 
 	return userHandler, trackHandler, playlistHandler, albumHandler, m
 }
@@ -157,10 +162,13 @@ func StartNew() {
 	r.HandleFunc("/api/v1/users/login", user.Login).Methods("POST")
 	r.HandleFunc("/api/v1/users/logout", user.Logout).Methods("DELETE")
 	r.HandleFunc("/api/v1/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
+
 	authHandler := m.CheckAuthMiddleware(r)
+	csrfMiddleware := m.CSRFCheckMiddleware(authHandler)
+
 	fmt.Println("Starts server at 8081")
 
-	accessMiddleware := middleware.AccessLogMiddleware(authHandler, user.Log)
+	accessMiddleware := middleware.AccessLogMiddleware(csrfMiddleware, user.Log)
 	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, user.Log)
 
 	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
