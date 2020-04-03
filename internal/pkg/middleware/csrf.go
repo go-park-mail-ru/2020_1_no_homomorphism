@@ -14,8 +14,8 @@ func (m *MiddlewareManager) CSRFCheckMiddleware(next http.Handler) http.Handler 
 		}
 		sid := ctx.Value("session_id").(string)
 		CSRFToken := r.Header.Get("Csrf-Token")
-		_, err := m.CSRF.Check(sid, CSRFToken)
-		if err != nil {
+		ok, err := m.CSRF.Check(sid, CSRFToken)
+		if err != nil || !ok {
 			ctx = context.WithValue(ctx, "isCSRFTokenCorrect", false)
 			next.ServeHTTP(w, r.WithContext(ctx))
 			return

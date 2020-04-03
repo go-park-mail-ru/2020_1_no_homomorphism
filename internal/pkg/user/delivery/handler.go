@@ -90,6 +90,15 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	token, err := h.CSRF.Create(cookie.Value, cookie.Expires.Unix())
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create csrf token: "+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Access-Control-Expose-Headers", "Csrf-Token")
+	w.Header().Set("Csrf-Token", token)
+
 	http.SetCookie(w, &cookie)
 	w.WriteHeader(http.StatusCreated)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreated)
@@ -113,41 +122,14 @@ func (h *UserHandler) checkAndSendExisting(w http.ResponseWriter, ctx context.Co
 		response.EmailExists = true
 		response.LoginExists = true
 	}
-	if response.LoginExists || response.EmailExists {
-		h.Log.HttpInfo(r.Context(), "user with same data is already exists", http.StatusConflict)
-		w.WriteHeader(http.StatusConflict)
-		err = writer.Encode(response)
-		if err != nil {
-			h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to encode: "+err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-		}
-		return
-	}
-	cookie, err := h.SessionDelivery.Create(user)
-	if err != nil {
-		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to create session: "+err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	token, err := h.CSRF.Create(cookie.Value, cookie.Expires.Unix())
-	if err != nil {
-		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create csrf token: "+err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Access-Control-Expose-Headers", "Csrf-Token")
-	w.Header().Set("Csrf-Token", token)
-	http.SetCookie(w, &cookie)
-
-	w.WriteHeader(http.StatusCreated)
+	h.Log.HttpInfo(ctx, "user with same data is already exists", http.StatusConflict)
+	w.WriteHeader(http.StatusConflict)
 
 	err := writer.Encode(response)
 	if err != nil {
 		h.Log.LogWarning(ctx, "user delivery", "checkAndSendExisting", "failed to encode: "+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreate
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -184,6 +166,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Access-Control-Expose-Headers", "Csrf-Token")
 	w.Header().Set("Csrf-Token", token)
+
 	http.SetCookie(w, &cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }

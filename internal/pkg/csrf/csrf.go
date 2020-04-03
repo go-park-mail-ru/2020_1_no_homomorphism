@@ -54,7 +54,6 @@ func (tk *CryptToken) Create(sid string, tokenExpTime int64) (string, error) {
 
 	token := base64.StdEncoding.EncodeToString(res)
 
-
 	return token, nil
 }
 
