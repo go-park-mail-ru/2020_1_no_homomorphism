@@ -36,6 +36,9 @@
           "400" : {
             "description" : "Bad request - wrong data"
           },
+          "403" : {
+            "description" : "user is already auth"
+          },
           "500" : {
             "description" : "Internal server error"
           }
@@ -74,32 +77,6 @@
         }
       }
     },
-    "/api/v1/users/logout" : {
-      "delete" : {
-        "summary" : "Logout",
-        "parameters" : [ {
-          "name" : "session_id",
-          "in" : "cookie",
-          "required" : false,
-          "style" : "form",
-          "explode" : true,
-          "schema" : {
-            "type" : "string"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "description" : "CORRECT, item loged out"
-          },
-          "400" : {
-            "description" : "Bad request - wrong data"
-          },
-          "401" : {
-            "description" : "User unauthorized"
-          }
-        }
-      }
-    },
     "/api/v1/users/signup" : {
       "post" : {
         "summary" : "Signup request",
@@ -120,8 +97,18 @@
           "400" : {
             "description" : "Bad request - wrong data"
           },
+          "403" : {
+            "description" : "user is already auth"
+          },
           "409" : {
-            "description" : "User already exists"
+            "description" : "User with same login or email exists",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/inline_response_409"
+                }
+              }
+            }
           },
           "500" : {
             "description" : "Internal server error"
@@ -129,9 +116,37 @@
         }
       }
     },
-    "/api/v1/users/me" : {
-      "get" : {
-        "summary" : "authorized user's profile",
+    "/api/v1/users/images" : {
+      "post" : {
+        "summary" : "Add user's image",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Image"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "CORRECT image updated"
+          },
+          "400" : {
+            "description" : "user unathtorized"
+          },
+          "401" : {
+            "description" : "bad request - wrong data"
+          },
+          "500" : {
+            "description" : "internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/users/logout" : {
+      "delete" : {
+        "summary" : "Logout",
         "parameters" : [ {
           "name" : "session_id",
           "in" : "cookie",
@@ -144,20 +159,13 @@
         } ],
         "responses" : {
           "200" : {
-            "description" : "CORRECT, found profile",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Profile"
-                }
-              }
-            }
+            "description" : "CORRECT, user loged out"
+          },
+          "400" : {
+            "description" : "Bad request - wrong data"
           },
           "401" : {
-            "description" : "user unauthtorized"
-          },
-          "500" : {
-            "description" : "Internal server error"
+            "description" : "User unauthorized"
           }
         }
       }
@@ -203,30 +211,25 @@
         }
       }
     },
-    "/api/v1/users/images" : {
-      "post" : {
-        "summary" : "Add user's image",
-        "requestBody" : {
-          "content" : {
-            "multipart/form-data" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/Image"
-              }
-            }
+    "/api/v1/users" : {
+      "get" : {
+        "summary" : "Logout",
+        "parameters" : [ {
+          "name" : "session_id",
+          "in" : "cookie",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "string"
           }
-        },
+        } ],
         "responses" : {
           "200" : {
-            "description" : "CORRECT image updated"
-          },
-          "400" : {
-            "description" : "user unathtorized"
+            "description" : "OK"
           },
           "401" : {
-            "description" : "bad request - wrong data"
-          },
-          "500" : {
-            "description" : "internal server error"
+            "description" : "User unauthorized"
           }
         }
       }
@@ -265,6 +268,39 @@
           },
           "500" : {
             "description" : "internal server error"
+          }
+        }
+      }
+    },
+    "/api/v1/users/me" : {
+      "get" : {
+        "summary" : "authorized user's profile",
+        "parameters" : [ {
+          "name" : "session_id",
+          "in" : "cookie",
+          "required" : false,
+          "style" : "form",
+          "explode" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "CORRECT, found profile",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "401" : {
+            "description" : "user unauthtorized"
+          },
+          "500" : {
+            "description" : "Internal server error"
           }
         }
       }
@@ -610,6 +646,18 @@
             "type" : "integer",
             "format" : "uint",
             "example" : 31245
+          }
+        }
+      },
+      "inline_response_409" : {
+        "properties" : {
+          "login_exists" : {
+            "type" : "boolean",
+            "example" : false
+          },
+          "email_exists" : {
+            "type" : "boolean",
+            "example" : true
           }
         }
       },
