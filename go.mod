@@ -14,6 +14,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
+	github.com/sevlyar/go-daemon v0.1.5
 	github.com/sirupsen/logrus v1.4.2
 	github.com/steinfletcher/apitest v1.4.5
 	github.com/stretchr/testify v1.5.1
