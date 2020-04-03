@@ -12,6 +12,7 @@ func AuthMiddlewareMock(next http.HandlerFunc, auth bool, user models.User) http
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "isAuth", auth)
 		ctx = context.WithValue(ctx, "user", user)
+		ctx = context.WithValue(ctx, "isCSRFTokenCorrect", true)
 		next(w, r.WithContext(ctx))
 	}
 }

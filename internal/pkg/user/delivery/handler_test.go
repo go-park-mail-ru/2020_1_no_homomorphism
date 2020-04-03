@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/steinfletcher/apitest"
+	"github.com/stretchr/testify/assert"
 	"net/http"
+	"no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/middleware"
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/session"
@@ -55,6 +57,10 @@ func TestCheckAuth(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
+	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
+	assert.NoError(t, err)
+	userHandlers.CSRF = csrfToken
+
 	t.Run("Login-OK", func(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
@@ -191,6 +197,10 @@ func TestLogin(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
+	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
+	assert.NoError(t, err)
+	userHandlers.CSRF = csrfToken
+
 	t.Run("Create-OK", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -233,7 +243,6 @@ func TestCreate(t *testing.T) {
 			Status(http.StatusCreated).
 			End()
 	})
-	//test auth
 	t.Run("Create-ErrorJSON", func(t *testing.T) {
 		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
 
@@ -258,8 +267,6 @@ func TestCreate(t *testing.T) {
 			Status(http.StatusForbidden).
 			End()
 	})
-
-	//test on login error
 	t.Run("Create-UseCaseError", func(t *testing.T) {
 		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
 
@@ -338,7 +345,7 @@ func TestCreate(t *testing.T) {
 			End()
 	})
 
-	t.Run("Login-EmailExists", func(t *testing.T) {
+	t.Run("Create-EmailExists", func(t *testing.T) {
 		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
 
 		ctrl := gomock.NewController(t)
@@ -373,7 +380,7 @@ func TestCreate(t *testing.T) {
 			End()
 	})
 
-	t.Run("Login-LoginExists", func(t *testing.T) {
+	t.Run("Create-LoginExists", func(t *testing.T) {
 		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
 
 		ctrl := gomock.NewController(t)
@@ -408,7 +415,7 @@ func TestCreate(t *testing.T) {
 			End()
 	})
 
-	t.Run("Login-ExistsFull", func(t *testing.T) {
+	t.Run("Create-ExistsFull", func(t *testing.T) {
 		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
 
 		ctrl := gomock.NewController(t)
