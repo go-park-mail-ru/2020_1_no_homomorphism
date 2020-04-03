@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/steinfletcher/apitest"
+	"github.com/stretchr/testify/assert"
 	"net/http"
+	csrf2 "no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/models"
 	"no_homomorphism/internal/pkg/session"
 	"no_homomorphism/internal/pkg/user"
@@ -36,6 +38,7 @@ func authMiddlewareMock(next http.HandlerFunc, auth bool, user models.User) http
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "isAuth", auth)
 		ctx = context.WithValue(ctx, "user", user)
+		ctx = context.WithValue(ctx, "isCSRFTokenCorrect", true)
 		next(w, r.WithContext(ctx))
 	})
 }
@@ -64,6 +67,10 @@ func TestCheckAuth(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
+	csrfToken, err := csrf2.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
+	assert.NoError(t, err)
+	userHandlers.CSRF = csrfToken
+
 	t.Run("Login-OK", func(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
