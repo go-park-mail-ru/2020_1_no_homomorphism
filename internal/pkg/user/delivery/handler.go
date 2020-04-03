@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
@@ -39,7 +40,6 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	user := r.Context().Value("user").(models.User)
 
-	h.Log.Debug(user)
 	input := models.UserSettings{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
@@ -52,35 +52,15 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-
-	writer := json.NewEncoder(w)
-
-	type updateResponse struct {
-		EmailExists bool `json:"email_exists"`
-	}
 	if emailExists != users.NO {
-		response := updateResponse{true}
-		err = writer.Encode(response)
-		if err != nil {
-			h.Log.LogWarning(r.Context(), "delivery", "Update", "failed to encode: "+err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		h.Log.HttpInfo(r.Context(), "user with same email exists", http.StatusConflict)
 		w.WriteHeader(http.StatusConflict)
-		return
-	}
-	response := updateResponse{false}
-	err = writer.Encode(response)
-	if err != nil {
-		h.Log.LogWarning(r.Context(), "delivery", "Update", "failed to encode: "+err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {//todo разбить на мелкие функции
+func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value("isAuth").(bool) {
 		h.Log.HttpInfo(r.Context(), "user is already auth", http.StatusForbidden)
 		w.WriteHeader(http.StatusForbidden)
@@ -100,6 +80,22 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {//todo р�
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	if exists != users.NO {
+		h.checkAndSendExisting(w, r.Context(), exists)
+		return
+	}
+	cookie, err := h.SessionDelivery.Create(user)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to create session: "+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	http.SetCookie(w, &cookie)
+	w.WriteHeader(http.StatusCreated)
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreated)
+}
+
+func (h *UserHandler) checkAndSendExisting(w http.ResponseWriter, ctx context.Context, exists users.SameUserExists) {
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
@@ -146,14 +142,12 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {//todo р�
 
 	w.WriteHeader(http.StatusCreated)
 
-	err = writer.Encode(response)
+	err := writer.Encode(response)
 	if err != nil {
-		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to encode: "+err.Error())
+		h.Log.LogWarning(ctx, "user delivery", "checkAndSendExisting", "failed to encode: "+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-
-	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreated)
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreate
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
@@ -220,6 +214,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cookie.Expires = time.Now().AddDate(0, 0, -1)
+	cookie.Path = "/"
 	http.SetCookie(w, cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
