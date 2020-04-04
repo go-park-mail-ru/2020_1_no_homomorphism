@@ -23,4 +23,5 @@ type UseCase interface {
 	GetProfileByLogin(login string) (models.Profile, error)
 	GetProfileByUser(user models.User) models.Profile
 	CheckUserPassword(userPassword string, InputPassword string) error
+	GetUserStat(id string) (models.UserStat, error)
 }

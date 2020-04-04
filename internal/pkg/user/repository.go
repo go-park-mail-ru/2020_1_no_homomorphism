@@ -11,4 +11,5 @@ type Repository interface {
 	GetUserByLogin(login string) (models.User, error)
 	CheckIfExists(login string, email string) (loginExists bool, emailExists bool, err error)
 	CheckUserPassword(userPassword string, inputPassword string) error
+	GetUserStat(id string) (models.UserStat, error)
 }

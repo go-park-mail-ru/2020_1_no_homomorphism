@@ -266,7 +266,7 @@ func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(models.User)
+	user := r.Context().Value("user").(models.User)//todo check error
 
 	file, handler, err := r.FormFile("profile_image")
 	if err != nil || handler.Size == 0 {
@@ -290,6 +290,30 @@ func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.Log.Info("new file created:", path)
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *UserHandler) GetUserStat(w http.ResponseWriter, r *http.Request) {
+	id, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "no data in mux vars", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	userStat, err := h.UserUC.GetUserStat(id)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get user's stat"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(userStat)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "user delivery", "GetUserStat", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 

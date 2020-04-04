@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	Id       uint64 `sql:"AUTO_INCREMENT" gorm:"column:id"`
+	Id       uint64 `gorm:"column:id"`
 	Login    string `gorm:"column:login"`
 	Password []byte `gorm:"column:password"`
 	Name     string `gorm:"column:name"`
@@ -158,6 +158,17 @@ func (ur *DbUserRepository) CheckUserPassword(userPassword string, InputPassword
 		return errors.New("wrong password")
 	}
 	return nil
+}
+
+func (ur *DbUserRepository) GetUserStat(id string) (models.UserStat, error) {
+	var stat models.UserStat
+
+	db := ur.db.Table("user_stat").Where("user_id = ?", id).Find(&stat)
+	err := db.Error
+	if err != nil {
+		return models.UserStat{}, err
+	}
+	return stat, nil
 }
 
 func IsModelFieldsNotEmpty(user models.User) bool {

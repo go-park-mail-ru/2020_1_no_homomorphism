@@ -102,6 +102,10 @@ func (uc *UserUseCase) GetProfileByUser(user models.User) models.Profile {
 	}
 }
 
+func (uc *UserUseCase) GetUserStat(id string) (models.UserStat, error) {
+	return uc.Repository.GetUserStat(id)
+}
+
 func (uc *UserUseCase) CheckUserPassword(userPassword string, inputPassword string) error {
 	return uc.Repository.CheckUserPassword(userPassword, inputPassword)
 }
