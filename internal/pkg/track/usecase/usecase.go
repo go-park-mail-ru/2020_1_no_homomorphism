@@ -20,3 +20,7 @@ func (uc TrackUseCase) GetTracksByAlbumId(id string) ([]models.Track, error) {
 func (uc TrackUseCase) GetTracksByPlaylistId(id string) ([]models.Track, error) {
 	return uc.Repository.GetPlaylistTracks(id)
 }
+
+func (uc TrackUseCase) GetBoundedTracksByArtistId(id string, start, end uint64) ([]models.Track, error) {
+	return uc.Repository.GetBoundedTracksByArtistId(id, start, end)
+}
