@@ -17,6 +17,9 @@ import (
 	albumDelivery "no_homomorphism/internal/pkg/album/delivery"
 	albumRepo "no_homomorphism/internal/pkg/album/repository"
 	albumUC "no_homomorphism/internal/pkg/album/usecase"
+	artistDelivery "no_homomorphism/internal/pkg/artist/delivery"
+	artistRepo "no_homomorphism/internal/pkg/artist/repository"
+	artistUC "no_homomorphism/internal/pkg/artist/usecase"
 	"no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/middleware"
 	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
@@ -34,17 +37,24 @@ import (
 	"no_homomorphism/pkg/logger"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken  csrf.CryptToken) (
+func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrf.CryptToken) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
 	albumDelivery.AlbumHandler,
+	artistDelivery.ArtistHandler,
 	middleware.MiddlewareManager) {
+
 	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	trackRep := trackRepo.NewDbTrackRepo(db)
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
+	artistRep := artistRepo.NewDbArtistRepository(db)
 	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") // todo add to config
+
+	ArtistUC := artistUC.ArtistUseCase{
+		ArtistRepository: &artistRep,
+	}
 
 	AlbumUC := albumUC.AlbumUseCase{
 		AlbumRepository: &albumRep,
@@ -76,6 +86,11 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 		Log:        mainLogger,
 	}
 
+	artistHandler := artistDelivery.ArtistHandler{
+		ArtistUC: &ArtistUC,
+		Log:      mainLogger,
+	}
+
 	userHandler := userDelivery.UserHandler{
 		SessionDelivery: &SessionDelivery,
 		UserUC:          &UserUC,
@@ -97,7 +112,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 
 	m := middleware.NewMiddlewareManager(&SessionDelivery, &UserUC, &TrackUC, &PlaylistUC, csrfToken)
 
-	return userHandler, trackHandler, playlistHandler, albumHandler, m
+	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, m
 }
 
 func StartNew() {
@@ -152,7 +167,7 @@ func StartNew() {
 		log.Fatal("fail init csrf token")
 	}
 
-	user, track, playlist, album, m := InitNewHandler(customLogger, db, redisConn, csrfToken)
+	user, track, playlist, album, artist, m := InitNewHandler(customLogger, db, redisConn, csrfToken)
 
 	r.HandleFunc("/api/v1/users/settings", user.Update).Methods("PUT")
 	r.HandleFunc("/api/v1/users/me", user.SelfProfile).Methods("GET")
@@ -167,6 +182,10 @@ func StartNew() {
 	r.HandleFunc("/api/v1/users/login", user.Login).Methods("POST")
 	r.HandleFunc("/api/v1/users/logout", user.Logout).Methods("DELETE")
 	r.HandleFunc("/api/v1/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
+	r.HandleFunc("/api/v1/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", track.GetBoundedArtistTracks).Methods("GET")
+	r.HandleFunc("/api/v1/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", album.GetBoundedAlbumsByArtistId).Methods("GET")
+	r.HandleFunc("/api/v1/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
+	r.HandleFunc("/api/v1/artists/{id:[0-9]+}", artist.GetFullArtistInfo).Methods("GET")
 
 	csrfMiddleware := m.CSRFCheckMiddleware(r)
 	authHandler := m.CheckAuthMiddleware(csrfMiddleware)
