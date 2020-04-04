@@ -16,3 +16,7 @@ func (uc *ArtistUseCase) GetArtistById(id string) (models.Artist, error) {
 func (uc *ArtistUseCase) GetBoundedArtists(start, end uint64) ([]models.Artist, error) {
 	return uc.ArtistRepository.GetBoundedArtists(start, end)
 }
+
+func (uc *ArtistUseCase) GetArtistStat(id string) (models.ArtistStat, error) {
+	return uc.ArtistRepository.GetArtistStat(id)
+}

@@ -59,3 +59,14 @@ func (ar *DbArtistRepository) GetBoundedArtists(start, end uint64) ([]models.Art
 	}
 	return modArtists, nil
 }
+
+func (ar *DbArtistRepository) GetArtistStat(id string) (models.ArtistStat, error) {
+	var stat models.ArtistStat
+
+	db := ar.db.Table("artist_stat").Where("artist_id = ?", id).Find(&stat)
+	err := db.Error
+	if err != nil {
+		return models.ArtistStat{}, err
+	}
+	return stat, nil
+}
