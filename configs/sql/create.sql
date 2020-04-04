@@ -9,11 +9,11 @@ CREATE TABLE artists -- TODO Подумать над полями
 CREATE TABLE albums
 (
     ID          BIGSERIAL PRIMARY KEY,
-    name        VARCHAR(50) NOT NULL,
+    name        VARCHAR(100) NOT NULL,
     image       VARCHAR(100) DEFAULT '/static/img/default.png',
-    release     DATE        NOT NULL,
-    artist_name VARCHAR(50) NOT NULL,
-    artist_ID   BIGSERIAL   NOT NULL,
+    release     DATE         NOT NULL,
+    artist_name VARCHAR(50)  NOT NULL,
+    artist_ID   BIGSERIAL    NOT NULL,
     FOREIGN KEY (artist_ID) REFERENCES artists (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -34,11 +34,11 @@ offset
 CREATE TABLE tracks
 (
     ID        BIGSERIAL PRIMARY KEY,
-    name      VARCHAR(50) NOT NULL,
-    duration  INTEGER     NOT NULL,
+    name      VARCHAR(100) NOT NULL,
+    duration  INTEGER      NOT NULL,
     --image    VARCHAR(100) DEFAULT '/static/img/default.png',
-    link      VARCHAR     NOT NULL,
-    artist_id BIGSERIAL   NOT NULL,
+    link      VARCHAR      NOT NULL,
+    artist_id BIGSERIAL    NOT NULL,
     FOREIGN KEY (artist_ID) REFERENCES artists (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -46,12 +46,13 @@ CREATE TABLE tracks
 
 CREATE TABLE album_tracks
 (
-    track_id BIGSERIAL NOT NULL,
-    album_id BIGSERIAL NOT NULL,
+    track_id BIGSERIAL   NOT NULL,
+    album_id BIGSERIAL   NOT NULL,
+    index    SMALLSERIAL NOT NULL,
     FOREIGN KEY (track_id) REFERENCES tracks (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
-    FOREIGN KEY (album_id) REFERENCES artists (ID)
+    FOREIGN KEY (album_id) REFERENCES albums (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE,
     PRIMARY KEY (track_id, album_id)
@@ -108,9 +109,9 @@ CREATE TABLE playlists
 
 CREATE TABLE playlist_tracks
 (
-    playlist_ID BIGSERIAL NOT NULL,
-    track_ID    BIGSERIAL NOT NULL,
-    index       SMALLINT  NOT NULL,
+    playlist_ID BIGSERIAL   NOT NULL,
+    track_ID    BIGSERIAL   NOT NULL,
+    index       SMALLSERIAL NOT NULL,
     image       VARCHAR DEFAULT '/static/img/album/default.png',
     FOREIGN KEY (playlist_ID) REFERENCES playlists (ID)
         ON DELETE CASCADE
@@ -120,6 +121,42 @@ CREATE TABLE playlist_tracks
         ON UPDATE CASCADE,
     PRIMARY KEY (playlist_ID, track_ID)
 );
+
+CREATE TABLE user_stat
+(
+    user_id   BIGINT NOT NULL PRIMARY KEY,
+    tracks    INT    NOT NULL,
+    albums    INT    NOT NULL,
+    playlists INT    NOT NULL,
+    artists   INT    NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+SELECT count(*)
+FROM liked_albums
+WHERE user_ID = 1;
+SELECT count(*)
+FROM playlists
+WHERE user_ID = 1;
+INSERT INTO user_stat
+VALUES (1, 0, 2, 4, 3);
+
+CREATE TABLE artist_stat
+(
+    artist_id   BIGINT NOT NULL PRIMARY KEY,
+    tracks      INT    NOT NULL,
+    albums      INT    NOT NULL,
+    subscribers INT    NOT NULL,
+    FOREIGN KEY (artist_id) REFERENCES artists (id)
+);
+SELECT count(*)
+FROM albums
+WHERE artist_ID = 1;
+SELECT count(*)
+FROM tracks
+WHERE artist_ID = 1;
+INSERT INTO artist_stat
+VALUES (1, 5, 7, 0);
 
 -- Список треков для плейлиста пользователя
 
@@ -194,12 +231,26 @@ SELECT a.ID as album_id,
        t.artist_name,
        t.track_name,
        t.duration,
-       t.link
+       t.link,
+       at.index
 FROM album_tracks as at,
      albums as a,
      full_track_info as t
 WHERE at.track_id = t.track_id
   AND at.album_id = a.ID;
+
+SELECT *
+from tracks_in_album
+WHERE album_id = 1
+ORDER BY index
+LIMIT 5
+offset
+0;
+
+-- Если при вставки пишет, что id повторяется, значит траблы с последовательностью, ее надо обновить:
+SELECT setval(pg_get_serial_sequence('users', 'id'), coalesce(max(id) + 1, 1), false)
+FROM users;
+
 
 -- Полная информация, необходимая для отображения трека
 
@@ -249,4 +300,9 @@ SELECT *
 FROM full_track_info
 WHERE track_id = 1;
 
+SELECT count(*)
+FROM users;
 
+SELECT count(*)
+FROM albums
+where artist_ID = 2;

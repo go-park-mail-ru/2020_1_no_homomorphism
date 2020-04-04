@@ -27,3 +27,11 @@ type UserSignIn struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
 }
+
+type UserStat struct {
+	UserId    string `json:"user_id"`
+	Tracks    uint64 `json:"tracks"`
+	Albums    uint64 `json:"albums"`
+	Playlists uint64 `json:"playlists"`
+	Artists   uint64 `json:"artists"`
+}
