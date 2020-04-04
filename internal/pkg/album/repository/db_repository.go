@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"no_homomorphism/internal/pkg/models"
+	"time"
 )
 
 type Albums struct {
-	Id         uint64 `gorm:"column:id"`
-	Name       string `gorm:"column:name"`
-	Image      string `gorm:"column:image"`
-	ArtistName string `gorm:"column:artist_name"`
-	ArtistId   uint64 `gorm:"column:artist_id"`
+	Id         uint64    `gorm:"column:id"`
+	Name       string    `gorm:"column:name"`
+	Image      string    `gorm:"column:image"`
+	Release    time.Time `gorm:"column:release"`
+	ArtistName string    `gorm:"column:artist_name"`
+	ArtistId   uint64    `gorm:"column:artist_id"`
 }
 
 type DbAlbumRepository struct {
@@ -29,6 +31,7 @@ func toModel(album Albums) models.Album {
 		Id:         fmt.Sprint(album.Id),
 		Name:       album.Name,
 		Image:      album.Image,
+		Release:    album.Release.Format("02-01-2006"),
 		ArtistName: album.ArtistName,
 		ArtistId:   fmt.Sprint(album.ArtistId),
 	}
@@ -61,4 +64,20 @@ func (ar *DbAlbumRepository) GetAlbumById(id string) (models.Album, error) {
 		return models.Album{}, err
 	}
 	return toModel(dbAlbum), nil
+}
+
+func (ar *DbAlbumRepository) GetBoundedAlbumsByArtistId(id string, start, end uint64) ([]models.Album, error) {
+	var dbAlbum []Albums
+	limit := end - start
+
+	db := ar.db.Where("artist_id = ?", id).Order("release").Limit(limit).Offset(start).Find(&dbAlbum)
+	err := db.Error
+	if err != nil {
+		return []models.Album{}, err
+	}
+	albumsArray := make([]models.Album, len(dbAlbum))
+	for i, elem := range dbAlbum {
+		albumsArray[i] = toModel(elem)
+	}
+	return albumsArray, nil
 }
