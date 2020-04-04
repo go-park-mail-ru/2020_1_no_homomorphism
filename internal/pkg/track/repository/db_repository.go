@@ -46,9 +46,16 @@ func (tr *DbTrackRepository) GetTrackById(id string) (models.Track, error) {
 	return toModel(track), nil
 }
 
-func (tr *DbTrackRepository) GetArtistTracks(artistId string) ([]models.Track, error) {
+func (tr *DbTrackRepository) GetBoundedTracksByArtistId(id string, start, end uint64) ([]models.Track, error) {
 	var tracks []DbTrack
-	db := tr.db.Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE artist_id = ?", artistId).Scan(&tracks)
+	limit := end - start
+	db := tr.db.
+		Raw("SELECT track_id,  track_name, artist_name, duration, link FROM full_track_info WHERE artist_id = ? ORDER BY track_name LIMIT ? OFFSET ?",
+			id,
+			limit,
+			start,
+			).Scan(&tracks)
+
 	err := db.Error
 	if err != nil {
 		return nil, errors.New("query error: " + err.Error())

@@ -11,6 +11,7 @@ CREATE TABLE albums
     ID          BIGSERIAL PRIMARY KEY,
     name        VARCHAR(50) NOT NULL,
     image       VARCHAR(100) DEFAULT '/static/img/default.png',
+    release     DATE        NOT NULL,
     artist_name VARCHAR(50) NOT NULL,
     artist_ID   BIGSERIAL   NOT NULL,
     FOREIGN KEY (artist_ID) REFERENCES artists (ID)
@@ -21,6 +22,14 @@ CREATE TABLE albums
 SELECT *
 FROM albums a
 WHERE a.artist_id = 1;
+
+SELECT track_id, track_name, artist_name, duration, link
+FROM full_track_info
+WHERE artist_id = 1
+ORDER BY track_name
+limit 2
+offset
+2;
 
 CREATE TABLE tracks
 (
