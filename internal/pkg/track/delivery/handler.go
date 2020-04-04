@@ -36,31 +36,3 @@ func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
-
-func (h *TrackHandler) GetAlbumTracks(w http.ResponseWriter, r *http.Request) {
-	varId, ok := mux.Vars(r)["id"]
-	if !ok {
-		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	playlists, err := h.TrackUC.GetTracksByAlbumId(varId)
-	if err != nil {
-		h.Log.HttpInfo(r.Context(), "failed to get album' tracks"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-
-	writer := json.NewEncoder(w)
-	err = writer.Encode(playlists)
-	if err != nil {
-		h.Log.HttpInfo(r.Context(), "can't write album' tracks into json:"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
-}
-
