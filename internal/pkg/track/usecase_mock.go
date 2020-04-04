@@ -48,19 +48,19 @@ func (mr *MockUseCaseMockRecorder) GetTrackById(id interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTrackById", reflect.TypeOf((*MockUseCase)(nil).GetTrackById), id)
 }
 
-// GetTracksByAlbumId mocks base method
+// GetBoundedTracksByAlbumId mocks base method
 func (m *MockUseCase) GetTracksByAlbumId(id string) ([]models.Track, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTracksByAlbumId", id)
+	ret := m.ctrl.Call(m, "GetBoundedTracksByAlbumId", id)
 	ret0, _ := ret[0].([]models.Track)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTracksByAlbumId indicates an expected call of GetTracksByAlbumId
+// GetBoundedTracksByAlbumId indicates an expected call of GetBoundedTracksByAlbumId
 func (mr *MockUseCaseMockRecorder) GetTracksByAlbumId(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTracksByAlbumId", reflect.TypeOf((*MockUseCase)(nil).GetTracksByAlbumId), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByAlbumId", reflect.TypeOf((*MockUseCase)(nil).GetTracksByAlbumId), id)
 }
 
 // GetTracksByPlaylistId mocks base method

@@ -146,7 +146,7 @@ func (s *Suite) TestGetAlbumTracks() {
 		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link"}).
 			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link).AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link))
 
-	res, err := s.repository.GetTracksByAlbumId(aId)
+	res, err := s.repository.GetBoundedTracksByAlbumId(aId, 0, 0)
 
 	require.NoError(s.T(), err)
 	for i, elem := range res {
@@ -158,7 +158,7 @@ func (s *Suite) TestGetAlbumTracks() {
 	s.mock.ExpectQuery("SELECT").
 		WithArgs(aId).WillReturnError(dbError)
 
-	_, err = s.repository.GetTracksByAlbumId(aId)
+	_, err = s.repository.GetBoundedTracksByAlbumId(aId, 0, 0)
 
 	require.Error(s.T(), err)
 }
