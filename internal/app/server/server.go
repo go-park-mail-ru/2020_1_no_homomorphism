@@ -88,7 +88,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 
 	artistHandler := artistDelivery.ArtistHandler{
 		ArtistUC: &ArtistUC,
-		TrackUC: &TrackUC,
+		TrackUC:  &TrackUC,
 		Log:      mainLogger,
 	}
 

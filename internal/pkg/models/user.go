@@ -2,20 +2,12 @@ package models
 
 type User struct {
 	Id       string `json:"id"`
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"`
 	Name     string `json:"name"`
 	Login    string `json:"login"`
 	Sex      string `json:"sex"`
 	Image    string `json:"image"`
 	Email    string `json:"email"`
-}
-
-type Profile struct {
-	Name  string `json:"name"`
-	Login string `json:"login"`
-	Sex   string `json:"sex"`
-	Image string `json:"image"`
-	Email string `json:"email"`
 }
 
 type UserSettings struct {

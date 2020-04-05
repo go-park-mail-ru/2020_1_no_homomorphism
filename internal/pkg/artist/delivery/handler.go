@@ -5,20 +5,16 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"no_homomorphism/internal/pkg/artist"
-	"no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/models"
-	"no_homomorphism/internal/pkg/session"
 	"no_homomorphism/internal/pkg/track"
 	"no_homomorphism/pkg/logger"
 	"strconv"
 )
 
 type ArtistHandler struct {
-	ArtistUC        artist.UseCase
-	TrackUC         track.UseCase
-	SessionDelivery session.Delivery
-	CSRF            csrf.CryptToken
-	Log             *logger.MainLogger
+	ArtistUC artist.UseCase
+	TrackUC  track.UseCase
+	Log      *logger.MainLogger
 }
 
 func (h *ArtistHandler) GetFullArtistInfo(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +35,7 @@ func (h *ArtistHandler) GetFullArtistInfo(w http.ResponseWriter, r *http.Request
 	writer := json.NewEncoder(w)
 	err = writer.Encode(&artistInfo)
 	if err != nil {
-		h.Log.LogWarning(r.Context(), "artistInfo delivery", "GetFullArtistInfo", "failed to encode json"+err.Error())
+		h.Log.LogWarning(r.Context(), "artist delivery", "GetFullArtistInfo", "failed to encode json"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -92,7 +88,7 @@ func (h *ArtistHandler) GetBoundedArtistTracks(w http.ResponseWriter, r *http.Re
 	end, okEnd := r.Context().Value("end").(uint64)
 
 	if !okId || !okStart || !okEnd {
-		h.Log.LogWarning(r.Context(), "playlist delivery", "GetBoundedPlaylistTracks", "failed to get vars")
+		h.Log.LogWarning(r.Context(), "artist delivery", "GetBoundedArtistTracks", "failed to get vars")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -111,7 +107,7 @@ func (h *ArtistHandler) GetBoundedArtistTracks(w http.ResponseWriter, r *http.Re
 	}{id, tracks})
 
 	if err != nil {
-		h.Log.LogWarning(r.Context(), "tracks delivery", "GetBoundedArtistTracks", "failed to encode json"+err.Error())
+		h.Log.LogWarning(r.Context(), "artist delivery", "GetBoundedArtistTracks", "failed to encode json"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

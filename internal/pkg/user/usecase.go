@@ -20,8 +20,8 @@ type UseCase interface {
 	Login(input models.UserSignIn) (models.User, error)
 	UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error)
 	GetUserByLogin(login string) (models.User, error)
-	GetProfileByLogin(login string) (models.Profile, error)
-	GetProfileByUser(user models.User) models.Profile
+	GetProfileByLogin(login string) (models.User, error)
+	GetOutputUserData(user models.User) models.User
 	CheckUserPassword(userPassword string, InputPassword string) error
 	GetUserStat(id string) (models.UserStat, error)
 }

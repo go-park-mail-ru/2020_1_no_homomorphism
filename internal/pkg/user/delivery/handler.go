@@ -241,7 +241,7 @@ func (h *UserHandler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := r.Context().Value("user").(models.User)
-	profile := h.UserUC.GetProfileByUser(user)
+	profile := h.UserUC.GetOutputUserData(user)
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -266,7 +266,7 @@ func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user := r.Context().Value("user").(models.User)//todo check error
+	user := r.Context().Value("user").(models.User) //todo check error
 
 	file, handler, err := r.FormFile("profile_image")
 	if err != nil || handler.Size == 0 {
