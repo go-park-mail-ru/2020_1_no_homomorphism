@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	uuid "github.com/satori/go.uuid"
 	"no_homomorphism/internal/pkg/models"
 	users "no_homomorphism/internal/pkg/user"
 	"os"
@@ -46,7 +47,7 @@ func (uc *UserUseCase) Update(user models.User, input models.UserSettings) (user
 }
 
 func (uc *UserUseCase) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
-	fileName := user.Id
+	fileName := uuid.NewV4().String()
 	filePath := filepath.Join(os.Getenv("MUSIC_PROJ_DIR"), uc.AvatarDir, fileName+"."+fileType)
 
 	newFile, err := os.Create(filePath)
