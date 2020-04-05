@@ -3,6 +3,8 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
@@ -113,7 +115,7 @@ func (ur *DbUserRepository) UpdateAvatar(user models.User, filePath string) erro
 	if err != nil {
 		return err
 	}
-	dbUser.Image = filePath
+	dbUser.Image = os.Getenv("FILE_SERVER") + filePath
 
 	db := ur.db.Save(&dbUser)
 	err = db.Error

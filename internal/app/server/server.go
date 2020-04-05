@@ -37,6 +37,7 @@ import (
 	"no_homomorphism/pkg/logger"
 )
 
+
 func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrf.CryptToken) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
@@ -50,7 +51,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	artistRep := artistRepo.NewDbArtistRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, "/static/img/avatar/default.png") // todo add to config
+	dbRep := userRepo.NewDbUserRepository(db, os.Getenv("FILE_SERVER") + "/avatar/default.jpg") // todo add to config
 
 	ArtistUC := artistUC.ArtistUseCase{
 		ArtistRepository: &artistRep,
@@ -74,7 +75,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	}
 	UserUC := userUC.UserUseCase{
 		Repository: &dbRep,
-		AvatarDir:  "/static/img/avatar/",
+		AvatarDir:  "/avatar",
 	}
 	TrackUC := trackUC.TrackUseCase{
 		Repository: &trackRep,
@@ -204,4 +205,5 @@ func StartNew() {
 		log.Println(err)
 		return
 	}
+
 }
