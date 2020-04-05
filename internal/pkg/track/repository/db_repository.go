@@ -12,6 +12,7 @@ type DbTrack struct {
 	Name     string `gorm:"column:track_name"`
 	Artist   string `gorm:"column:artist_name"`
 	Duration uint   `gorm:"column:duration"`
+	Image    string `gorm:"column:track_image"`
 	Link     string `gorm:"column:link"`
 }
 
@@ -31,7 +32,7 @@ func toModel(dbTrack DbTrack) models.Track {
 		Name:     dbTrack.Name,
 		Artist:   dbTrack.Artist,
 		Duration: dbTrack.Duration,
-		Image:    "", //todo подумать над фото трека
+		Image:    dbTrack.Image,
 		Link:     dbTrack.Link,
 	}
 }
