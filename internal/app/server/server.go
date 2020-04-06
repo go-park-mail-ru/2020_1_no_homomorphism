@@ -118,7 +118,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 }
 
 func StartNew() {
-	connStr := "user=postgres password=postgres dbname=music_app" //TODO получать из конфига
+	connStr := "host=localhost port=5432 user=postgres password=postgres dbname=music_app" //TODO получать из конфига
 
 	db, err := gorm.Open("postgres", connStr)
 	if err != nil {

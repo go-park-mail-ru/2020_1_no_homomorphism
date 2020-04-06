@@ -48,7 +48,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	emailExists, err := h.UserUC.Update(user, input)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "can't update user:"+err.Error(), http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "can't update user:" + err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
