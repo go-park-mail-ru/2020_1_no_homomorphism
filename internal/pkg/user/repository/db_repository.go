@@ -92,11 +92,12 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	if err != nil {
 		return err
 	}
-	if err := bcrypt.CompareHashAndPassword(dbUser.Password, []byte(input.Password)); err != nil {
-		return fmt.Errorf("old password is wrong : %v", err)
-	}
 	var hash []byte
+
 	if input.NewPassword != "" {
+		if err := bcrypt.CompareHashAndPassword(dbUser.Password, []byte(input.Password)); err != nil {
+			return fmt.Errorf("old password is wrong : %v", err)
+		}
 		hash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
 		if err != nil {
 			return fmt.Errorf("error while password hashing: %v", err)

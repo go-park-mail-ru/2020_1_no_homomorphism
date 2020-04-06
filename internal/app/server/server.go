@@ -14,6 +14,8 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/kabukky/httpscerts"
 	albumDelivery "no_homomorphism/internal/pkg/album/delivery"
 	albumRepo "no_homomorphism/internal/pkg/album/repository"
 	albumUC "no_homomorphism/internal/pkg/album/usecase"
@@ -37,7 +39,6 @@ import (
 	"no_homomorphism/pkg/logger"
 )
 
-
 func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrf.CryptToken) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
@@ -51,7 +52,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	artistRep := artistRepo.NewDbArtistRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, os.Getenv("FILE_SERVER") + "/avatar/default.jpg") // todo add to config
+	dbRep := userRepo.NewDbUserRepository(db, os.Getenv("FILE_SERVER")+"/avatar/default.jpg") // todo add to config
 
 	ArtistUC := artistUC.ArtistUseCase{
 		ArtistRepository: &artistRep,
@@ -200,11 +201,26 @@ func StartNew() {
 	accessMiddleware := middleware.AccessLogMiddleware(authHandler, user.Log)
 	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, user.Log)
 
+	//generateSSL()
+
 	fmt.Println("Starts server at 8081")
+	//err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", c.Handler(panicMiddleware))
 	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
 	if err != nil {
 		log.Println(err)
 		return
 	}
+}
 
+func generateSSL() {
+	// Проверяем, доступен ли cert файл.
+	err := httpscerts.Check("cert.pem", "key.pem")
+	// Если он недоступен, то генерируем новый.
+	if err != nil {
+		err = httpscerts.Generate("cert.pem", "key.pem", "https://127.0.0.1:8081")
+		//err = httpscerts.Generate("cert.pem", "key.pem", "http://89.208.199.170:8001")
+		if err != nil {
+			logrus.Fatal("failed to generate https cert")
+		}
+	}
 }
