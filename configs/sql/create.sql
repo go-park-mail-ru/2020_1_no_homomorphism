@@ -36,7 +36,7 @@ CREATE TABLE tracks
     ID        BIGSERIAL PRIMARY KEY,
     name      VARCHAR(100) NOT NULL,
     duration  INTEGER      NOT NULL,
-    --image    VARCHAR(100) DEFAULT '/static/img/default.png',
+    image     VARCHAR DEFAULT '/static/img/track/default.png',
     link      VARCHAR      NOT NULL,
     artist_id BIGSERIAL    NOT NULL,
     FOREIGN KEY (artist_ID) REFERENCES artists (ID)
@@ -226,13 +226,14 @@ FROM albums as al
          JOIN artists as ar ON al.artist_ID = ar.ID;
 
 CREATE VIEW tracks_in_album AS
-SELECT a.ID as album_id,
+SELECT a.ID    as album_id,
        t.track_id,
        t.artist_name,
        t.track_name,
        t.duration,
        t.link,
-       at.index
+       at.index,
+       a.image as track_image
 FROM album_tracks as at,
      albums as a,
      full_track_info as t
@@ -290,15 +291,17 @@ VALUES ('Metalll Band', 'metall');
 INSERT INTO tracks (name, duration, link, artist_id)
 VALUES ('Death 2', 215, 'http://death.com/666.mp3', 2);
 
-CREATE VIEW full_track_info AS
-SELECT t.ID as track_id, a.ID as artist_id, t.name as track_name, a.name artist_name, t.duration, t.link
+CREATE OR REPLACE VIEW full_track_info AS
+SELECT t.ID    as track_id,
+       a.ID    as artist_id,
+       t.name  as track_name,
+       a.name     artist_name,
+       t.duration,
+       t.link,
+       t.image as track_image
 FROM tracks t,
      artists a
 WHERE a.ID = t.artist_id;
-
-SELECT *
-FROM full_track_info
-WHERE track_id = 1;
 
 SELECT count(*)
 FROM users;

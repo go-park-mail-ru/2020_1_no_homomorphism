@@ -154,6 +154,7 @@ func StartNew() {
 	redisConn := &redis.Pool{
 		MaxIdle:   80,
 		MaxActive: 12000,
+		Wait:      true,
 		Dial: func() (redis.Conn, error) {
 			conn, err := redis.DialURL(*redisAddr)
 			if err != nil {
