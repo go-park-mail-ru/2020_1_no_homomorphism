@@ -6,22 +6,21 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
+	"github.com/kabukky/httpscerts"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/kabukky/httpscerts"
 	albumDelivery "no_homomorphism/internal/pkg/album/delivery"
 	albumRepo "no_homomorphism/internal/pkg/album/repository"
 	albumUC "no_homomorphism/internal/pkg/album/usecase"
 	artistDelivery "no_homomorphism/internal/pkg/artist/delivery"
 	artistRepo "no_homomorphism/internal/pkg/artist/repository"
 	artistUC "no_homomorphism/internal/pkg/artist/usecase"
+	"no_homomorphism/internal/pkg/constants"
 	"no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/middleware"
 	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
@@ -39,7 +38,7 @@ import (
 	"no_homomorphism/pkg/logger"
 )
 
-func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrf.CryptToken) (
+func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrf.CryptToken) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
@@ -52,7 +51,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	artistRep := artistRepo.NewDbArtistRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, os.Getenv("FILE_SERVER")+"/avatar/default.jpg",  "/avatar") // todo add to config
+	dbRep := userRepo.NewDbUserRepository(db, constants.AvatarDefault,  constants.AvatarDir) // todo add to config
 
 	ArtistUC := artistUC.ArtistUseCase{
 		ArtistRepository: &artistRep,
@@ -72,7 +71,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 
 	SessionDelivery := sessionDelivery.SessionDelivery{
 		UseCase:    &SessionUC,
-		ExpireTime: 24 * 31 * time.Hour,
+		ExpireTime: constants.CookieExpireTime,
 	}
 	UserUC := userUC.UserUseCase{
 		Repository: &dbRep,
@@ -97,7 +96,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 		SessionDelivery: &SessionDelivery,
 		UserUC:          &UserUC,
 		Log:             mainLogger,
-		ImgTypes:        map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif"},
+		ImgTypes:        constants.AvatarTypes,
 		CSRF:            csrfToken,
 	}
 
@@ -117,61 +116,9 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, m
 }
 
-func StartNew() {
-	connStr := "host=localhost port=5432 user=postgres password=postgres dbname=music_app" //TODO получать из конфига
-
-	db, err := gorm.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal("Failed to start db: " + err.Error())
-	}
-	defer db.Close()
-
-	db.DB().SetMaxOpenConns(10)
-
+func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, redisConn *redis.Pool, csrfToken csrf.CryptToken) http.Handler {
+	user, track, playlist, album, artist, m := InitHandler(customLogger, db, redisConn, csrfToken)
 	r := mux.NewRouter()
-	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000"},
-		AllowCredentials: true,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
-		AllowedHeaders:   []string{"Content-Type", "X-Content-Type-Options", "Csrf-Token"},
-		Debug:            false,
-	})
-
-	var customLogger *logger.MainLogger
-
-	filename := "logfile.log"
-	f, err := os.OpenFile(filename, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		logrus.Error("Failed to open logfile:", err)
-		customLogger = logger.NewLogger(os.Stdout)
-	} else {
-		customLogger = logger.NewLogger(f)
-	}
-	defer f.Close()
-
-	redisAddr := flag.String("addr", "redis://user:@localhost:6379/0", "redis addr")
-
-	redisConn := &redis.Pool{
-		MaxIdle:   80,
-		MaxActive: 12000,
-		Wait:      true,
-		Dial: func() (redis.Conn, error) {
-			conn, err := redis.DialURL(*redisAddr)
-			if err != nil {
-				log.Fatal("fail init redis pool: ", err)
-			}
-			return conn, err
-		},
-	}
-	defer redisConn.Close()
-
-	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
-	if err != nil {
-		log.Fatal("fail init csrf token")
-	}
-
-	user, track, playlist, album, artist, m := InitNewHandler(customLogger, db, redisConn, csrfToken)
-
 	r.HandleFunc("/api/v1/users/settings", user.Update).Methods("PUT")
 	r.HandleFunc("/api/v1/users/me", user.SelfProfile).Methods("GET")
 	r.HandleFunc("/api/v1/users/playlists", playlist.GetUserPlaylists).Methods("GET")
@@ -199,12 +146,62 @@ func StartNew() {
 
 	accessMiddleware := middleware.AccessLogMiddleware(authHandler, user.Log)
 	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, user.Log)
+	return panicMiddleware
+}
 
+func StartNew() {
+
+	db, err := gorm.Open("postgres", constants.DbConn)
+	if err != nil {
+		log.Fatal("Failed to start db: " + err.Error())
+	}
+
+	defer db.Close()
+
+	db.DB().SetMaxOpenConns(constants.DbMaxConnN)
+
+	if err := db.DB().Ping(); err != nil {
+		log.Fatal("Failed to ping db: " + err.Error())
+	}
+
+	c := cors.New(constants.CorsOptions)
+
+	var customLogger *logger.MainLogger
+	f, err := os.OpenFile(constants.LogFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	if err != nil {
+		logrus.Error("Failed to open logfile:", err)
+		customLogger = logger.NewLogger(os.Stdout)
+	} else {
+		customLogger = logger.NewLogger(f)
+	}
+	defer f.Close()
+
+	redisAddr := flag.String("addr", constants.RedisAddr, "redis addr")
+	redisConn := &redis.Pool{
+		MaxIdle:   80,
+		MaxActive: 12000,
+		Wait:      true,
+		Dial: func() (redis.Conn, error) {
+			conn, err := redis.DialURL(*redisAddr)
+			if err != nil {
+				log.Fatal("fail init redis pool: ", err)
+			}
+			return conn, err
+		},
+	}
+	defer redisConn.Close()
+
+	csrfToken, err := csrf.NewAesCryptHashToken(constants.CsrfSecret)
+	if err != nil {
+		log.Fatal("fail init csrf token")
+	}
+
+	middlewares := InitRouter(customLogger, db, redisConn, csrfToken)
 	//generateSSL()
 
 	fmt.Println("Starts server at 8081")
 	//err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", c.Handler(panicMiddleware))
-	err = http.ListenAndServe(":8081", c.Handler(panicMiddleware))
+	err = http.ListenAndServe(":8081", c.Handler(middlewares))
 	if err != nil {
 		log.Println(err)
 		return
