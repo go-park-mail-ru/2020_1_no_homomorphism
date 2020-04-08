@@ -1,10 +1,10 @@
 package repository
 
 import (
-	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"no_homomorphism/internal/pkg/models"
+	"strconv"
 )
 
 type DbTrack struct {
@@ -28,7 +28,7 @@ func NewDbTrackRepo(db *gorm.DB) DbTrackRepository {
 
 func toModel(dbTrack DbTrack) models.Track {
 	return models.Track{
-		Id:       fmt.Sprint(dbTrack.Id),
+		Id:       strconv.FormatUint(dbTrack.Id, 10),
 		Name:     dbTrack.Name,
 		Artist:   dbTrack.Artist,
 		Duration: dbTrack.Duration,
@@ -47,7 +47,7 @@ func (tr *DbTrackRepository) GetTrackById(id string) (models.Track, error) {
 
 	err := db.Error
 	if err != nil {
-		return models.Track{}, errors.New("query error: " + err.Error())
+		return models.Track{}, fmt.Errorf("query error: %v", err)
 	}
 	return toModel(track), nil
 }
@@ -66,7 +66,7 @@ func (tr *DbTrackRepository) GetBoundedTracksByArtistId(id string, start, end ui
 
 	err := db.Error
 	if err != nil {
-		return nil, errors.New("query error: " + err.Error())
+		return nil, fmt.Errorf("query error: %v", err)
 	}
 
 	modTracks := make([]models.Track, len(tracks))

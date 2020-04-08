@@ -1,9 +1,9 @@
 package repository
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"no_homomorphism/internal/pkg/models"
+	"strconv"
 	"time"
 )
 
@@ -28,27 +28,30 @@ func NewDbAlbumRepository(database *gorm.DB) DbAlbumRepository {
 
 func toModel(album Albums) models.Album {
 	return models.Album{
-		Id:         fmt.Sprint(album.Id),
+		Id:         strconv.FormatUint(album.Id, 10),
 		Name:       album.Name,
 		Image:      album.Image,
 		Release:    album.Release.Format("02-01-2006"),
 		ArtistName: album.ArtistName,
-		ArtistId:   fmt.Sprint(album.ArtistId),
+		ArtistId:   strconv.FormatUint(album.ArtistId, 10),
 	}
 }
 
 func (ar *DbAlbumRepository) GetUserAlbums(id string) ([]models.Album, error) {
 	var dbAlbum []Albums
 
-	db := ar.db.Raw("SELECT album_id as id, album_name as name, album_image as image, artist_name, artist_id FROM user_albums WHERE user_id = ?", id).
+	sqlQuery := "SELECT album_id as id, album_name as name, album_image as image, artist_name, artist_id FROM user_albums WHERE user_id = ?"
+
+	db := ar.db.
+		Raw(sqlQuery, id).
 		Scan(&dbAlbum)
+
 	err := db.Error
 	if err != nil {
 		return nil, err
 	}
 
 	albums := make([]models.Album, len(dbAlbum))
-
 	for i, elem := range dbAlbum {
 		albums[i] = toModel(elem)
 	}
@@ -58,7 +61,10 @@ func (ar *DbAlbumRepository) GetUserAlbums(id string) ([]models.Album, error) {
 func (ar *DbAlbumRepository) GetAlbumById(id string) (models.Album, error) {
 	var dbAlbum Albums
 
-	db := ar.db.Where("id = ?", id).Find(&dbAlbum)
+	db := ar.db.
+		Where("id = ?", id).
+		Find(&dbAlbum)
+
 	err := db.Error
 	if err != nil {
 		return models.Album{}, err
@@ -70,11 +76,18 @@ func (ar *DbAlbumRepository) GetBoundedAlbumsByArtistId(id string, start, end ui
 	var dbAlbum []Albums
 	limit := end - start
 
-	db := ar.db.Where("artist_id = ?", id).Order("release").Limit(limit).Offset(start).Find(&dbAlbum)
+	db := ar.db.
+		Where("artist_id = ?", id).
+		Order("release").
+		Limit(limit).
+		Offset(start).
+		Find(&dbAlbum)
+
 	err := db.Error
 	if err != nil {
 		return []models.Album{}, err
 	}
+
 	albumsArray := make([]models.Album, len(dbAlbum))
 	for i, elem := range dbAlbum {
 		albumsArray[i] = toModel(elem)

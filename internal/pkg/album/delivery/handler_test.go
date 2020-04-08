@@ -46,12 +46,14 @@ func TestGetUserAlbums(t *testing.T) {
 				Id:         "1",
 				Name:       "KekLol",
 				Image:      "/static/img",
+				Release:    "23-01-1999",
 				ArtistName: "TestArtist",
 				ArtistId:   "42",
 			},
 			{
 				Id:         "2",
 				Name:       "testName",
+				Release:    "23-05-2010",
 				Image:      "/static/img/test",
 				ArtistName: "Mc Test",
 				ArtistId:   "74",
@@ -65,7 +67,7 @@ func TestGetUserAlbums(t *testing.T) {
 
 		albumHandlers.AlbumUC = m
 
-		albumStr := `{"artist_id":"%s", "artist_name":"%s", "id":"%s", "image":"%s", "name":"%s"}`
+		albumStr := `{"artist_id":"%s", "artist_name":"%s", "id":"%s", "image":"%s", "name":"%s", "release":"%s"}`
 		bodyStr := strings.Join([]string{albumStr, albumStr}, ",")
 		bodyStr = `{"albums":[` + bodyStr + `]}`
 
@@ -81,11 +83,13 @@ func TestGetUserAlbums(t *testing.T) {
 				albums[0].Id,
 				albums[0].Image,
 				albums[0].Name,
+				albums[0].Release,
 				albums[1].ArtistId,
 				albums[1].ArtistName,
 				albums[1].Id,
 				albums[1].Image,
 				albums[1].Name,
+				albums[1].Release,
 			)).
 			Status(http.StatusOK).
 			End()
@@ -147,57 +151,28 @@ func TestGetFullAlbum(t *testing.T) {
 			Id:         "1",
 			Name:       "KekLol",
 			Image:      "/static/img",
+			Release:    "23-01-1999",
 			ArtistName: "TestArtist",
 			ArtistId:   "42",
 		}
-
-		tracks := []models.Track{
-			{
-				Id:       "123",
-				Name:     "name",
-				Artist:   "Mc",
-				Duration: 243,
-				Image:    "/asdw/sdaasd/asd",
-				Link:     "http://kek.lol.ru/test.pm3",
-			},
-			{
-				Id:       "4312",
-				Name:     "name2",
-				Artist:   "NotMc",
-				Duration: 232,
-				Image:    "/ss/23/fgbg",
-				Link:     "https://kek.test.ru/test.pm3",
-			},
-		}
-
-		tracksMarshal, err := json.Marshal(tracks)
-		assert.NoError(t, err)
 
 		albumMarshal, err := json.Marshal(albumModel)
 		assert.NoError(t, err)
 
 		m := album.NewMockUseCase(ctrl)
-		tr := track.NewMockUseCase(ctrl)
 
 		m.EXPECT().
 			GetAlbumById(idVal).
 			Return(albumModel, nil)
 
-		tr.EXPECT().
-			GetTracksByAlbumId(idVal).
-			Return(tracks, nil)
-
 		albumHandlers.AlbumUC = m
-		albumHandlers.TrackUC = tr
-
-		str := fmt.Sprintf(`{"album":%s,"count":%d,"tracks":%s}`, albumMarshal, len(tracks), tracksMarshal)
 
 		apitest.New("GetFullAlbum-OK").
 			Handler(trueAuthPreHandle).
 			Method("Get").
 			URL("/api/v1/albums/12").
 			Expect(t).
-			Body(str).
+			Body(string(albumMarshal)).
 			Status(http.StatusOK).
 			End()
 	})
@@ -236,50 +211,6 @@ func TestGetFullAlbum(t *testing.T) {
 		albumHandlers.TrackUC = tr
 
 		apitest.New("GetFullAlbum-GetAlbumError").
-			Handler(trueAuthPreHandle).
-			Method("Get").
-			URL("/api/v1/albums/12").
-			Expect(t).
-			Status(http.StatusBadRequest).
-			End()
-	})
-
-	t.Run("GetFullAlbum-GetTracksError", func(t *testing.T) {
-		idVal := "12"
-		trueAuthPreHandle := middleware.SetMuxVars(
-			albumHandlers.GetFullAlbum,
-			"id",
-			idVal,
-		)
-
-		ctrl := gomock.NewController(t)
-		defer ctrl.Finish()
-
-		albumModel := models.Album{
-			Id:         "1",
-			Name:       "KekLol",
-			Image:      "/static/img",
-			ArtistName: "TestArtist",
-			ArtistId:   "42",
-		}
-
-		m := album.NewMockUseCase(ctrl)
-		tr := track.NewMockUseCase(ctrl)
-
-		m.EXPECT().
-			GetAlbumById(idVal).
-			Return(albumModel, nil)
-
-		testError := errors.New("test error")
-
-		tr.EXPECT().
-			GetTracksByAlbumId(idVal).
-			Return([]models.Track{}, testError)
-
-		albumHandlers.AlbumUC = m
-		albumHandlers.TrackUC = tr
-
-		apitest.New("GetFullAlbum-GetTracksError").
 			Handler(trueAuthPreHandle).
 			Method("Get").
 			URL("/api/v1/albums/12").

@@ -40,7 +40,6 @@ func TestCreate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		exists, err := useCase.Create(testUser)
@@ -60,7 +59,6 @@ func TestCreate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 		exists, err := useCase.Create(testUser)
 
@@ -80,7 +78,6 @@ func TestCreate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 		exists, err := useCase.Create(testUser)
 
@@ -100,7 +97,6 @@ func TestCreate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 		exists, err := useCase.Create(testUser)
 
@@ -121,7 +117,6 @@ func TestCreate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 		_, err := useCase.Create(testUser)
 
@@ -146,7 +141,6 @@ func TestCreate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 		_, err := useCase.Create(testUser)
 
@@ -176,7 +170,6 @@ func TestUpdate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		exists, err := useCase.Update(testUser, testInput)
@@ -200,7 +193,6 @@ func TestUpdate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		exists, err := useCase.Update(testUser, testInput2)
@@ -221,7 +213,6 @@ func TestUpdate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		_, err := useCase.Update(testUser, testInput)
@@ -244,7 +235,6 @@ func TestUpdate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		exists, err := useCase.Update(testUser, testInput)
@@ -264,7 +254,6 @@ func TestUpdate(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		_, err := useCase.Update(testUser, testInput)
@@ -274,7 +263,8 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestGetProfileByLogin(t *testing.T) {
-	testProfile := models.Profile{
+	testProfile := models.User{
+		Id:    testUser.Id,
 		Name:  testUser.Name,
 		Login: testUser.Login,
 		Sex:   testUser.Sex,
@@ -294,7 +284,6 @@ func TestGetProfileByLogin(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		userData, err := useCase.GetProfileByLogin(testUser.Login)
@@ -315,7 +304,6 @@ func TestGetProfileByLogin(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		_, err := useCase.GetProfileByLogin(testUser.Login)
@@ -337,7 +325,6 @@ func TestGetUserByLogin(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		userData, err := useCase.GetUserByLogin(testUser.Login)
@@ -358,7 +345,6 @@ func TestGetUserByLogin(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		_, err := useCase.GetUserByLogin(testUser.Login)
@@ -391,7 +377,6 @@ func TestLogin(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		userData, err := useCase.Login(testInput)
@@ -411,7 +396,6 @@ func TestLogin(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		_, err := useCase.Login(testInput)
@@ -434,7 +418,6 @@ func TestLogin(t *testing.T) {
 
 		useCase := UserUseCase{
 			Repository: m,
-			AvatarDir:  "/test",
 		}
 
 		_, err := useCase.Login(testInput)

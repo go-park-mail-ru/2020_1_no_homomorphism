@@ -11,6 +11,7 @@ import (
 	"no_homomorphism/internal/pkg/models"
 	"regexp"
 	"testing"
+	"time"
 )
 
 type Suite struct {
@@ -49,14 +50,18 @@ func (s *Suite) TestAlbumById() {
 	album := models.Album{
 		Id:       "2434234",
 		Name:     "test-name",
+		Release:  "12-01-1999",
 		Image:    "img-test",
 		ArtistId: "3487919",
 	}
 
+	loc := time.Local
+	testTime := time.Date(1999, 1, 12, 0, 0, 0, 0, loc)
+
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "albums" WHERE (id = $1)`)).
 		WithArgs(album.Id).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "artist_id"}).
-			AddRow(album.Id, album.Name, album.Image, album.ArtistId))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "release", "image", "artist_id"}).
+			AddRow(album.Id, album.Name, testTime, album.Image, album.ArtistId))
 
 	res, err := s.repository.GetAlbumById(album.Id)
 
@@ -78,15 +83,19 @@ func (s *Suite) TestGetUserAlbums() {
 		Id:         "123",
 		Name:       "test-name",
 		Image:      "img-test",
+		Release:    "12-01-1999",
 		ArtistName: "artist_name",
 		ArtistId:   "1234123",
 	},
 	}
 
+	loc := time.Local
+	testTime := time.Date(1999, 1, 12, 0, 0, 0, 0, loc)
+
 	s.mock.ExpectQuery("SELECT album_id as id, album_name as name, album_image as image, artist_name, artist_id FROM user_albums WHERE user_id = ?").
 		WithArgs(album[0].Id).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "image", "artist_id", "artist_name"}).
-			AddRow(album[0].Id, album[0].Name, album[0].Image, album[0].ArtistId, album[0].ArtistName))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "release", "image", "artist_id", "artist_name"}).
+			AddRow(album[0].Id, album[0].Name, testTime, album[0].Image, album[0].ArtistId, album[0].ArtistName))
 
 	res, err := s.repository.GetUserAlbums(album[0].Id)
 

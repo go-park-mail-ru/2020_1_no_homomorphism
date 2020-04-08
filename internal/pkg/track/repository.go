@@ -7,5 +7,4 @@ type Repository interface {
 	GetBoundedTracksByPlaylistId(plId string, start, end uint64) ([]models.Track, error) //todo optimize bound funcs
 	GetBoundedTracksByAlbumId(aId string, start, end uint64) ([]models.Track, error)
 	GetBoundedTracksByArtistId(id string, start, end uint64) ([]models.Track, error)
-	//GetArtistTracks(artistId uint64) ([]*models.Track, error)
 }

@@ -62,20 +62,10 @@ func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Req
 		h.sendBadRequest(w, r.Context(), "failed to get playlistData: "+err.Error())
 		return
 	}
-
-	tracks, err := h.TrackUC.GetTracksByPlaylistId(varId)
-	if err != nil {
-		h.sendBadRequest(w, r.Context(), "failed to get tracks: "+err.Error())
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
-	err = writer.Encode(struct {
-		Playlist models.Playlist `json:"playlist"`
-		Count    int             `json:"count"`
-		Tracks   []models.Track  `json:"tracks"`
-	}{playlistData, len(tracks), tracks})
+	err = writer.Encode(playlistData)
 
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "can't write tracks info into json: "+err.Error())

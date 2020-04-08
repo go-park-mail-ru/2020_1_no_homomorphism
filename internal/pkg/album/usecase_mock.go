@@ -62,3 +62,18 @@ func (mr *MockUseCaseMockRecorder) GetAlbumById(id interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAlbumById", reflect.TypeOf((*MockUseCase)(nil).GetAlbumById), id)
 }
+
+// GetBoundedAlbumsByArtistId mocks base method
+func (m *MockUseCase) GetBoundedAlbumsByArtistId(id string, start, end uint64) ([]models.Album, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBoundedAlbumsByArtistId", id, start, end)
+	ret0, _ := ret[0].([]models.Album)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBoundedAlbumsByArtistId indicates an expected call of GetBoundedAlbumsByArtistId
+func (mr *MockUseCaseMockRecorder) GetBoundedAlbumsByArtistId(id, start, end interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedAlbumsByArtistId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedAlbumsByArtistId), id, start, end)
+}

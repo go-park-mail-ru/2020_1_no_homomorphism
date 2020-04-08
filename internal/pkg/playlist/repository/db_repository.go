@@ -1,13 +1,13 @@
 package repository
 
 import (
-	"fmt"
 	"github.com/jinzhu/gorm"
 	"no_homomorphism/internal/pkg/models"
+	"strconv"
 )
 
 type Playlists struct {
-	Id     uint64 `sql:"AUTO_INCREMENT" gorm:"column:id"`
+	Id     uint64 `gorm:"column:id"`
 	Name   string `gorm:"column:name"`
 	Image  string `gorm:"column:image"`
 	UserId uint64 `gorm:"column:user_id"`
@@ -25,24 +25,26 @@ func NewDbPlaylistRepository(database *gorm.DB) DbPlaylistRepository {
 
 func toModel(pl Playlists) models.Playlist {
 	return models.Playlist{
-		Id:     fmt.Sprint(pl.Id),
+		Id:     strconv.FormatUint(pl.Id, 10),
 		Name:   pl.Name,
 		Image:  pl.Image,
-		UserId: fmt.Sprint(pl.UserId),
+		UserId: strconv.FormatUint(pl.UserId, 10),
 	}
 }
 
 func (pr *DbPlaylistRepository) GetUserPlaylists(uId string) ([]models.Playlist, error) {
 	var dbPlaylists []Playlists
 
-	db := pr.db.Where("user_ID = ?", uId).Find(&dbPlaylists)
+	db := pr.db.
+		Where("user_ID = ?", uId).
+		Find(&dbPlaylists)
+
 	err := db.Error
 	if err != nil {
 		return nil, err
 	}
 
 	playlists := make([]models.Playlist, len(dbPlaylists))
-
 	for i, elem := range dbPlaylists {
 		playlists[i] = toModel(elem)
 	}
@@ -52,7 +54,10 @@ func (pr *DbPlaylistRepository) GetUserPlaylists(uId string) ([]models.Playlist,
 func (pr *DbPlaylistRepository) GetPlaylistById(pId string) (models.Playlist, error) {
 	var dbPlaylists Playlists
 
-	db := pr.db.Where("id = ?", pId).First(&dbPlaylists)
+	db := pr.db.
+		Where("id = ?", pId).
+		First(&dbPlaylists)
+
 	err := db.Error
 	if err != nil {
 		return models.Playlist{}, err

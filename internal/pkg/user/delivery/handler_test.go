@@ -460,7 +460,8 @@ func TestSelfProfile(t *testing.T) {
 
 		m := user.NewMockUseCase(ctrl)
 
-		profile := models.Profile{
+		profile := models.User{
+			Id:    testUser.Id,
 			Name:  testUser.Name,
 			Login: testUser.Login,
 			Sex:   testUser.Sex,
@@ -469,7 +470,7 @@ func TestSelfProfile(t *testing.T) {
 		}
 
 		m.EXPECT().
-			GetProfileByUser(testUser).
+			GetOutputUserData(testUser).
 			Return(profile)
 
 		userHandlers.UserUC = m
@@ -479,7 +480,8 @@ func TestSelfProfile(t *testing.T) {
 			Method("Get").
 			URL("/profile/me").
 			Expect(t).
-			Body(fmt.Sprintf(`{"name":"%s", "login":"%s", "sex":"%s", "image":"%s", "email":"%s"}`,
+			Body(fmt.Sprintf(`{"id":"%s", "name":"%s", "login":"%s", "sex":"%s", "image":"%s", "email":"%s"}`,
+				profile.Id,
 				profile.Name,
 				profile.Login,
 				profile.Sex,
