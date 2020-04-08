@@ -52,7 +52,7 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	artistRep := artistRepo.NewDbArtistRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, os.Getenv("FILE_SERVER")+"/avatar/default.jpg") // todo add to config
+	dbRep := userRepo.NewDbUserRepository(db, os.Getenv("FILE_SERVER")+"/avatar/default.jpg",  "/avatar") // todo add to config
 
 	ArtistUC := artistUC.ArtistUseCase{
 		ArtistRepository: &artistRep,
@@ -76,7 +76,6 @@ func InitNewHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Poo
 	}
 	UserUC := userUC.UserUseCase{
 		Repository: &dbRep,
-		AvatarDir:  "/avatar",
 	}
 	TrackUC := trackUC.TrackUseCase{
 		Repository: &trackRep,

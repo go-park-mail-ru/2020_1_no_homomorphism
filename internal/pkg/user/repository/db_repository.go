@@ -3,9 +3,12 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/jinzhu/gorm"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
 )
@@ -23,12 +26,14 @@ type User struct {
 type DbUserRepository struct {
 	db           *gorm.DB
 	defaultImage string
+	avatarDir    string
 }
 
-func NewDbUserRepository(database *gorm.DB, defaultImage string) DbUserRepository {
+func NewDbUserRepository(database *gorm.DB, defaultImage string, avatarDir string) DbUserRepository {
 	return DbUserRepository{
 		db:           database,
 		defaultImage: defaultImage,
+		avatarDir:    avatarDir,
 	}
 }
 
@@ -114,19 +119,36 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	return nil
 }
 
-func (ur *DbUserRepository) UpdateAvatar(user models.User, filePath string) error {
+func (ur *DbUserRepository) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
+	fileName := uuid.NewV4().String()
+	filePath := filepath.Join(os.Getenv("FILE_ROOT") + ur.avatarDir, fileName + "." + fileType)
+
+	newFile, err := os.Create(filePath)
+	if err != nil {
+		return "", errors.New("failed to create file")
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, file)
+	if err != nil {
+		return "", errors.New("error while writing to file")
+	}
+
+
 	dbUser, err := ur.getUser(user.Login)
 	if err != nil {
-		return err
+		return "", err
 	}
-	dbUser.Image = os.Getenv("FILE_SERVER") + filePath
+	serverFilePath := os.Getenv("FILE_SERVER") + filepath.Join(ur.avatarDir, fileName+"."+fileType)
+	dbUser.Image = serverFilePath
 
 	db := ur.db.Save(&dbUser)
 	err = db.Error
 	if err != nil {
-		return err //todo error wrapper
+		return "", err // todo error wrapper
 	}
-	return nil
+
+	return serverFilePath, nil
 }
 
 func (ur *DbUserRepository) GetUserByLogin(login string) (models.User, error) {

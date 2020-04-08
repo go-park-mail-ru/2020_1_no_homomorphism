@@ -1,19 +1,15 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
-	uuid "github.com/satori/go.uuid"
 	"io"
+
 	"no_homomorphism/internal/pkg/models"
 	users "no_homomorphism/internal/pkg/user"
-	"os"
-	"path/filepath"
 )
 
 type UserUseCase struct {
 	Repository users.Repository
-	AvatarDir  string
 }
 
 func (uc *UserUseCase) Create(user models.User) (users.SameUserExists, error) {
@@ -47,26 +43,8 @@ func (uc *UserUseCase) Update(user models.User, input models.UserSettings) (user
 }
 
 func (uc *UserUseCase) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
-	fileName := uuid.NewV4().String()
-	filePath := filepath.Join(os.Getenv("FILE_ROOT") + uc.AvatarDir, fileName+"."+fileType)
 
-	newFile, err := os.Create(filePath)
-	if err != nil {
-		return "", errors.New("failed to create file")
-	}
-	defer newFile.Close()
-
-	_, err = io.Copy(newFile, file)
-	if err != nil {
-		return "", errors.New("error while writing to file")
-	}
-
-	err = uc.Repository.UpdateAvatar(user, filepath.Join(uc.AvatarDir, fileName+"."+fileType))
-	if err != nil {
-		return "", err
-	}
-
-	return os.Getenv("FILE_SERVER") + filePath, nil
+	return uc.Repository.UpdateAvatar(user, file, fileType)
 }
 
 func (uc *UserUseCase) GetUserByLogin(user string) (models.User, error) {
