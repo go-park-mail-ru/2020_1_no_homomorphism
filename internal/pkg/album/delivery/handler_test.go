@@ -36,7 +36,7 @@ func init() {
 
 func TestGetUserAlbums(t *testing.T) {
 	t.Run("GetUserAlbums-OK", func(t *testing.T) {
-		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, true, testUser)
+		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -96,7 +96,7 @@ func TestGetUserAlbums(t *testing.T) {
 	})
 
 	t.Run("GetUserAlbums-NoAuth", func(t *testing.T) {
-		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, false, models.User{})
+		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, false, models.User{}, "")
 
 		apitest.New("GetUserAlbums-NoAuth").
 			Handler(trueAuthPreHandle).
@@ -109,7 +109,7 @@ func TestGetUserAlbums(t *testing.T) {
 	})
 
 	t.Run("GetUserAlbums-error", func(t *testing.T) {
-		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, true, testUser)
+		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -214,6 +214,105 @@ func TestGetFullAlbum(t *testing.T) {
 			Handler(trueAuthPreHandle).
 			Method("Get").
 			URL("/api/v1/albums/12").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+}
+
+func TestGetBoundedAlbumsByArtistId(t *testing.T) {
+	t.Run("GetBoundedAlbumsByArtistId-OK", func(t *testing.T) {
+		artistId := "1231"
+		start := "0"
+		end := "2"
+
+		boundedVars := middleware.GetBoundedVars(albumHandlers.GetBoundedAlbumsByArtistId, albumHandlers.Log)
+		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		albums := []models.Album{
+			{
+				Id:         "1",
+				Name:       "KekLol",
+				Image:      "/static/img",
+				Release:    "23-01-1999",
+				ArtistName: "TestArtist",
+				ArtistId:   artistId,
+			},
+			{
+				Id:         "2",
+				Name:       "testName",
+				Release:    "23-05-2010",
+				Image:      "/static/img/test",
+				ArtistName: "Mc Test",
+				ArtistId:   artistId,
+			},
+		}
+
+		m := album.NewMockUseCase(ctrl)
+
+		var startUint uint64 = 0
+		var endUint uint64 = 2
+
+		m.EXPECT().
+			GetBoundedAlbumsByArtistId(artistId, startUint, endUint).
+			Return(albums, nil)
+
+		albumHandlers.AlbumUC = m
+
+		albumsMarshal, err := json.Marshal(albums)
+		assert.NoError(t, err)
+
+		str := `{"id":"1231","albums":` + string(albumsMarshal) + `}`
+
+		apitest.New("GetBoundedAlbumsByArtistId-OK").
+			Handler(vars).
+			Method("Get").
+			Expect(t).
+			Body(str).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("GetBoundedAlbumsByArtistId-NoVars", func(t *testing.T) {
+
+		apitest.New("GetBoundedAlbumsByArtistId-NoVars").
+			Handler(http.HandlerFunc(albumHandlers.GetBoundedAlbumsByArtistId)).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+
+	t.Run("GetBoundedAlbumsByArtistId-UseCaseError", func(t *testing.T) {
+		artistId := "1231"
+		start := "0"
+		end := "2"
+
+		boundedVars := middleware.GetBoundedVars(albumHandlers.GetBoundedAlbumsByArtistId, albumHandlers.Log)
+		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := album.NewMockUseCase(ctrl)
+
+		var startUint uint64 = 0
+		var endUint uint64 = 2
+
+		testError := errors.New("test error")
+
+		m.EXPECT().
+			GetBoundedAlbumsByArtistId(artistId, startUint, endUint).
+			Return([]models.Album{}, testError)
+
+		albumHandlers.AlbumUC = m
+
+		apitest.New("GetBoundedAlbumsByArtistId-UseCaseError").
+			Handler(vars).
+			Method("Get").
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()

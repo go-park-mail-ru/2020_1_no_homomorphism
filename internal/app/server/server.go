@@ -141,7 +141,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, redisConn *redis.P
 	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedArtistTracks, user.Log)).Methods("GET")
 
-	r.Handle("/users", auth.AuthMiddleware(user.CheckAuth, true))
+	r.Handle("/users", auth.AuthMiddleware(user.CheckAuth, false))
 	r.Handle("/users/token", auth.AuthMiddleware(user.GetCSRF, false)).Methods("GET")
 	r.Handle("/users/me", auth.AuthMiddleware(user.SelfProfile, false)).Methods("GET")
 	r.Handle("/users/login", auth.AuthMiddleware(user.Login, true)).Methods("POST")
@@ -209,7 +209,7 @@ func StartNew() {
 	routes := InitRouter(customLogger, db, redisConn, csrfToken)
 
 	fmt.Println("Starts server at 8081")
-	err = http.ListenAndServe(":8081", c.Handler(routes))
+	err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)
 		return

@@ -35,7 +35,7 @@ func init() {
 
 func TestGetUserPlaylists(t *testing.T) {
 	t.Run("GetUserPlaylists-OK", func(t *testing.T) {
-		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, true, testUser)
+		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -76,7 +76,7 @@ func TestGetUserPlaylists(t *testing.T) {
 	})
 
 	t.Run("GetUserPlaylists-NoAuth", func(t *testing.T) {
-		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, false, models.User{})
+		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, false, models.User{}, "")
 
 		apitest.New("GetUserPlaylists-NoAuth").
 			Handler(handler).
@@ -88,7 +88,7 @@ func TestGetUserPlaylists(t *testing.T) {
 	})
 
 	t.Run("GetUserPlaylists-UseCaseError", func(t *testing.T) {
-		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, true, testUser)
+		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -116,7 +116,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 	t.Run("GetFullPlaylistById-OK", func(t *testing.T) {
 		varsId := "1234"
 		handler := middleware.SetMuxVars(
-			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser),
+			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser, ""),
 			"id",
 			varsId,
 		)
@@ -158,7 +158,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 		varsId := "1234"
 
 		handler := middleware.SetMuxVars(
-			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, false, models.User{}),
+			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, false, models.User{}, ""),
 			"id",
 			varsId,
 		)
@@ -173,7 +173,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 	})
 
 	t.Run("GetFullPlaylistById-NoVars", func(t *testing.T) {
-		handler := middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser)
+		handler := middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser, "")
 
 		apitest.New("GetFullPlaylistById-NoVars").
 			Handler(handler).
@@ -187,7 +187,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 	t.Run("GetFullPlaylistById-CheckAccessError", func(t *testing.T) {
 		varsId := "1234"
 		handler := middleware.SetMuxVars(
-			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser),
+			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser, ""),
 			"id",
 			varsId,
 		)
@@ -226,7 +226,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 	t.Run("GetFullPlaylistById-NoAccess", func(t *testing.T) {
 		varsId := "1234"
 		handler := middleware.SetMuxVars(
-			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser),
+			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser, ""),
 			"id",
 			varsId,
 		)
@@ -263,7 +263,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 	t.Run("GetFullPlaylistById-GetPlError", func(t *testing.T) {
 		varsId := "1234"
 		handler := middleware.SetMuxVars(
-			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser),
+			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser, ""),
 			"id",
 			varsId,
 		)

@@ -1,6 +1,7 @@
 package delivery
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/golang/mock/gomock"
@@ -33,34 +34,7 @@ func init() {
 	userHandlers.Log = logger.NewLogger(os.Stdout)
 }
 
-func TestCheckAuth(t *testing.T) {
-	falseAuthPreHandle := middleware.AuthMiddlewareMock(userHandlers.CheckAuth, true, models.User{})
-	trueAuthPreHandle := middleware.AuthMiddlewareMock(userHandlers.CheckAuth, false, models.User{})
-
-	apitest.New("CheckAuth-true").
-		Handler(falseAuthPreHandle).
-		Method("Get").
-		Cookie("session_id", "randomSessionIdValueForTesting").
-		URL("/user").
-		Expect(t).
-		Status(http.StatusOK).
-		End()
-
-	apitest.New("CheckAuth-false").
-		Handler(trueAuthPreHandle).
-		Method("Get").
-		Cookie("session_id", "randomSessionIdValueForTesting").
-		URL("/user").
-		Expect(t).
-		Status(http.StatusUnauthorized).
-		End()
-}
-
 func TestLogin(t *testing.T) {
-	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
-	assert.NoError(t, err)
-	userHandlers.CSRF = csrfToken
-
 	t.Run("Login-OK", func(t *testing.T) {
 
 		ctrl := gomock.NewController(t)
@@ -88,7 +62,7 @@ func TestLogin(t *testing.T) {
 		userHandlers.UserUC = m
 		userHandlers.SessionDelivery = s
 
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{}, "")
 
 		apitest.New("Login-OK").
 			Handler(middlewareMock).
@@ -102,7 +76,7 @@ func TestLogin(t *testing.T) {
 	//test auth
 	t.Run("Login-auth", func(t *testing.T) {
 
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, true, testUser, "")
 
 		apitest.New("Login-auth").
 			Handler(middlewareMock).
@@ -116,7 +90,7 @@ func TestLogin(t *testing.T) {
 
 	//test on login error
 	t.Run("Login-UseCaseError", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{}, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -146,7 +120,7 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("Login-SessionError", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{}, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -183,7 +157,7 @@ func TestLogin(t *testing.T) {
 	})
 
 	t.Run("Login-FailedToParseJSON", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Login, false, models.User{}, "")
 
 		apitest.New("Login-FailedToParseJSON").
 			Handler(middlewareMock).
@@ -197,10 +171,6 @@ func TestLogin(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
-	csrfToken, err := csrf.NewAesCryptHashToken("qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB")
-	assert.NoError(t, err)
-	userHandlers.CSRF = csrfToken
-
 	t.Run("Create-OK", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -226,7 +196,7 @@ func TestCreate(t *testing.T) {
 		userHandlers.UserUC = m
 		userHandlers.SessionDelivery = s
 
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{}, "")
 
 		apitest.New("Create-OK").
 			Handler(middlewareMock).
@@ -244,7 +214,7 @@ func TestCreate(t *testing.T) {
 			End()
 	})
 	t.Run("Create-ErrorJSON", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{}, "")
 
 		apitest.New("Create-ErrorJSON").
 			Handler(middlewareMock).
@@ -257,7 +227,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("Create-auth", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, true, testUser, "")
 
 		apitest.New("Create-auth").
 			Handler(middlewareMock).
@@ -268,7 +238,7 @@ func TestCreate(t *testing.T) {
 			End()
 	})
 	t.Run("Create-UseCaseError", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{}, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -304,7 +274,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("Create-SessionError", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{}, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -346,7 +316,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("Create-EmailExists", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{}, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -381,7 +351,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("Create-LoginExists", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{}, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -416,7 +386,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("Create-ExistsFull", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{})
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Create, false, models.User{}, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -453,7 +423,7 @@ func TestCreate(t *testing.T) {
 
 func TestSelfProfile(t *testing.T) {
 	t.Run("SelfProfile-OK", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.SelfProfile, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.SelfProfile, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -491,23 +461,91 @@ func TestSelfProfile(t *testing.T) {
 			Status(http.StatusOK).
 			End()
 	})
+}
 
-	t.Run("SelfProfile-NotAuth", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.SelfProfile, false, models.User{})
+func TestGetProfile(t *testing.T) {
+	t.Run("GetProfile-OK", func(t *testing.T) {
+		middlewareMock := middleware.SetMuxVars(userHandlers.Profile, "profile", testUser.Login)
 
-		apitest.New("SelfProfile-NotAuth").
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := user.NewMockUseCase(ctrl)
+
+		profile := models.User{
+			Id:    testUser.Id,
+			Name:  testUser.Name,
+			Login: testUser.Login,
+			Sex:   testUser.Sex,
+			Image: testUser.Image,
+			Email: testUser.Email,
+		}
+
+		m.EXPECT().
+			GetProfileByLogin(testUser.Login).
+			Return(profile, nil)
+
+		userHandlers.UserUC = m
+
+		apitest.New("GetProfile-OK").
 			Handler(middlewareMock).
 			Method("Get").
-			URL("/profile/me").
+			URL("/profile/keklol").
 			Expect(t).
-			Status(http.StatusUnauthorized).
+			Body(fmt.Sprintf(`{"id":"%s", "name":"%s", "login":"%s", "sex":"%s", "image":"%s", "email":"%s"}`,
+				profile.Id,
+				profile.Name,
+				profile.Login,
+				profile.Sex,
+				profile.Image,
+				profile.Email,
+			)).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("GetProfile-UseCaseError", func(t *testing.T) {
+		middlewareMock := middleware.SetMuxVars(userHandlers.Profile, "profile", testUser.Login)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := user.NewMockUseCase(ctrl)
+
+		testError := errors.New("testError")
+
+		m.EXPECT().
+			GetProfileByLogin(testUser.Login).
+			Return(models.User{}, testError)
+
+		userHandlers.UserUC = m
+
+		apitest.New("GetProfile-UseCaseError").
+			Handler(middlewareMock).
+			Method("Get").
+			URL("/profile/keklol").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+
+	t.Run("GetProfile-NoMuxVars", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		apitest.New("GetProfile-NoMuxVars").
+			Handler(http.HandlerFunc(userHandlers.Profile)).
+			Method("Get").
+			URL("/profile/keklol").
+			Expect(t).
+			Status(http.StatusBadRequest).
 			End()
 	})
 }
 
 func TestLogout(t *testing.T) {
 	t.Run("Logout-OK", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Logout, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Logout, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -533,19 +571,19 @@ func TestLogout(t *testing.T) {
 	})
 
 	t.Run("Logout-NotAuth", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Logout, false, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Logout, false, models.User{}, "")
 
 		apitest.New("Logout-NotAuth").
 			Handler(middlewareMock).
 			Method("Delete").
 			URL("/logout").
 			Expect(t).
-			Status(http.StatusUnauthorized).
+			Status(http.StatusBadRequest).
 			End()
 	})
 
 	t.Run("Logout-SessionDeleteError", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Logout, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Logout, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -574,7 +612,7 @@ func TestLogout(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	t.Run("Update-OK", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -597,7 +635,7 @@ func TestUpdate(t *testing.T) {
 		apitest.New("Update-OK").
 			Handler(middlewareMock).
 			Method("Put").
-			URL("/profile/settings").
+			URL("/users/settings").
 			Body(fmt.Sprintf(`{"login": "%s", "password": "%s", "email":"%s", "sex":"%s", "name":"%s", "new_password":"%s"}`,
 				inputData.Login,
 				inputData.Password,
@@ -612,12 +650,12 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("Update-BadInput", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser, "")
 
 		apitest.New("Update-BadInput").
 			Handler(middlewareMock).
 			Method("Put").
-			URL("/profile/settings").
+			URL("/users/settings").
 			Body(`{askd:"oaskdoepkwr23r:,kapod}"`).
 			Expect(t).
 			Status(http.StatusBadRequest).
@@ -625,7 +663,7 @@ func TestUpdate(t *testing.T) {
 	})
 
 	t.Run("Update-EmailExists", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -649,7 +687,7 @@ func TestUpdate(t *testing.T) {
 		apitest.New("Update-EmailExists").
 			Handler(middlewareMock).
 			Method("Put").
-			URL("/profile/settings").
+			URL("/users/settings").
 			Body(fmt.Sprintf(`{"login": "%s", "password": "%s", "email":"%s", "sex":"%s", "name":"%s", "new_password":"%s"}`,
 				inputData.Login,
 				inputData.Password,
@@ -663,36 +701,8 @@ func TestUpdate(t *testing.T) {
 			End()
 	})
 
-	t.Run("Update-Unauthorized", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, false, models.User{})
-
-		inputData := models.UserSettings{
-			NewPassword: "23hf9823d9123d",
-			User:        testUser,
-		}
-		inputData.Id = ""
-		inputData.Email = "exists@email.true"
-		inputData.Image = ""
-
-		apitest.New("Update-Unauthorized").
-			Handler(middlewareMock).
-			Method("Put").
-			URL("/profile/settings").
-			Body(fmt.Sprintf(`{"login": "%s", "password": "%s", "email":"%s", "sex":"%s", "name":"%s", "new_password":"%s"}`,
-				inputData.Login,
-				inputData.Password,
-				inputData.Email,
-				inputData.Sex,
-				inputData.Name,
-				inputData.NewPassword,
-			)).
-			Expect(t).
-			Status(http.StatusUnauthorized).
-			End()
-	})
-
 	t.Run("Update-UseCaseError", func(t *testing.T) {
-		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser)
+		middlewareMock := middleware.AuthMiddlewareMock(userHandlers.Update, true, testUser, "")
 
 		ctrl := gomock.NewController(t)
 		defer ctrl.Finish()
@@ -717,7 +727,7 @@ func TestUpdate(t *testing.T) {
 		apitest.New("Update-UseCaseError").
 			Handler(middlewareMock).
 			Method("Put").
-			URL("/profile/settings").
+			URL("/users/settings").
 			Body(fmt.Sprintf(`{"login": "%s", "password": "%s", "email":"%s", "sex":"%s", "name":"%s", "new_password":"%s"}`,
 				inputData.Login,
 				inputData.Password,
@@ -731,4 +741,149 @@ func TestUpdate(t *testing.T) {
 			End()
 	})
 
+	t.Run("Update-NoCsrf", func(t *testing.T) {
+		apitest.New("Update-NoCsrf").
+			Handler(http.HandlerFunc(userHandlers.Update)).
+			Method("Put").
+			URL("/users/settings").
+			Expect(t).
+			Status(http.StatusUnauthorized).
+			End()
+	})
+}
+
+func TestGetUserStat(t *testing.T) {
+	t.Run("GetUserStat-OK", func(t *testing.T) {
+		middlewareMock := middleware.SetMuxVars(userHandlers.GetUserStat, "id", testUser.Id)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := user.NewMockUseCase(ctrl)
+
+		stat := models.UserStat{
+			UserId:    testUser.Id,
+			Tracks:    12,
+			Albums:    4234,
+			Playlists: 5345,
+			Artists:   123,
+		}
+
+		statMarshal, err := json.Marshal(stat)
+		assert.NoError(t, err)
+
+		m.EXPECT().
+			GetUserStat(testUser.Id).
+			Return(stat, nil)
+
+		userHandlers.UserUC = m
+
+		apitest.New("GetProfile-OK").
+			Handler(middlewareMock).
+			Method("Get").
+			URL("/stat/keklol").
+			Expect(t).
+			Body(string(statMarshal)).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("GetUserStat-UseCaseError", func(t *testing.T) {
+		middlewareMock := middleware.SetMuxVars(userHandlers.GetUserStat, "id", testUser.Id)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := user.NewMockUseCase(ctrl)
+
+		testError := errors.New("testError")
+
+		m.EXPECT().
+			GetUserStat(testUser.Id).
+			Return(models.UserStat{}, testError)
+
+		userHandlers.UserUC = m
+
+		apitest.New("GetProfile-UseCaseError").
+			Handler(middlewareMock).
+			Method("Get").
+			URL("/stat/keklol").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+
+	t.Run("GetUserStat-NoMuxVars", func(t *testing.T) {
+		apitest.New("GetProfile-NoMuxVars").
+			Handler(http.HandlerFunc(userHandlers.GetUserStat)).
+			Method("Get").
+			URL("/stat/keklol").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+}
+
+func TestGetCSRF(t *testing.T) {
+	t.Run("GetCSRF-OK", func(t *testing.T) {
+		sessionId := "asdasdwer6545"
+		handler := middleware.AuthMiddlewareMock(userHandlers.GetCSRF, true, models.User{}, sessionId)
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := csrf.NewMockUseCase(ctrl)
+
+		token := "jieimrc2mu49muc9824cu924cum9"
+
+		m.EXPECT().
+			Create(sessionId, gomock.Any()).
+			Return(token, nil)
+
+		userHandlers.CSRF = m
+
+		apitest.New("GetCSRF-OK").
+			Handler(handler).
+			Method("Get").
+			URL("/users/token").
+			Expect(t).
+			Header("Csrf-Token", token).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("GetUserStat-UseCaseError", func(t *testing.T) {
+		sessionId := "asdasdwer6545"
+		handler := middleware.AuthMiddlewareMock(userHandlers.GetCSRF, true, models.User{}, sessionId)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := csrf.NewMockUseCase(ctrl)
+
+		testError := errors.New("testError")
+
+		m.EXPECT().
+			Create(sessionId, gomock.Any()).
+			Return("", testError)
+
+		userHandlers.CSRF = m
+
+		apitest.New("GetProfile-UseCaseError").
+			Handler(handler).
+			Method("Get").
+			URL("/users/token").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+
+	t.Run("GetUserStat-NoSession_id", func(t *testing.T) {
+		apitest.New("GetProfile-NoSession_id").
+			Handler(http.HandlerFunc(userHandlers.GetCSRF)).
+			Method("Get").
+			URL("/users/token").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
 }
