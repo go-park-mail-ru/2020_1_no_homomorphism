@@ -17,7 +17,7 @@ type CryptToken struct {
 
 type TokenData struct {
 	SessionID string
-	Exp       int64
+	timeStamp int64
 }
 
 func NewAesCryptHashToken(secret string) (CryptToken, error) {
@@ -29,7 +29,7 @@ func NewAesCryptHashToken(secret string) (CryptToken, error) {
 	return CryptToken{Secret: key}, nil
 }
 
-func (tk *CryptToken) Create(sid string, tokenExpTime int64) (string, error) {
+func (tk *CryptToken) Create(sid string, timeStamp int64) (string, error) {
 	block, err := aes.NewCipher(tk.Secret)
 	if err != nil {
 		return "", err
@@ -45,7 +45,7 @@ func (tk *CryptToken) Create(sid string, tokenExpTime int64) (string, error) {
 		return "", err
 	}
 
-	td := &TokenData{SessionID: sid, Exp: tokenExpTime}
+	td := &TokenData{SessionID: sid, timeStamp: timeStamp}
 	data, _ := json.Marshal(td)
 	ciphertext := aesgcm.Seal(nil, nonce, data, nil)
 
@@ -87,11 +87,11 @@ func (tk *CryptToken) Check(sid string, inputToken string) (bool, error) {
 		return false, fmt.Errorf("bad json: %v", err)
 	}
 
-	if td.Exp < time.Now().Unix() {
+	if td.timeStamp < time.Now().Unix() {
 		return false, fmt.Errorf("token expired")
 	}
 
 	expected := TokenData{SessionID: sid}
-	td.Exp = 0
+	td.timeStamp = 0
 	return td == expected, nil
 }

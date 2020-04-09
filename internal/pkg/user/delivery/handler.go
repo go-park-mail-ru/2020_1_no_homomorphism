@@ -26,12 +26,6 @@ type UserHandler struct {
 }
 
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	if !r.Context().Value("isCSRFTokenCorrect").(bool) {
 		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -48,7 +42,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 	emailExists, err := h.UserUC.Update(user, input)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "can't update user:" + err.Error(), http.StatusBadRequest)
+		h.Log.HttpInfo(r.Context(), "can't update user:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -90,16 +84,8 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	token, err := h.CSRF.Create(cookie.Value, cookie.Expires.Unix())
-	if err != nil {
-		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create csrf token: "+err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Access-Control-Expose-Headers", "Csrf-Token")
-	w.Header().Set("Csrf-Token", token)
-
 	http.SetCookie(w, &cookie)
+
 	w.WriteHeader(http.StatusCreated)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreated)
 }
@@ -158,32 +144,11 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := h.CSRF.Create(cookie.Value, cookie.Expires.Unix())
-	if err != nil {
-		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create csrf token: "+err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Access-Control-Expose-Headers", "Csrf-Token")
-	w.Header().Set("Csrf-Token", token)
-
 	http.SetCookie(w, &cookie)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
 func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	if !r.Context().Value("isCSRFTokenCorrect").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
 	cookie, err := r.Cookie("session_id")
 	if err == http.ErrNoCookie || cookie == nil {
 		h.Log.HttpInfo(r.Context(), "could not find cookie", http.StatusBadRequest)
@@ -202,12 +167,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-func (h *UserHandler) Profile(w http.ResponseWriter, r *http.Request) { //todo достпуность данных других пользователей??
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+func (h *UserHandler) Profile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	login, e := vars["profile"]
 	if e == false {
@@ -235,11 +195,6 @@ func (h *UserHandler) Profile(w http.ResponseWriter, r *http.Request) { //todo �
 }
 
 func (h *UserHandler) SelfProfile(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	user := r.Context().Value("user").(models.User)
 	profile := h.UserUC.GetOutputUserData(user)
 
@@ -256,11 +211,6 @@ func (h *UserHandler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
 	if !r.Context().Value("isCSRFTokenCorrect").(bool) {
 		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -323,5 +273,26 @@ func (h *UserHandler) CheckAuth(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *UserHandler) GetCSRF(w http.ResponseWriter, r *http.Request) {
+	sId, ok := r.Context().Value("session_id").(string)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "user delivery", "GetCSRF", "failed to get from context")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	token, err := h.CSRF.Create(sId, time.Now().Unix())
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "user delivery", "GetCSRF", "failed to create csrf")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Access-Control-Expose-Headers", "Csrf-Token")
+	w.Header().Set("Csrf-Token", token)
+
+	w.WriteHeader(http.StatusOK)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }

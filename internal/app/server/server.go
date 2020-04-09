@@ -112,7 +112,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 		Log:     mainLogger,
 	}
 
-	auth := m.NewAuthMiddleware(&SessionDelivery, &UserUC)
+	auth := m.NewAuthMiddleware(&SessionDelivery, &UserUC, mainLogger)
 	csrf := m.NewCsrfMiddleware(csrfToken)
 
 	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, auth, csrf
@@ -123,7 +123,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, redisConn *redis.P
 
 	r := mux.NewRouter().PathPrefix(constants.ApiPrefix).Subrouter()
 
-	r.Handle("/users/albums", auth.AuthMiddleware(album.GetUserAlbums)).Methods("GET")
+	r.Handle("/users/albums", auth.AuthMiddleware(album.GetUserAlbums, false)).Methods("GET")
 	r.HandleFunc("/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
 
@@ -131,22 +131,23 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, redisConn *redis.P
 	r.HandleFunc("/artists/{id:[0-9]+}/stat", artist.GetArtistStat).Methods("GET")
 	r.HandleFunc("/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
 
-	r.Handle("/users/playlists", auth.AuthMiddleware(playlist.GetUserPlaylists)).Methods("GET")
-	r.Handle("/playlists/{id:[0-9]+}", auth.AuthMiddleware(playlist.GetFullPlaylistById)).Methods("GET")
-	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.AuthMiddleware(m.GetBoundedVars(playlist.GetBoundedPlaylistTracks, user.Log))).Methods("GET")
+	r.Handle("/users/playlists", auth.AuthMiddleware(playlist.GetUserPlaylists, false)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}", auth.AuthMiddleware(playlist.GetFullPlaylistById, false)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.AuthMiddleware(m.GetBoundedVars(playlist.GetBoundedPlaylistTracks, user.Log), false)).Methods("GET")
 
 	r.HandleFunc("/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
 	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedArtistTracks, user.Log)).Methods("GET")
 
-	r.Handle("/users", auth.AuthMiddleware(user.CheckAuth))
-	r.Handle("/users/me", auth.AuthMiddleware(user.SelfProfile)).Methods("GET")
-	r.Handle("/users/login", auth.AuthMiddleware(user.Login)).Methods("POST")
-	r.Handle("/users/logout", auth.AuthMiddleware(user.Logout)).Methods("DELETE")
-	r.Handle("/users/images", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.UpdateAvatar))).Methods("POST")
-	r.Handle("/users/signup", auth.AuthMiddleware(user.Create)).Methods("POST")
-	r.Handle("/users/settings", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.Update))).Methods("PUT")
-	r.Handle("/users/profiles/{profile}", auth.AuthMiddleware(user.Profile)).Methods("GET")
+	r.Handle("/users", auth.AuthMiddleware(user.CheckAuth, true))
+	r.Handle("/users/token", auth.AuthMiddleware(user.GetCSRF, false)).Methods("GET")
+	r.Handle("/users/me", auth.AuthMiddleware(user.SelfProfile, false)).Methods("GET")
+	r.Handle("/users/login", auth.AuthMiddleware(user.Login, true)).Methods("POST")
+	r.Handle("/users/logout", auth.AuthMiddleware(user.Logout, false)).Methods("DELETE")
+	r.Handle("/users/images", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.UpdateAvatar), false)).Methods("POST")
+	r.Handle("/users/signup", auth.AuthMiddleware(user.Create, true)).Methods("POST")
+	r.Handle("/users/settings", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.Update), false)).Methods("PUT")
+	r.Handle("/users/profiles/{profile}", auth.AuthMiddleware(user.Profile, false)).Methods("GET")
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
 
 	accessMiddleware := m.AccessLogMiddleware(r, user.Log)
