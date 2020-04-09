@@ -7,10 +7,10 @@ import (
 )
 
 type CsrfMiddleware struct {
-	CSRF csrf.CryptToken
+	CSRF csrf.UseCase
 }
 
-func NewCsrfMiddleware(csrf csrf.CryptToken) CsrfMiddleware {
+func NewCsrfMiddleware(csrf csrf.UseCase) CsrfMiddleware {
 	return CsrfMiddleware{
 		CSRF: csrf,
 	}

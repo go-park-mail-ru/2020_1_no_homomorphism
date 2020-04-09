@@ -32,6 +32,7 @@ var LogFile = "logfile.log"
 var RedisAddr = "redis://user:@localhost:6379/0"
 
 var CsrfSecret = "qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB"
+var CsrfDuration int64 = 3600 //1 час
 
 var (
 	FileServerRoot = "resources"

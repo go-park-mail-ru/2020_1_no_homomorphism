@@ -20,7 +20,7 @@ import (
 type UserHandler struct {
 	SessionDelivery session.Delivery
 	UserUC          users.UseCase
-	CSRF            csrf.CryptToken
+	CSRF            csrf.UseCase
 	Log             *logger.MainLogger
 	ImgTypes        map[string]string
 }

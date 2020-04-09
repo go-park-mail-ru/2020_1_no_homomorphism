@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"no_homomorphism/internal/pkg/csrf/repository"
+	"no_homomorphism/internal/pkg/csrf/usecase"
 	"os"
 
 	"github.com/gomodule/redigo/redis"
@@ -20,7 +22,7 @@ import (
 	artistRepo "no_homomorphism/internal/pkg/artist/repository"
 	artistUC "no_homomorphism/internal/pkg/artist/usecase"
 	"no_homomorphism/internal/pkg/constants"
-	csrfLib "no_homomorphism/internal/pkg/csrf"
+	csrfLib "no_homomorphism/internal/pkg/csrf/usecase"
 	m "no_homomorphism/internal/pkg/middleware"
 	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
 	playlistRepo "no_homomorphism/internal/pkg/playlist/repository"
@@ -98,7 +100,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 		UserUC:          &UserUC,
 		Log:             mainLogger,
 		ImgTypes:        constants.AvatarTypes,
-		CSRF:            csrfToken,
+		CSRF:            &csrfToken,
 	}
 
 	trackHandler := trackDelivery.TrackHandler{
@@ -113,7 +115,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 	}
 
 	auth := m.NewAuthMiddleware(&SessionDelivery, &UserUC, mainLogger)
-	csrf := m.NewCsrfMiddleware(csrfToken)
+	csrf := m.NewCsrfMiddleware(&csrfToken)
 
 	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, auth, csrf
 }
@@ -197,7 +199,9 @@ func StartNew() {
 	}
 	defer redisConn.Close()
 
-	csrfToken, err := csrfLib.NewAesCryptHashToken(constants.CsrfSecret)
+	csrfRepo := repository.NewRedisTokenManager(redisConn)
+
+	csrfToken, err := usecase.NewAesCryptHashToken(constants.CsrfSecret, constants.CsrfDuration, &csrfRepo)
 	if err != nil {
 		log.Fatalf("failed to init csrf token: %v", err)
 	}
