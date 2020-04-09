@@ -6,8 +6,16 @@ import (
 	"github.com/rs/cors"
 )
 
+var ApiPrefix = "/api/v1/"
+
 var CorsOptions = cors.Options{
-	AllowedOrigins:   []string{"http://89.208.199.170:3000", "http://195.19.37.246:10982", "http://89.208.199.170:3001", "http://localhost:3000"},
+	AllowedOrigins: []string{
+		"http://89.208.199.170:3000",
+		"http://195.19.37.246:10982",
+		"http://89.208.199.170:3001",
+		"http://localhost:3000",
+		"http://virusmusic.fun",
+	},
 	AllowCredentials: true,
 	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
 	AllowedHeaders:   []string{"Content-Type", "X-Content-Type-Options", "Csrf-Token"},
@@ -15,7 +23,7 @@ var CorsOptions = cors.Options{
 }
 
 var (
-	DbConn = "host=localhost port=5432 user=postgres password=postgres dbname=music_app"
+	DbConn     = "host=localhost port=5432 user=postgres password=postgres dbname=music_app"
 	DbMaxConnN = 10
 )
 

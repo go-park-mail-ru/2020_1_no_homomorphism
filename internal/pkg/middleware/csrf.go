@@ -3,10 +3,21 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"no_homomorphism/internal/pkg/csrf"
 )
 
-func (m *MiddlewareManager) CSRFCheckMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+type CsrfMiddleware struct {
+	CSRF csrf.CryptToken
+}
+
+func NewCsrfMiddleware(csrf csrf.CryptToken) CsrfMiddleware {
+	return CsrfMiddleware{
+		CSRF: csrf,
+	}
+}
+
+func (m *CsrfMiddleware) CSRFCheckMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if !ctx.Value("isAuth").(bool) {
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -22,5 +33,5 @@ func (m *MiddlewareManager) CSRFCheckMiddleware(next http.Handler) http.Handler 
 		}
 		ctx = context.WithValue(ctx, "isCSRFTokenCorrect", true)
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	}
 }

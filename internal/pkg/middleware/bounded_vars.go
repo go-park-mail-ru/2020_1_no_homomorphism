@@ -8,8 +8,8 @@ import (
 	"strconv"
 )
 
-func GetBoundedVars(next http.HandlerFunc, log *logger.MainLogger) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func GetBoundedVars(next http.HandlerFunc, log *logger.MainLogger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		vars := mux.Vars(r)
@@ -37,5 +37,5 @@ func GetBoundedVars(next http.HandlerFunc, log *logger.MainLogger) http.Handler 
 		ctx = context.WithValue(ctx, "end", end)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	}
 }

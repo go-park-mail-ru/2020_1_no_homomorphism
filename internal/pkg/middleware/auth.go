@@ -4,33 +4,23 @@ import (
 	"context"
 	"net/http"
 
-	"no_homomorphism/internal/pkg/csrf"
-	"no_homomorphism/internal/pkg/playlist"
-
 	"no_homomorphism/internal/pkg/session"
-	"no_homomorphism/internal/pkg/track"
 	"no_homomorphism/internal/pkg/user"
 )
 
-type MiddlewareManager struct {
+type AuthMidleware struct {
 	SessionDelivery session.Delivery
 	UserUC          user.UseCase
-	TrackUC         track.UseCase
-	PlaylistUC      playlist.UseCase
-	CSRF            csrf.CryptToken
 }
 
-func NewMiddlewareManager(sd session.Delivery, uuc user.UseCase, tuc track.UseCase, puc playlist.UseCase, csrfToken csrf.CryptToken) MiddlewareManager {
-	return MiddlewareManager{
+func NewAuthMiddleware(sd session.Delivery, uuc user.UseCase) AuthMidleware {
+	return AuthMidleware{
 		SessionDelivery: sd,
 		UserUC:          uuc,
-		TrackUC:         tuc,
-		PlaylistUC:      puc,
-		CSRF:            csrfToken,
 	}
 }
 
-func (m *MiddlewareManager) CheckAuthMiddleware(next http.Handler) http.Handler { //todo write logs
+func (m *AuthMidleware) AuthMiddleware(next http.HandlerFunc) http.Handler { //todo write logs
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		cookie, err := r.Cookie("session_id")
@@ -58,4 +48,3 @@ func (m *MiddlewareManager) CheckAuthMiddleware(next http.Handler) http.Handler 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-

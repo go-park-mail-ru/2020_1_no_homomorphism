@@ -75,7 +75,7 @@ func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Req
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *http.Request) { //todo сократить эти 3 хендлера
+func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *http.Request) {
 	id, okId := r.Context().Value("id").(string)
 	start, okStart := r.Context().Value("start").(uint64)
 	end, okEnd := r.Context().Value("end").(uint64)

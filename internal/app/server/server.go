@@ -10,7 +10,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
-	"github.com/kabukky/httpscerts"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -21,8 +20,8 @@ import (
 	artistRepo "no_homomorphism/internal/pkg/artist/repository"
 	artistUC "no_homomorphism/internal/pkg/artist/usecase"
 	"no_homomorphism/internal/pkg/constants"
-	"no_homomorphism/internal/pkg/csrf"
-	"no_homomorphism/internal/pkg/middleware"
+	csrfLib "no_homomorphism/internal/pkg/csrf"
+	m "no_homomorphism/internal/pkg/middleware"
 	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
 	playlistRepo "no_homomorphism/internal/pkg/playlist/repository"
 	playlistUC "no_homomorphism/internal/pkg/playlist/usecase"
@@ -38,20 +37,22 @@ import (
 	"no_homomorphism/pkg/logger"
 )
 
-func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrf.CryptToken) (
+func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrfLib.CryptToken) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
 	albumDelivery.AlbumHandler,
 	artistDelivery.ArtistHandler,
-	middleware.MiddlewareManager) {
+	m.AuthMidleware,
+	m.CsrfMiddleware,
+) {
 
 	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	trackRep := trackRepo.NewDbTrackRepo(db)
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	artistRep := artistRepo.NewDbArtistRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, constants.AvatarDefault,  constants.AvatarDir) // todo add to config
+	dbRep := userRepo.NewDbUserRepository(db, constants.AvatarDefault, constants.AvatarDir)
 
 	ArtistUC := artistUC.ArtistUseCase{
 		ArtistRepository: &artistRep,
@@ -111,49 +112,53 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 		Log:     mainLogger,
 	}
 
-	m := middleware.NewMiddlewareManager(&SessionDelivery, &UserUC, &TrackUC, &PlaylistUC, csrfToken)
+	auth := m.NewAuthMiddleware(&SessionDelivery, &UserUC)
+	csrf := m.NewCsrfMiddleware(csrfToken)
 
-	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, m
+	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, auth, csrf
 }
 
-func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, redisConn *redis.Pool, csrfToken csrf.CryptToken) http.Handler {
-	user, track, playlist, album, artist, m := InitHandler(customLogger, db, redisConn, csrfToken)
-	r := mux.NewRouter()
-	r.HandleFunc("/api/v1/users/settings", user.Update).Methods("PUT")
-	r.HandleFunc("/api/v1/users/me", user.SelfProfile).Methods("GET")
-	r.HandleFunc("/api/v1/users/playlists", playlist.GetUserPlaylists).Methods("GET")
-	r.HandleFunc("/api/v1/users/albums", album.GetUserAlbums).Methods("GET")
-	r.HandleFunc("/api/v1/playlists/{id:[0-9]+}", playlist.GetFullPlaylistById).Methods("GET")
-	r.HandleFunc("/api/v1/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
-	r.HandleFunc("/api/v1/users/profiles/{profile}", user.Profile)
-	r.HandleFunc("/api/v1/users/images", user.UpdateAvatar).Methods("POST")
-	r.HandleFunc("/api/v1/users", user.CheckAuth)
-	r.HandleFunc("/api/v1/users/signup", user.Create).Methods("POST")
-	r.HandleFunc("/api/v1/users/login", user.Login).Methods("POST")
-	r.HandleFunc("/api/v1/users/logout", user.Logout).Methods("DELETE")
-	r.HandleFunc("/api/v1/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
-	r.Handle("/api/v1/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", middleware.GetBoundedVars(artist.GetBoundedArtistTracks, user.Log)).Methods("GET")
-	r.Handle("/api/v1/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", middleware.GetBoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
-	r.HandleFunc("/api/v1/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
-	r.HandleFunc("/api/v1/artists/{id:[0-9]+}", artist.GetFullArtistInfo).Methods("GET")
-	r.HandleFunc("/api/v1/artists/{id:[0-9]+}/stat", artist.GetArtistStat).Methods("GET")
-	r.HandleFunc("/api/v1/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
-	r.Handle("/api/v1/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", middleware.GetBoundedVars(album.GetBoundedAlbumTracks, user.Log)).Methods("GET")
-	r.Handle("/api/v1/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", middleware.GetBoundedVars(playlist.GetBoundedPlaylistTracks, user.Log)).Methods("GET")
+func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, redisConn *redis.Pool, csrfToken csrfLib.CryptToken) http.Handler {
+	user, track, playlist, album, artist, auth, csrf := InitHandler(customLogger, db, redisConn, csrfToken)
 
-	csrfMiddleware := m.CSRFCheckMiddleware(r)
-	authHandler := m.CheckAuthMiddleware(csrfMiddleware)
+	r := mux.NewRouter().PathPrefix(constants.ApiPrefix).Subrouter()
 
-	accessMiddleware := middleware.AccessLogMiddleware(authHandler, user.Log)
-	panicMiddleware := middleware.PanicMiddleware(accessMiddleware, user.Log)
+	r.Handle("/users/albums", auth.AuthMiddleware(album.GetUserAlbums)).Methods("GET")
+	r.HandleFunc("/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
+
+	r.HandleFunc("/artists/{id:[0-9]+}", artist.GetFullArtistInfo).Methods("GET")
+	r.HandleFunc("/artists/{id:[0-9]+}/stat", artist.GetArtistStat).Methods("GET")
+	r.HandleFunc("/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
+
+	r.Handle("/users/playlists", auth.AuthMiddleware(playlist.GetUserPlaylists)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}", auth.AuthMiddleware(playlist.GetFullPlaylistById)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.AuthMiddleware(m.GetBoundedVars(playlist.GetBoundedPlaylistTracks, user.Log))).Methods("GET")
+
+	r.HandleFunc("/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
+	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedArtistTracks, user.Log)).Methods("GET")
+
+	r.Handle("/users", auth.AuthMiddleware(user.CheckAuth))
+	r.Handle("/users/me", auth.AuthMiddleware(user.SelfProfile)).Methods("GET")
+	r.Handle("/users/login", auth.AuthMiddleware(user.Login)).Methods("POST")
+	r.Handle("/users/logout", auth.AuthMiddleware(user.Logout)).Methods("DELETE")
+	r.Handle("/users/images", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.UpdateAvatar))).Methods("POST")
+	r.Handle("/users/signup", auth.AuthMiddleware(user.Create)).Methods("POST")
+	r.Handle("/users/settings", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.Update))).Methods("PUT")
+	r.Handle("/users/profiles/{profile}", auth.AuthMiddleware(user.Profile)).Methods("GET")
+	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
+
+	accessMiddleware := m.AccessLogMiddleware(r, user.Log)
+	panicMiddleware := m.PanicMiddleware(accessMiddleware, user.Log)
+
 	return panicMiddleware
 }
 
 func StartNew() {
-
 	db, err := gorm.Open("postgres", constants.DbConn)
 	if err != nil {
-		log.Fatal("Failed to start db: " + err.Error())
+		log.Fatalf("Failed to start db: %v", err)
 	}
 
 	defer db.Close()
@@ -161,7 +166,7 @@ func StartNew() {
 	db.DB().SetMaxOpenConns(constants.DbMaxConnN)
 
 	if err := db.DB().Ping(); err != nil {
-		log.Fatal("Failed to ping db: " + err.Error())
+		log.Fatalf("Failed to ping db: %v", err)
 	}
 
 	c := cors.New(constants.CorsOptions)
@@ -184,39 +189,24 @@ func StartNew() {
 		Dial: func() (redis.Conn, error) {
 			conn, err := redis.DialURL(*redisAddr)
 			if err != nil {
-				log.Fatal("fail init redis pool: ", err)
+				log.Fatalf("failed to init redis pool: %v", err)
 			}
 			return conn, err
 		},
 	}
 	defer redisConn.Close()
 
-	csrfToken, err := csrf.NewAesCryptHashToken(constants.CsrfSecret)
+	csrfToken, err := csrfLib.NewAesCryptHashToken(constants.CsrfSecret)
 	if err != nil {
-		log.Fatal("fail init csrf token")
+		log.Fatalf("failed to init csrf token: %v", err)
 	}
 
-	middlewares := InitRouter(customLogger, db, redisConn, csrfToken)
-	//generateSSL()
+	routes := InitRouter(customLogger, db, redisConn, csrfToken)
 
 	fmt.Println("Starts server at 8081")
-	//err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", c.Handler(panicMiddleware))
-	err = http.ListenAndServe(":8081", c.Handler(middlewares))
+	err = http.ListenAndServe(":8081", c.Handler(routes))
 	if err != nil {
 		log.Println(err)
 		return
-	}
-}
-
-func generateSSL() {
-	// Проверяем, доступен ли cert файл.
-	err := httpscerts.Check("cert.pem", "key.pem")
-	// Если он недоступен, то генерируем новый.
-	if err != nil {
-		err = httpscerts.Generate("cert.pem", "key.pem", "https://127.0.0.1:8081")
-		//err = httpscerts.Generate("cert.pem", "key.pem", "http://89.208.199.170:8001")
-		if err != nil {
-			logrus.Fatal("failed to generate https cert")
-		}
 	}
 }
