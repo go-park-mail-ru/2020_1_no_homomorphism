@@ -62,7 +62,7 @@ func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
-	err := h.checkAuthFromCtx(w, r)
+	err := h.checkNoAuth(w, r)
 	if err != nil {
 		return
 	}
@@ -126,7 +126,7 @@ func (h *UserHandler) checkAndSendExisting(w http.ResponseWriter, ctx context.Co
 }
 
 func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
-	err := h.checkAuthFromCtx(w, r)
+	err := h.checkNoAuth(w, r)
 	if err != nil {
 		return
 	}
@@ -231,7 +231,7 @@ func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user, ok := r.Context().Value("user").(models.User) //todo check error
+	user, ok := r.Context().Value("user").(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "delivery", "UpdateAvatar", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -312,10 +312,10 @@ func (h *UserHandler) GetCSRF(w http.ResponseWriter, r *http.Request) {
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
-func (h *UserHandler) checkAuthFromCtx(w http.ResponseWriter, r *http.Request) error {
+func (h *UserHandler) checkNoAuth(w http.ResponseWriter, r *http.Request) error {
 	auth, ok := r.Context().Value("isAuth").(bool)
 	if !ok {
-		h.Log.LogWarning(r.Context(), "user delivery", "checkAuthFromCtx", "failed to get from context")
+		h.Log.LogWarning(r.Context(), "user delivery", "checkNoAuth", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)
 		return errors.New("failed to get from ctx")
 	}
