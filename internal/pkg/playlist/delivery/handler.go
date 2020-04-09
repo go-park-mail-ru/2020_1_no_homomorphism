@@ -19,12 +19,12 @@ type PlaylistHandler struct {
 }
 
 func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetUserPlaylists", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	user := r.Context().Value("user").(models.User)
 
 	playlists, err := h.PlaylistUC.GetUserPlaylists(user.Id)
 	if err != nil {
@@ -116,12 +116,12 @@ func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Cont
 }
 
 func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, varId string) error {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return errors.New("user is not auth")
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "checkUserAccess", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
+		return errors.New("failed to get from ctx")
 	}
-	user := r.Context().Value("user").(models.User)
 
 	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, varId)
 	if err != nil {

@@ -75,17 +75,7 @@ func TestGetUserPlaylists(t *testing.T) {
 			End()
 	})
 
-	t.Run("GetUserPlaylists-NoAuth", func(t *testing.T) {
-		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, false, models.User{}, "")
 
-		apitest.New("GetUserPlaylists-NoAuth").
-			Handler(handler).
-			Method("Get").
-			URL("/api/v1/users/playlists").
-			Expect(t).
-			Status(http.StatusUnauthorized).
-			End()
-	})
 
 	t.Run("GetUserPlaylists-UseCaseError", func(t *testing.T) {
 		handler := middleware.AuthMiddlewareMock(plHandler.GetUserPlaylists, true, testUser, "")
@@ -154,23 +144,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 			End()
 	})
 
-	t.Run("GetFullPlaylistById-NoAuth", func(t *testing.T) {
-		varsId := "1234"
 
-		handler := middleware.SetMuxVars(
-			middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, false, models.User{}, ""),
-			"id",
-			varsId,
-		)
-
-		apitest.New("GetFullPlaylistById-NoAuth").
-			Handler(handler).
-			Method("Get").
-			URL("/api/v1/playlists/1234").
-			Expect(t).
-			Status(http.StatusUnauthorized).
-			End()
-	})
 
 	t.Run("GetFullPlaylistById-NoVars", func(t *testing.T) {
 		handler := middleware.AuthMiddlewareMock(plHandler.GetFullPlaylistById, true, testUser, "")

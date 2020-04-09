@@ -43,12 +43,12 @@ func (h *AlbumHandler) GetFullAlbum(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AlbumHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "album delivery", "GetUserAlbums", "failed to from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	user := r.Context().Value("user").(models.User)
 
 	albums, err := h.AlbumUC.GetUserAlbums(user.Id)
 	if err != nil {
@@ -104,4 +104,3 @@ func (h *AlbumHandler) GetBoundedAlbumsByArtistId(w http.ResponseWriter, r *http
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
-

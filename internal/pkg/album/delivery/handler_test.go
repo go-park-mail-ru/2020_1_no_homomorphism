@@ -95,18 +95,7 @@ func TestGetUserAlbums(t *testing.T) {
 			End()
 	})
 
-	t.Run("GetUserAlbums-NoAuth", func(t *testing.T) {
-		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, false, models.User{}, "")
 
-		apitest.New("GetUserAlbums-NoAuth").
-			Handler(trueAuthPreHandle).
-			Method("Get").
-			Cookie("session_id", "randomSessionIdValueForTesting").
-			URL("/users/albums").
-			Expect(t).
-			Status(http.StatusUnauthorized).
-			End()
-	})
 
 	t.Run("GetUserAlbums-error", func(t *testing.T) {
 		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, true, testUser, "")
