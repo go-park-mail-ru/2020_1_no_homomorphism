@@ -10,6 +10,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/jinzhu/gorm v1.9.12
+	github.com/kabukky/httpscerts v0.0.0-20150320125433-617593d7dcb3
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lib/pq v1.3.0

@@ -5,18 +5,16 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"no_homomorphism/internal/pkg/artist"
-	"no_homomorphism/internal/pkg/csrf"
 	"no_homomorphism/internal/pkg/models"
-	"no_homomorphism/internal/pkg/session"
+	"no_homomorphism/internal/pkg/track"
 	"no_homomorphism/pkg/logger"
 	"strconv"
 )
 
 type ArtistHandler struct {
-	ArtistUC        artist.UseCase
-	SessionDelivery session.Delivery
-	CSRF            csrf.CryptToken
-	Log             *logger.MainLogger
+	ArtistUC artist.UseCase
+	TrackUC  track.UseCase
+	Log      *logger.MainLogger
 }
 
 func (h *ArtistHandler) GetFullArtistInfo(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +35,7 @@ func (h *ArtistHandler) GetFullArtistInfo(w http.ResponseWriter, r *http.Request
 	writer := json.NewEncoder(w)
 	err = writer.Encode(&artistInfo)
 	if err != nil {
-		h.Log.LogWarning(r.Context(), "artistInfo delivery", "GetFullArtistInfo", "failed to encode json"+err.Error())
+		h.Log.LogWarning(r.Context(), "artist delivery", "GetFullArtistInfo", "failed to encode json"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -81,5 +79,30 @@ func (h *ArtistHandler) GetBoundedArtists(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+
+func (h *ArtistHandler) GetArtistStat(w http.ResponseWriter, r *http.Request) {
+	id, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "no data in mux vars", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	artistStat, err := h.ArtistUC.GetArtistStat(id)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get artist's stat"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(artistStat)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "artist delivery", "GetArtistStat", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }

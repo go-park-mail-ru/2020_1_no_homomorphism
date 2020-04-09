@@ -23,8 +23,5 @@ func (uc PlaylistUseCase) CheckAccessToPlaylist(userId string, playlistId string
 	if err != nil {
 		return false, fmt.Errorf("cant get playlist: %v", err)
 	}
-	if pl.UserId != userId {
-		return false, nil
-	}
-	return true, nil
+	return pl.UserId == userId, nil
 }

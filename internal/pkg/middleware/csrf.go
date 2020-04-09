@@ -2,17 +2,30 @@ package middleware
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"net/http"
+	"no_homomorphism/internal/pkg/csrf"
 )
 
-func (m *MiddlewareManager) CSRFCheckMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+type CsrfMiddleware struct {
+	CSRF csrf.UseCase
+}
+
+func NewCsrfMiddleware(csrf csrf.UseCase) CsrfMiddleware {
+	return CsrfMiddleware{
+		CSRF: csrf,
+	}
+}
+
+func (m *CsrfMiddleware) CSRFCheckMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		if !ctx.Value("isAuth").(bool) {
-			next.ServeHTTP(w, r.WithContext(ctx))
+		sid, ok := ctx.Value("session_id").(string)
+		if !ok {
+			logrus.Error("failed to get from ctx")
+			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		sid := ctx.Value("session_id").(string)
 		CSRFToken := r.Header.Get("Csrf-Token")
 		ok, err := m.CSRF.Check(sid, CSRFToken)
 		if err != nil || !ok {
@@ -22,5 +35,5 @@ func (m *MiddlewareManager) CSRFCheckMiddleware(next http.Handler) http.Handler 
 		}
 		ctx = context.WithValue(ctx, "isCSRFTokenCorrect", true)
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+	}
 }

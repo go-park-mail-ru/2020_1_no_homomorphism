@@ -6,3 +6,10 @@ type Artist struct {
 	Image string `json:"image"`
 	Genre string `json:"genre"`
 }
+
+type ArtistStat struct {
+	ArtistId    string `json:"artist_id"`
+	Tracks      uint64 `json:"tracks"`
+	Albums      uint64 `json:"albums"`
+	Subscribers uint64 `json:"subscribers"`
+}

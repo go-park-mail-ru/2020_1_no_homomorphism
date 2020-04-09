@@ -3,13 +3,19 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strconv"
+
 	"github.com/jinzhu/gorm"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/crypto/bcrypt"
 	"no_homomorphism/internal/pkg/models"
 )
 
 type User struct {
-	Id       uint64 `sql:"AUTO_INCREMENT" gorm:"column:id"`
+	Id       uint64 `gorm:"column:id"`
 	Login    string `gorm:"column:login"`
 	Password []byte `gorm:"column:password"`
 	Name     string `gorm:"column:name"`
@@ -21,20 +27,27 @@ type User struct {
 type DbUserRepository struct {
 	db           *gorm.DB
 	defaultImage string
+	avatarDir    string
 }
 
-func NewDbUserRepository(database *gorm.DB, defaultImage string) DbUserRepository {
+func NewDbUserRepository(database *gorm.DB, defaultImage string, avatarDir string) DbUserRepository {
 	return DbUserRepository{
 		db:           database,
 		defaultImage: defaultImage,
+		avatarDir:    avatarDir,
 	}
 }
 
 func (ur *DbUserRepository) getUser(login string) (User, error) {
 	var results User
-	db := ur.db.Raw("SELECT id, login, password, name, email, sex, image FROM users WHERE login=?", login).Scan(&results)
+
+	db := ur.db.
+		Table("users").
+		Where("login = ?", login).
+		Find(&results)
+
 	err := db.Error
-	if err != nil {
+	if db.Error != nil {
 		return User{}, err
 	}
 	return results, nil
@@ -57,7 +70,7 @@ func (ur *DbUserRepository) prepareDbUser(user models.User, hash []byte) (User, 
 
 func ToModel(user User) models.User {
 	return models.User{
-		Id:       fmt.Sprint(user.Id),
+		Id:       strconv.FormatUint(user.Id, 10),
 		Login:    user.Login,
 		Password: string(user.Password),
 		Name:     user.Name,
@@ -72,10 +85,12 @@ func (ur *DbUserRepository) Create(user models.User) error {
 	if err != nil {
 		return fmt.Errorf("error while password hashing: %v", err)
 	}
+
 	dbUser, err := ur.prepareDbUser(user, hash)
 	if err != nil {
 		return err
 	}
+
 	db := ur.db.Create(&dbUser)
 	err = db.Error
 	if err != nil {
@@ -91,7 +106,11 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	}
 
 	var hash []byte
+
 	if input.NewPassword != "" {
+		if err := bcrypt.CompareHashAndPassword(dbUser.Password, []byte(input.Password)); err != nil {
+			return fmt.Errorf("old password is wrong : %v", err)
+		}
 		hash, err = bcrypt.GenerateFromPassword([]byte(input.NewPassword), bcrypt.MinCost)
 		if err != nil {
 			return fmt.Errorf("error while password hashing: %v", err)
@@ -100,27 +119,39 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	}
 	dbUser.Name = input.Name
 	dbUser.Email = input.Email
+
 	db := ur.db.Save(&dbUser)
-	err = db.Error
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return db.Error
 }
 
-func (ur *DbUserRepository) UpdateAvatar(user models.User, filePath string) error {
-	dbUser, err := ur.getUser(user.Login)
-	if err != nil {
-		return err
-	}
-	dbUser.Image = filePath
+func (ur *DbUserRepository) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
+	fileName := uuid.NewV4().String()
+	filePath := filepath.Join(os.Getenv("FILE_ROOT")+ur.avatarDir, fileName+"."+fileType)
 
-	db := ur.db.Save(&dbUser)
+	newFile, err := os.Create(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create file: %v", err)
+	}
+	defer newFile.Close()
+
+	_, err = io.Copy(newFile, file)
+	if err != nil {
+		return "", fmt.Errorf("error while writing to file: %v", err)
+	}
+
+	serverFilePath := os.Getenv("FILE_SERVER") + filepath.Join(ur.avatarDir, fileName+"."+fileType)
+
+	db := ur.db.
+		Model(&user).
+		Update("image", serverFilePath)
+
 	err = db.Error
 	if err != nil {
-		return err //todo error wrapper
+		return "", fmt.Errorf("failed to update user: %v", err)
 	}
-	return nil
+
+	return serverFilePath, nil
 }
 
 func (ur *DbUserRepository) GetUserByLogin(login string) (models.User, error) {
@@ -128,20 +159,24 @@ func (ur *DbUserRepository) GetUserByLogin(login string) (models.User, error) {
 	if err != nil {
 		return models.User{}, err
 	}
-	user := ToModel(dbUser)
-	return user, nil
+	return ToModel(dbUser), nil
 }
 
 func (ur *DbUserRepository) CheckIfExists(login string, email string) (loginExists bool, emailExists bool, err error) {
 	var results []User
-	db := ur.db.Raw("SELECT id, login, email FROM users WHERE login=? or email=?", login, email).Scan(&results)
+	db := ur.db.
+		Raw("SELECT login, email FROM users WHERE login=? or email=?", login, email).
+		Scan(&results)
+
 	err = db.Error
 	if err == gorm.ErrRecordNotFound {
 		return false, false, nil
 	}
+
 	if err != nil {
 		return true, true, err
 	}
+
 	for _, elem := range results {
 		if elem.Login == login {
 			loginExists = true
@@ -158,6 +193,21 @@ func (ur *DbUserRepository) CheckUserPassword(userPassword string, InputPassword
 		return errors.New("wrong password")
 	}
 	return nil
+}
+
+func (ur *DbUserRepository) GetUserStat(id string) (models.UserStat, error) {
+	var stat models.UserStat
+
+	db := ur.db.
+		Table("user_stat").
+		Where("user_id = ?", id).
+		Find(&stat)
+
+	err := db.Error
+	if err != nil {
+		return models.UserStat{}, err
+	}
+	return stat, nil
 }
 
 func IsModelFieldsNotEmpty(user models.User) bool {

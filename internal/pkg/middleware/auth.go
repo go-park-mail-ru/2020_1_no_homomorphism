@@ -3,52 +3,45 @@ package middleware
 import (
 	"context"
 	"net/http"
-
-	"no_homomorphism/internal/pkg/csrf"
-	"no_homomorphism/internal/pkg/playlist"
+	"no_homomorphism/pkg/logger"
 
 	"no_homomorphism/internal/pkg/session"
-	"no_homomorphism/internal/pkg/track"
 	"no_homomorphism/internal/pkg/user"
 )
 
-type MiddlewareManager struct {
+type AuthMidleware struct {
 	SessionDelivery session.Delivery
 	UserUC          user.UseCase
-	TrackUC         track.UseCase
-	PlaylistUC      playlist.UseCase
-	CSRF            csrf.CryptToken
+	Log             *logger.MainLogger
 }
 
-func NewMiddlewareManager(sd session.Delivery, uuc user.UseCase, tuc track.UseCase, puc playlist.UseCase, csrfToken csrf.CryptToken) MiddlewareManager {
-	return MiddlewareManager{
+func NewAuthMiddleware(sd session.Delivery, uuc user.UseCase, logger *logger.MainLogger) AuthMidleware {
+	return AuthMidleware{
 		SessionDelivery: sd,
 		UserUC:          uuc,
-		TrackUC:         tuc,
-		PlaylistUC:      puc,
-		CSRF:            csrfToken,
+		Log:             logger,
 	}
 }
 
-func (m *MiddlewareManager) CheckAuthMiddleware(next http.Handler) http.Handler { //todo write logs
+func (m *AuthMidleware) AuthMiddleware(next http.HandlerFunc, passNext bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		cookie, err := r.Cookie("session_id")
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
 		userLogin, err := m.SessionDelivery.GetLoginBySessionID(cookie.Value)
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
 		profile, err := m.UserUC.GetUserByLogin(userLogin)
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
 		ctx = context.WithValue(ctx, "isAuth", true)
@@ -59,3 +52,11 @@ func (m *MiddlewareManager) CheckAuthMiddleware(next http.Handler) http.Handler 
 	})
 }
 
+func (m *AuthMidleware) passNext(passNext bool, next http.HandlerFunc, w http.ResponseWriter, r *http.Request, ctx context.Context) {
+	if passNext {
+		next.ServeHTTP(w, r.WithContext(ctx))
+	} else {
+		m.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+	}
+}

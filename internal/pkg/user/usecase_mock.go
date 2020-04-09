@@ -110,10 +110,10 @@ func (mr *MockUseCaseMockRecorder) GetUserByLogin(login interface{}) *gomock.Cal
 }
 
 // GetProfileByLogin mocks base method
-func (m *MockUseCase) GetProfileByLogin(login string) (models.Profile, error) {
+func (m *MockUseCase) GetProfileByLogin(login string) (models.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProfileByLogin", login)
-	ret0, _ := ret[0].(models.Profile)
+	ret0, _ := ret[0].(models.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -124,18 +124,18 @@ func (mr *MockUseCaseMockRecorder) GetProfileByLogin(login interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileByLogin", reflect.TypeOf((*MockUseCase)(nil).GetProfileByLogin), login)
 }
 
-// GetProfileByUser mocks base method
-func (m *MockUseCase) GetProfileByUser(user models.User) models.Profile {
+// GetOutputUserData mocks base method
+func (m *MockUseCase) GetOutputUserData(user models.User) models.User {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetProfileByUser", user)
-	ret0, _ := ret[0].(models.Profile)
+	ret := m.ctrl.Call(m, "GetOutputUserData", user)
+	ret0, _ := ret[0].(models.User)
 	return ret0
 }
 
-// GetProfileByUser indicates an expected call of GetProfileByUser
-func (mr *MockUseCaseMockRecorder) GetProfileByUser(user interface{}) *gomock.Call {
+// GetOutputUserData indicates an expected call of GetOutputUserData
+func (mr *MockUseCaseMockRecorder) GetOutputUserData(user interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProfileByUser", reflect.TypeOf((*MockUseCase)(nil).GetProfileByUser), user)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOutputUserData", reflect.TypeOf((*MockUseCase)(nil).GetOutputUserData), user)
 }
 
 // CheckUserPassword mocks base method
@@ -150,4 +150,19 @@ func (m *MockUseCase) CheckUserPassword(userPassword, InputPassword string) erro
 func (mr *MockUseCaseMockRecorder) CheckUserPassword(userPassword, InputPassword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserPassword", reflect.TypeOf((*MockUseCase)(nil).CheckUserPassword), userPassword, InputPassword)
+}
+
+// GetUserStat mocks base method
+func (m *MockUseCase) GetUserStat(id string) (models.UserStat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserStat", id)
+	ret0, _ := ret[0].(models.UserStat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserStat indicates an expected call of GetUserStat
+func (mr *MockUseCaseMockRecorder) GetUserStat(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStat", reflect.TypeOf((*MockUseCase)(nil).GetUserStat), id)
 }

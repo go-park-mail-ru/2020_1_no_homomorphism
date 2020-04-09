@@ -6,6 +6,7 @@ package user
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	io "io"
 	models "no_homomorphism/internal/pkg/models"
 	reflect "reflect"
 )
@@ -62,17 +63,18 @@ func (mr *MockRepositoryMockRecorder) Update(user, input interface{}) *gomock.Ca
 }
 
 // UpdateAvatar mocks base method
-func (m *MockRepository) UpdateAvatar(user models.User, avatarPath string) error {
+func (m *MockRepository) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAvatar", user, avatarPath)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "UpdateAvatar", user, file, fileType)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // UpdateAvatar indicates an expected call of UpdateAvatar
-func (mr *MockRepositoryMockRecorder) UpdateAvatar(user, avatarPath interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) UpdateAvatar(user, file, fileType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockRepository)(nil).UpdateAvatar), user, avatarPath)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockRepository)(nil).UpdateAvatar), user, file, fileType)
 }
 
 // GetUserByLogin mocks base method
@@ -118,4 +120,19 @@ func (m *MockRepository) CheckUserPassword(userPassword, inputPassword string) e
 func (mr *MockRepositoryMockRecorder) CheckUserPassword(userPassword, inputPassword interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckUserPassword", reflect.TypeOf((*MockRepository)(nil).CheckUserPassword), userPassword, inputPassword)
+}
+
+// GetUserStat mocks base method
+func (m *MockRepository) GetUserStat(id string) (models.UserStat, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserStat", id)
+	ret0, _ := ret[0].(models.UserStat)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserStat indicates an expected call of GetUserStat
+func (mr *MockRepositoryMockRecorder) GetUserStat(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserStat", reflect.TypeOf((*MockRepository)(nil).GetUserStat), id)
 }

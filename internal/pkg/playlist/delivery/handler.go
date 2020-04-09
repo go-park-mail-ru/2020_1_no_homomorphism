@@ -3,6 +3,7 @@ package delivery
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/gorilla/mux"
 	"net/http"
 	"no_homomorphism/internal/pkg/models"
@@ -18,12 +19,12 @@ type PlaylistHandler struct {
 }
 
 func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetUserPlaylists", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	user := r.Context().Value("user").(models.User)
 
 	playlists, err := h.PlaylistUC.GetUserPlaylists(user.Id)
 	if err != nil {
@@ -46,46 +47,25 @@ func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Request) {
-	if !r.Context().Value("isAuth").(bool) {
-		h.Log.HttpInfo(r.Context(), "permission denied: user is not auth", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-	user := r.Context().Value("user").(models.User)
 	varId, ok := mux.Vars(r)["id"]
 	if !ok {
 		h.sendBadRequest(w, r.Context(), "no id in mux vars")
 		return
 	}
-	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, varId)
-	if err != nil {
-		h.sendBadRequest(w, r.Context(), "failed to check access: "+err.Error())
+
+	if err := h.checkUserAccess(w, r, varId); err != nil {
 		return
 	}
-	if !ok {
-		h.Log.HttpInfo(r.Context(), "current user doesnt have access to the playlist", http.StatusForbidden)
-		w.WriteHeader(http.StatusForbidden)
-		return
-	}
+
 	playlistData, err := h.PlaylistUC.GetPlaylistById(varId)
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "failed to get playlistData: "+err.Error())
 		return
 	}
-
-	tracks, err := h.TrackUC.GetTracksByPlaylistId(varId)
-	if err != nil {
-		h.sendBadRequest(w, r.Context(), "failed to get tracks: "+err.Error())
-		return
-	}
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
-	err = writer.Encode(struct {
-		Playlist models.Playlist `json:"playlist"`
-		Count    int             `json:"count"`
-		Tracks   []models.Track  `json:"tracks"`
-	}{playlistData, len(tracks), tracks})
+	err = writer.Encode(playlistData)
 
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "can't write tracks info into json: "+err.Error())
@@ -95,7 +75,63 @@ func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Req
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
+func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *http.Request) {
+	id, okId := r.Context().Value("id").(string)
+	start, okStart := r.Context().Value("start").(uint64)
+	end, okEnd := r.Context().Value("end").(uint64)
+
+	if !okId || !okStart || !okEnd {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetBoundedPlaylistTracks", "failed to get vars")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.checkUserAccess(w, r, id); err != nil {
+		return
+	}
+	tracks, err := h.TrackUC.GetBoundedTracksByPlaylistId(id, start, end)
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "failed to get tracks"+err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(struct {
+		Id     string         `json:"id"`
+		Tracks []models.Track `json:"tracks"`
+	}{id, tracks})
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetBoundedPlaylistTracks", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
 func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Context, msg string) {
 	h.Log.HttpInfo(ctx, msg, http.StatusBadRequest)
 	w.WriteHeader(http.StatusBadRequest)
+}
+
+func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, varId string) error {
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "checkUserAccess", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
+		return errors.New("failed to get from ctx")
+	}
+
+	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, varId)
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "failed to check access: "+err.Error())
+		return errors.New("failed to check access")
+	}
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "current user doesnt have access to the playlist", http.StatusForbidden)
+		w.WriteHeader(http.StatusForbidden)
+		return errors.New("no access")
+	}
+	return nil
 }
