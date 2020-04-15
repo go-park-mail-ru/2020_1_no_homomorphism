@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/kabukky/httpscerts"
+	"google.golang.org/grpc"
 	"log"
 	"net/http"
+	"no_homomorphism/configs/proto/session"
 	"no_homomorphism/internal/pkg/csrf/repository"
 	"no_homomorphism/internal/pkg/csrf/usecase"
 	"os"
@@ -28,9 +30,6 @@ import (
 	playlistDelivery "no_homomorphism/internal/pkg/playlist/delivery"
 	playlistRepo "no_homomorphism/internal/pkg/playlist/repository"
 	playlistUC "no_homomorphism/internal/pkg/playlist/usecase"
-	sessionDelivery "no_homomorphism/internal/pkg/session/delivery"
-	sessionRepo "no_homomorphism/internal/pkg/session/repository"
-	sessionUC "no_homomorphism/internal/pkg/session/usecase"
 	trackDelivery "no_homomorphism/internal/pkg/track/delivery"
 	trackRepo "no_homomorphism/internal/pkg/track/repository"
 	trackUC "no_homomorphism/internal/pkg/track/usecase"
@@ -40,7 +39,7 @@ import (
 	"no_homomorphism/pkg/logger"
 )
 
-func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, csrfToken csrfLib.CryptToken) (
+func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
@@ -50,7 +49,6 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 	m.CsrfMiddleware,
 ) {
 
-	sesRep := sessionRepo.NewRedisSessionManager(redis)
 	trackRep := trackRepo.NewDbTrackRepo(db)
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
@@ -69,14 +67,6 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 		PlRepository: &playlistRep,
 	}
 
-	SessionUC := sessionUC.SessionUseCase{
-		Repository: &sesRep,
-	}
-
-	SessionDelivery := sessionDelivery.SessionDelivery{
-		UseCase:    &SessionUC,
-		ExpireTime: constants.CookieExpireTime,
-	}
 	UserUC := userUC.UserUseCase{
 		Repository: &dbRep,
 	}
@@ -97,7 +87,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 	}
 
 	userHandler := userDelivery.UserHandler{
-		SessionDelivery: &SessionDelivery,
+		SessionDelivery: sessManager,
 		UserUC:          &UserUC,
 		Log:             mainLogger,
 		ImgTypes:        constants.AvatarTypes,
@@ -115,14 +105,14 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, redis *redis.Pool, 
 		Log:     mainLogger,
 	}
 
-	auth := m.NewAuthMiddleware(&SessionDelivery, &UserUC, mainLogger)
+	auth := m.NewAuthMiddleware(sessManager, &UserUC, mainLogger)
 	csrf := m.NewCsrfMiddleware(&csrfToken)
 
 	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, auth, csrf
 }
 
-func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, redisConn *redis.Pool, csrfToken csrfLib.CryptToken) http.Handler {
-	user, track, playlist, album, artist, auth, csrf := InitHandler(customLogger, db, redisConn, csrfToken)
+func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient) http.Handler {
+	user, track, playlist, album, artist, auth, csrf := InitHandler(customLogger, db, csrfToken, sessManager)
 
 	r := mux.NewRouter().PathPrefix(constants.ApiPrefix).Subrouter()
 
@@ -220,11 +210,22 @@ func StartNew() {
 		log.Fatalf("failed to init csrf token: %v", err)
 	}
 
-	routes := InitRouter(customLogger, db, redisConn, csrfToken)
+	grcpConn, err := grpc.Dial(
+		"127.0.0.1:8083",
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+		log.Fatalf("cant connect to grpc")
+	}
+	defer grcpConn.Close()
+
+	sessManager := session.NewAuthCheckerClient(grcpConn)
+
+	routes := InitRouter(customLogger, db, csrfToken, sessManager)
 
 	fmt.Println("Starts server at 8081")
-	err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", c.Handler(m.HeadersHandler(routes)))
-	//err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
+	//err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", c.Handler(m.HeadersHandler(routes)))
+	err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)
 		return

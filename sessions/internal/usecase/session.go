@@ -5,8 +5,7 @@ import (
 	"time"
 
 	uuid "github.com/satori/go.uuid"
-	"no_homomorphism/internal/pkg/models"
-	"no_homomorphism/internal/pkg/session"
+	"no_homomorphism/sessions/internal"
 )
 
 type SessionUseCase struct {
@@ -17,10 +16,10 @@ func addPrefix(id uuid.UUID) string {
 	return "sessions:" + id.String()
 }
 
-func (uc *SessionUseCase) Create(user models.User, expires time.Duration) (uuid.UUID, error) {
+func (uc *SessionUseCase) Create(login string, expires time.Duration) (uuid.UUID, error) {
 	id := uuid.NewV4()
 	sId := addPrefix(id)
-	err := uc.Repository.Create(sId, user.Login, expires)
+	err := uc.Repository.Create(sId, login, expires)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -40,6 +39,6 @@ func (uc *SessionUseCase) Delete(sessionID uuid.UUID) error {
 	return nil
 }
 
-func (uc *SessionUseCase) GetLoginBySessionID(sessionID uuid.UUID) (string, error) {
+func (uc *SessionUseCase) Check(sessionID uuid.UUID) (string, error) {
 	return uc.Repository.GetLoginBySessionID(addPrefix(sessionID))
 }

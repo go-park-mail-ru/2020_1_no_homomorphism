@@ -5,17 +5,17 @@ import (
 	"net/http"
 	"no_homomorphism/pkg/logger"
 
-	"no_homomorphism/internal/pkg/session"
+	"no_homomorphism/configs/proto/session"
 	"no_homomorphism/internal/pkg/user"
 )
 
 type AuthMidleware struct {
-	SessionDelivery session.Delivery
+	SessionDelivery session.AuthCheckerClient
 	UserUC          user.UseCase
 	Log             *logger.MainLogger
 }
 
-func NewAuthMiddleware(sd session.Delivery, uuc user.UseCase, logger *logger.MainLogger) AuthMidleware {
+func NewAuthMiddleware(sd session.AuthCheckerClient, uuc user.UseCase, logger *logger.MainLogger) AuthMidleware {
 	return AuthMidleware{
 		SessionDelivery: sd,
 		UserUC:          uuc,
@@ -32,13 +32,13 @@ func (m *AuthMidleware) AuthMiddleware(next http.HandlerFunc, passNext bool) htt
 			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
-		userLogin, err := m.SessionDelivery.GetLoginBySessionID(cookie.Value)
+		sess, err := m.SessionDelivery.Check(context.Background(), &session.SessionID{ID: cookie.Value})
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
 			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
-		profile, err := m.UserUC.GetUserByLogin(userLogin)
+		profile, err := m.UserUC.GetUserByLogin(sess.Login)
 		if err != nil {
 			ctx = context.WithValue(ctx, "isAuth", false)
 			m.passNext(passNext, next, w, r, ctx)

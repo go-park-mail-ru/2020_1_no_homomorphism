@@ -7,6 +7,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.11.4
 	github.com/go-test/deep v1.0.5
 	github.com/golang/mock v1.4.3
+	github.com/golang/protobuf v1.3.3
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/jinzhu/gorm v1.9.12
@@ -21,5 +22,7 @@ require (
 	github.com/steinfletcher/apitest v1.4.5
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
+	golang.org/x/net v0.0.0-20190404232315-eb5bcb51f2a3
+	google.golang.org/grpc v1.28.1
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )

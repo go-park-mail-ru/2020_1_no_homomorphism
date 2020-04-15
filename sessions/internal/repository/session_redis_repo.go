@@ -8,12 +8,12 @@ import (
 )
 
 type SessionManager struct {
-	redisPool redis.Pool
+	redisPool *redis.Pool
 }
 
-func NewRedisSessionManager(conn *redis.Pool) SessionManager {
-	return SessionManager{
-		redisPool: *conn,
+func NewRedisSessionManager(conn *redis.Pool) *SessionManager {
+	return &SessionManager{
+		redisPool: conn,
 	}
 }
 

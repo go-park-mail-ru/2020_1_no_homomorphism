@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"no_homomorphism/internal/pkg/constants"
 
+	"no_homomorphism/configs/proto/session"
 	"no_homomorphism/internal/pkg/csrf"
-	"no_homomorphism/internal/pkg/session"
 	users "no_homomorphism/internal/pkg/user"
 
 	"no_homomorphism/pkg/logger"
@@ -19,7 +20,7 @@ import (
 )
 
 type UserHandler struct {
-	SessionDelivery session.Delivery
+	SessionDelivery session.AuthCheckerClient
 	UserUC          users.UseCase
 	CSRF            csrf.UseCase
 	Log             *logger.MainLogger
@@ -85,11 +86,19 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		h.checkAndSendExisting(w, r.Context(), exists)
 		return
 	}
-	cookie, err := h.SessionDelivery.Create(user)
+	userSession, err := h.SessionDelivery.Create(context.Background(), &session.Session{Login: user.Login})
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "user delivery", "Create", "failed to create session: "+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	cookie := http.Cookie{
+		Name:     "session_id",
+		Value:    userSession.ID,
+		HttpOnly: true,
+		Path:     "/",
+		Expires:  time.Now().Add(constants.CookieExpireTime),
 	}
 	http.SetCookie(w, &cookie)
 
@@ -144,14 +153,22 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	cookie, err := h.SessionDelivery.Create(userData)
+	userSession, err := h.SessionDelivery.Create(context.Background(), &session.Session{Login: userData.Login})
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "delivery", "Login", "failed to create session: "+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
+	cookie := http.Cookie{
+		Name:     "session_id",
+		Value:    userSession.ID,
+		HttpOnly: true,
+		Path:     "/",
+		Expires:  time.Now().Add(constants.CookieExpireTime),
+	}
 	http.SetCookie(w, &cookie)
+
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
@@ -162,7 +179,7 @@ func (h *UserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	err = h.SessionDelivery.Delete(cookie.Value)
+	_, err = h.SessionDelivery.Delete(context.Background(), &session.SessionID{ID: cookie.Value})
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "can't delete session:"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
