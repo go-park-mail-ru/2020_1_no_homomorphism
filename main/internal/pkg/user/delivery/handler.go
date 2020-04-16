@@ -8,7 +8,7 @@ import (
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	users "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
 	"net/http"
 

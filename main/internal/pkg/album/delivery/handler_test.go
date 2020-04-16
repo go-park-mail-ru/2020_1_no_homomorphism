@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang/mock/gomock"
-	"github.com/steinfletcher/apitest"
-	"github.com/stretchr/testify/assert"
-	"net/http"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/album"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
+	"github.com/golang/mock/gomock"
+	"github.com/steinfletcher/apitest"
+	"github.com/stretchr/testify/assert"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -94,8 +94,6 @@ func TestGetUserAlbums(t *testing.T) {
 			Status(http.StatusOK).
 			End()
 	})
-
-
 
 	t.Run("GetUserAlbums-error", func(t *testing.T) {
 		trueAuthPreHandle := middleware.AuthMiddlewareMock(albumHandlers.GetUserAlbums, true, testUser, "")

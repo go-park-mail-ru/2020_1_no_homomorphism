@@ -14,6 +14,13 @@ type Playlists struct {
 	UserId uint64 `gorm:"column:user_id"`
 }
 
+type TrackInPlaylist struct {
+	PlaylistID uint64 `gorm:"column:playlist_id"`
+	TrackID    uint64 `gorm:"column:track_id"`
+	Index      uint8  `gorm:"column:index"`
+	Image      string `gorm:"column:image"`
+}
+
 type DbPlaylistRepository struct {
 	db *gorm.DB
 }
@@ -82,4 +89,27 @@ func (pr *DbPlaylistRepository) CreatePlaylist(name string, uID string) (plID st
 	}
 
 	return strconv.FormatUint(newPlaylist.Id, 10), nil
+}
+
+func (pr *DbPlaylistRepository) AddTrackToPlaylist(plTracks models.PlaylistTracks) error {
+	playlistID, err := strconv.ParseUint(plTracks.PlaylistID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse plID: %v", err)
+	}
+	trackID, err := strconv.ParseUint(plTracks.TrackID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse trackID: %v", err)
+	}
+
+	newRelation := TrackInPlaylist{
+		PlaylistID: playlistID,
+		TrackID:    trackID,
+		Image:      plTracks.Image,
+	}
+
+	if err := pr.db.Table("playlist_tracks").Create(&newRelation).Error; err != nil {
+		return fmt.Errorf("failed to create playlist:track relation: %v", err)
+	}
+
+	return nil
 }

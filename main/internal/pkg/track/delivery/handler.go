@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	track "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 )
 
 type TrackHandler struct {

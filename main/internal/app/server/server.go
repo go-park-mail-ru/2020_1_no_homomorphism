@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/constants"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf/repository"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
 	"github.com/kabukky/httpscerts"
 	"google.golang.org/grpc"
@@ -125,8 +125,9 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 
 	r.Handle("/users/playlists", auth.AuthMiddleware(playlist.GetUserPlaylists, false)).Methods("GET")
 	r.Handle("/playlists/{id:[0-9]+}", auth.AuthMiddleware(playlist.GetFullPlaylistById, false)).Methods("GET")
+	r.Handle("/playlists/new/{name}", auth.AuthMiddleware(playlist.CreatePlaylist, false)).Methods("POST") //todo csrf
+	r.Handle("/playlists/tracks", auth.AuthMiddleware(playlist.AddTrackToPlaylist, false)).Methods("POST") //todo csrf
 	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.AuthMiddleware(m.GetBoundedVars(playlist.GetBoundedPlaylistTracks, user.Log), false)).Methods("GET")
-	r.Handle("/playlists/{name}", auth.AuthMiddleware(playlist.CreatePlaylist, false)).Methods("POST")
 
 	r.HandleFunc("/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
 	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
@@ -136,7 +137,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.Handle("/users/token", auth.AuthMiddleware(user.GetCSRF, false)).Methods("GET")
 	r.Handle("/users/me", auth.AuthMiddleware(user.SelfProfile, false)).Methods("GET")
 	r.Handle("/users/login", auth.AuthMiddleware(user.Login, true)).Methods("POST")
-	r.Handle("/users/logout", auth.AuthMiddleware(user.Logout, false)).Methods("DELETE")
+	r.Handle("/users/logout", auth.AuthMiddleware(user.Logout, false)).Methods("DELETE") //todo убрать глаголы
 	r.Handle("/users/images", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.UpdateAvatar), false)).Methods("POST")
 	r.Handle("/users/signup", auth.AuthMiddleware(user.Create, true)).Methods("POST")
 	r.Handle("/users/settings", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.Update), false)).Methods("PUT")
@@ -184,7 +185,7 @@ func StartNew() {
 		logrus.Error("Failed to open logfile:", err)
 		customLogger = logger.NewLogger(os.Stdout)
 	} else {
-		customLogger = logger.NewLogger(f)
+		customLogger = logger.NewLogger(os.Stdout)
 	}
 	defer f.Close()
 

@@ -5,7 +5,7 @@ import (
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/artist"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"

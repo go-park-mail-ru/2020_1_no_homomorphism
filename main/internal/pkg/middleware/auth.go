@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
 	"net/http"
 

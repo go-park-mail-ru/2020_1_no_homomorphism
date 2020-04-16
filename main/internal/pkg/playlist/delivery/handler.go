@@ -7,7 +7,7 @@ import (
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/playlist"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -89,6 +89,7 @@ func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *htt
 	if err := h.checkUserAccess(w, r, id); err != nil {
 		return
 	}
+
 	tracks, err := h.TrackUC.GetBoundedTracksByPlaylistId(id, start, end)
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "failed to get tracks"+err.Error())
@@ -115,7 +116,7 @@ func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Cont
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, varId string) error {
+func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, playlistID string) error {
 	user, ok := r.Context().Value("user").(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "checkUserAccess", "failed to get from ctx")
@@ -123,7 +124,7 @@ func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request
 		return errors.New("failed to get from ctx")
 	}
 
-	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, varId)
+	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, playlistID)
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "failed to check access: "+err.Error())
 		return errors.New("failed to check access")
@@ -167,4 +168,28 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 	}
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreated)
+}
+
+func (h *PlaylistHandler) AddTrackToPlaylist(w http.ResponseWriter, r *http.Request) {
+	plTracks := models.PlaylistTracks{}
+
+	decoder := json.NewDecoder(r.Body)
+	err := decoder.Decode(&plTracks)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if err = h.checkUserAccess(w, r, plTracks.PlaylistID); err != nil {
+		return
+	}
+
+	if err = h.PlaylistUC.AddTrackToPlaylist(plTracks); err != nil {
+		h.Log.HttpInfo(r.Context(), "cant add track to playlist:"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }

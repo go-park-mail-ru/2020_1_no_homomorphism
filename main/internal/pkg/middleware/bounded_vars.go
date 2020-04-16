@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/gorilla/mux"
 	"net/http"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"strconv"
 )
 

@@ -3,7 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 )
 
 func PanicMiddleware(next http.Handler, log *logger.MainLogger) http.Handler {
