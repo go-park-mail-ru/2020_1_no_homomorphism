@@ -82,7 +82,6 @@ CREATE TRIGGER after_user_insert
     FOR EACH ROW
 EXECUTE PROCEDURE after_user_insert_func();
 
--- todo добавить триггер на добавление трека в плейлист (index increase)
 
 CREATE TABLE liked_artists
 (
@@ -138,6 +137,37 @@ CREATE TABLE playlist_tracks
         ON UPDATE CASCADE,
     PRIMARY KEY (playlist_ID, track_ID)
 );
+
+
+CREATE OR REPLACE FUNCTION before_playlist_track_insert_func() RETURNS TRIGGER AS
+$before_playlist_track_insert$
+DECLARE
+    max_index smallint;
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        max_index := (SELECT max(pl.index)
+                      FROM playlist_tracks as pl
+                      WHERE pl.playlist_ID = new.playlist_ID);
+        IF max_index IS NULL then
+            max_index = 0;
+        end if;
+
+        NEW.index := max_index + 1;
+
+        if NEW.image = '' then
+            new.image = '/static/img/track/default.png';
+        end if;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$before_playlist_track_insert$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_playlist_track_insert
+    BEFORE INSERT
+    ON playlist_tracks
+    FOR EACH ROW
+EXECUTE PROCEDURE before_playlist_track_insert_func();
 
 
 CREATE TABLE user_stat
@@ -256,39 +286,4 @@ SELECT a.ID as atrist_Id,
 FROM artists a,
      tracks t
 WHERE a.ID = t.artist_id;
-
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Cвитер', 244, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Cвитер.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Ах мамочка', 227, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Ах мамочка.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Бабы-стервы', 183, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Бабы-стервы.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Белые розы', 252, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Белые розы.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Водка без пива (zaycev.net)', 150, '/static/img/track/verka.jpg',
-        '/static/audio/Верка Сердючка - Водка без пива.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Горiлка', 172, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Горiлка.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Даже если вам немного за 30', 204, '/static/img/track/verka.jpg',
-        '/static/audio/Верка Сердючка - Даже если вам немного за 30.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('День рождения', 168, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - День рождения.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Жениха Хотела', 203, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Жениха Хотела.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Он бы подошел, я бы отвернулась ', 223, '/static/img/track/verka.jpg',
-        '/static/audio/Верка Сердючка - Он бы подошел, я бы отвернулась .mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('С Днём Рождения', 171, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - С Днём Рождения.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Свадебная', 181, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Свадебная.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Сигареточка', 175, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Сигареточка.mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Эх, свадьба, свадьба.. (zaycev.net)', 177, '/static/img/track/verka.jpg',
-        '/static/audio/Верка Сердючка - Эх, свадьба, свадьба...mp3', 4);
-INSERT INTO tracks (name, duration, image, link, artist_id)
-VALUES ('Я Не Поняла', 227, '/static/img/track/verka.jpg', '/static/audio/Верка Сердючка - Я Не Поняла.mp3', 4);
 
