@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/jinzhu/gorm"
+	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	"github.com/jinzhu/gorm"
 	"strconv"
 )
 
@@ -63,4 +64,22 @@ func (pr *DbPlaylistRepository) GetPlaylistById(pId string) (models.Playlist, er
 		return models.Playlist{}, err
 	}
 	return toModel(dbPlaylists), nil
+}
+
+func (pr *DbPlaylistRepository) CreatePlaylist(name string, uID string) (plID string, err error) {
+	userID, err := strconv.ParseUint(uID, 10, 64)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse uID: %v", err)
+	}
+
+	newPlaylist := Playlists{
+		Name:   name,
+		UserId: userID,
+	}
+
+	if err := pr.db.Create(&newPlaylist).Error; err != nil {
+		return "", fmt.Errorf("failed to create playlist: %v", err)
+	}
+
+	return strconv.FormatUint(newPlaylist.Id, 10), nil
 }

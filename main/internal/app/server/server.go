@@ -126,6 +126,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.Handle("/users/playlists", auth.AuthMiddleware(playlist.GetUserPlaylists, false)).Methods("GET")
 	r.Handle("/playlists/{id:[0-9]+}", auth.AuthMiddleware(playlist.GetFullPlaylistById, false)).Methods("GET")
 	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.AuthMiddleware(m.GetBoundedVars(playlist.GetBoundedPlaylistTracks, user.Log), false)).Methods("GET")
+	r.Handle("/playlists/{name}", auth.AuthMiddleware(playlist.CreatePlaylist, false)).Methods("POST")
 
 	r.HandleFunc("/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
 	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")

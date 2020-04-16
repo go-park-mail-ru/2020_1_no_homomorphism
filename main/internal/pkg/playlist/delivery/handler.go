@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/gorilla/mux"
-	"net/http"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/playlist"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
 	"github.com/2020_1_no_homomorphism/no_homo_main/pkg/logger"
+	"github.com/gorilla/mux"
+	"net/http"
 )
 
 type PlaylistHandler struct {
@@ -134,4 +134,37 @@ func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request
 		return errors.New("no access")
 	}
 	return nil
+}
+
+func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request) {
+	name, ok := mux.Vars(r)["name"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "CreatePlaylist", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	plID, err := h.PlaylistUC.CreatePlaylist(name, user.Id)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(http.StatusCreated)
+
+	writer := json.NewEncoder(w)
+	err = writer.Encode(struct {
+		ID string `json:"playlist_id"`
+	}{plID})
+
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "can't write into json: "+err.Error())
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusCreated)
 }

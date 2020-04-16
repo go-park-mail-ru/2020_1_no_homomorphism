@@ -18,6 +18,10 @@ func (uc PlaylistUseCase) GetPlaylistById(id string) (models.Playlist, error) {
 	return uc.PlRepository.GetPlaylistById(id)
 }
 
+func (uc PlaylistUseCase) CreatePlaylist(name string, uID string) (plID string, err error) {
+	return uc.PlRepository.CreatePlaylist(name, uID)
+}
+
 func (uc PlaylistUseCase) CheckAccessToPlaylist(userId string, playlistId string) (bool, error) {
 	pl, err := uc.PlRepository.GetPlaylistById(playlistId)
 	if err != nil {
