@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  main:
+    build:
+      context: .
+      dockerfile: main/Dockerfile.Multistage
+    expose:
+      - "8081"
+    network_mode:
+      host
+  sessions:
+    build:
+      context: .
+      dockerfile: sessions/Dockerfile.Multistage
+    expose:
+      - "8083"
+    network_mode:
+      host
+#    networks:
+#      - hostnetwork
+#networks:
+#  hostnetwork:
+#    driver: host

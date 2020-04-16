@@ -1,6 +1,8 @@
 .idea/*
+sessions/.idea/*
+sessions/.vscode/*
 images/*
 coverage.out
-cmd/server/logfile.log
+*.log
 /logfile.log
 /resources/*
