@@ -9,4 +9,5 @@ type UseCase interface {
 	CheckAccessToPlaylist(userId string, playlistId string) (bool, error)
 	AddTrackToPlaylist(plTracks models.PlaylistTracks) error
 	GetPlaylistsIdByTrack(userID, trackID string) ([]string, error)
+	DeleteTrackFromPlaylist(plID, trackID string) error
 }

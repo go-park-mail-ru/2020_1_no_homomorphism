@@ -15,8 +15,8 @@ type Playlists struct {
 }
 
 type TrackInPlaylist struct {
-	PlaylistID uint64 `gorm:"column:playlist_id"`
-	TrackID    uint64 `gorm:"column:track_id"`
+	PlaylistID uint64 `gorm:"column:playlist_id;primary_key"`
+	TrackID    uint64 `gorm:"column:track_id;primary_key"`
 	Index      uint8  `gorm:"column:index"`
 	Image      string `gorm:"column:image"`
 }
@@ -134,4 +134,30 @@ func (pr *DbPlaylistRepository) GetPlaylistsIdByTrack(userID, trackID string) ([
 	}
 
 	return playlists, nil
+}
+
+func (pr *DbPlaylistRepository) DeleteTrackFromPlaylist(plID, trackID string) error {
+	playlist, err := strconv.ParseUint(plID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse plID: %v", err)
+	}
+	track, err := strconv.ParseUint(trackID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse trackID: %v", err)
+	}
+
+	dbPlaylist := TrackInPlaylist{
+		PlaylistID: playlist,
+		TrackID:    track,
+	}
+
+	db := pr.db.
+		Table("playlist_tracks").
+		Delete(&dbPlaylist)
+
+	if err := db.Error; err != nil {
+		return fmt.Errorf("query failed: %v", err)
+	}
+
+	return nil
 }

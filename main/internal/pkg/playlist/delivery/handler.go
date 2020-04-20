@@ -229,3 +229,28 @@ func (h *PlaylistHandler) GetPlaylistsIDByTrack(w http.ResponseWriter, r *http.R
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
+
+func (h *PlaylistHandler) DeleteTrackFromPlaylist(w http.ResponseWriter, r *http.Request) {
+	playlistID, ok := mux.Vars(r)["playlist"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no playlistID in mux vars")
+		return
+	}
+
+	trackID, ok := mux.Vars(r)["track"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no trackID in mux vars")
+		return
+	}
+
+	if err := h.checkUserAccess(w, r, playlistID); err != nil {
+		return
+	}
+
+	if err := h.PlaylistUC.DeleteTrackFromPlaylist(playlistID, trackID); err != nil {
+		h.sendBadRequest(w, r.Context(), "cant delete track from playlist:"+err.Error())
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}

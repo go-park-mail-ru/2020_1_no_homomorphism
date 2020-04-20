@@ -30,6 +30,10 @@ func (uc PlaylistUseCase) GetPlaylistsIdByTrack(userID, trackID string) ([]strin
 	return uc.PlRepository.GetPlaylistsIdByTrack(userID, trackID)
 }
 
+func (uc PlaylistUseCase) DeleteTrackFromPlaylist(plID, trackID string) error {
+	return uc.PlRepository.DeleteTrackFromPlaylist(plID, trackID)
+}
+
 func (uc PlaylistUseCase) CheckAccessToPlaylist(userId string, playlistId string) (bool, error) {
 	pl, err := uc.PlRepository.GetPlaylistById(playlistId)
 	if err != nil {
