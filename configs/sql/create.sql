@@ -122,6 +122,25 @@ CREATE TABLE playlists
         ON UPDATE CASCADE
 );
 
+CREATE OR REPLACE FUNCTION before_playlist_insert_func() RETURNS TRIGGER AS
+$before_playlist_insert$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        if NEW.image = '' then
+            new.image = '/static/img/playlist/default.png';
+        end if;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$before_playlist_insert$ LANGUAGE plpgsql;
+
+CREATE TRIGGER before_playlist_insert
+    BEFORE INSERT
+    ON playlists
+    FOR EACH ROW
+EXECUTE PROCEDURE before_playlist_insert_func();
+
 
 CREATE TABLE playlist_tracks
 (
