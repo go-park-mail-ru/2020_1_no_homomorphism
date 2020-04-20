@@ -2,8 +2,8 @@ package repository
 
 import (
 	"fmt"
-	"github.com/jinzhu/gorm"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	"github.com/jinzhu/gorm"
 	"strconv"
 )
 
@@ -11,6 +11,7 @@ type DbTrack struct {
 	Id       uint64 `gorm:"column:track_id"`
 	Name     string `gorm:"column:track_name"`
 	Artist   string `gorm:"column:artist_name"`
+	ArtistID uint64 `gorm:"column:artist_id"`
 	Duration uint   `gorm:"column:duration"`
 	Image    string `gorm:"column:track_image"`
 	Link     string `gorm:"column:link"`
@@ -31,6 +32,7 @@ func toModel(dbTrack DbTrack) models.Track {
 		Id:       strconv.FormatUint(dbTrack.Id, 10),
 		Name:     dbTrack.Name,
 		Artist:   dbTrack.Artist,
+		ArtistID: strconv.FormatUint(dbTrack.ArtistID, 10),
 		Duration: dbTrack.Duration,
 		Image:    dbTrack.Image,
 		Link:     dbTrack.Link,

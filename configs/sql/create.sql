@@ -141,7 +141,8 @@ CREATE TABLE playlist_tracks
 SELECT *
 FROM playlist_tracks
          JOIN playlists p on playlist_tracks.playlist_ID = p.ID
-WHERE p.user_ID = 1 and track_ID = 1;
+WHERE p.user_ID = 1
+  and track_ID = 1;
 
 
 CREATE OR REPLACE FUNCTION before_playlist_track_insert_func() RETURNS TRIGGER AS
@@ -214,6 +215,7 @@ SELECT p.ID       as playlist_id,
        p.name     as playlist_name,
        p.image    as playlist_image,
        t.track_id as track_id,
+       t.artist_id,
        t.track_name,
        t.duration,
        t.artist_name,
@@ -269,6 +271,7 @@ CREATE VIEW tracks_in_album AS
 SELECT a.ID    as album_id,
        t.track_id,
        t.artist_name,
+       t.artist_id,
        t.track_name,
        t.duration,
        t.link,
