@@ -8,7 +8,7 @@ import (
 )
 
 type Playlists struct {
-	Id     uint64 `gorm:"column:id"`
+	Id     uint64 `gorm:"column:id;primary_key"`
 	Name   string `gorm:"column:name"`
 	Image  string `gorm:"column:image"`
 	UserId uint64 `gorm:"column:user_id"`
@@ -156,7 +156,28 @@ func (pr *DbPlaylistRepository) DeleteTrackFromPlaylist(plID, trackID string) er
 		Delete(&dbPlaylist)
 
 	if err := db.Error; err != nil {
-		return fmt.Errorf("query failed: %v", err)
+		return fmt.Errorf("delete failed: %v", err)
+	}
+
+	return nil
+}
+
+func (pr *DbPlaylistRepository) DeletePlaylist(plID string) error {
+	playlist, err := strconv.ParseUint(plID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to parse plID: %v", err)
+	}
+
+	dbPlaylist := Playlists{
+		Id: playlist,
+	}
+
+	db := pr.db.
+		Table("playlists").
+		Delete(&dbPlaylist)
+
+	if err := db.Error; err != nil {
+		return fmt.Errorf("delete failed: %v", err)
 	}
 
 	return nil

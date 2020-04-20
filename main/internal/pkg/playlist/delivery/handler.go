@@ -254,3 +254,22 @@ func (h *PlaylistHandler) DeleteTrackFromPlaylist(w http.ResponseWriter, r *http
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
+
+func (h *PlaylistHandler) DeletePlaylist(w http.ResponseWriter, r *http.Request) {
+	playlistID, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+
+	if err := h.checkUserAccess(w, r, playlistID); err != nil {
+		return
+	}
+
+	if err := h.PlaylistUC.DeletePlaylist(playlistID); err != nil {
+		h.sendBadRequest(w, r.Context(), "cant delete track from playlist:"+err.Error())
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
