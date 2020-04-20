@@ -8,4 +8,5 @@ type UseCase interface {
 	CreatePlaylist(name string, uID string) (plID string, err error)
 	CheckAccessToPlaylist(userId string, playlistId string) (bool, error)
 	AddTrackToPlaylist(plTracks models.PlaylistTracks) error
+	GetPlaylistsIdByTrack(userID, trackID string) ([]string, error)
 }

@@ -26,6 +26,10 @@ func (uc PlaylistUseCase) AddTrackToPlaylist(plTracks models.PlaylistTracks) err
 	return uc.PlRepository.AddTrackToPlaylist(plTracks)
 }
 
+func (uc PlaylistUseCase) GetPlaylistsIdByTrack(userID, trackID string) ([]string, error) {
+	return uc.PlRepository.GetPlaylistsIdByTrack(userID, trackID)
+}
+
 func (uc PlaylistUseCase) CheckAccessToPlaylist(userId string, playlistId string) (bool, error) {
 	pl, err := uc.PlRepository.GetPlaylistById(playlistId)
 	if err != nil {

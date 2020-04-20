@@ -140,7 +140,7 @@ func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request
 func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request) {
 	name, ok := mux.Vars(r)["name"]
 	if !ok {
-		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		h.sendBadRequest(w, r.Context(), "no name in mux vars")
 		return
 	}
 
@@ -176,8 +176,7 @@ func (h *PlaylistHandler) AddTrackToPlaylist(w http.ResponseWriter, r *http.Requ
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&plTracks)
 	if err != nil {
-		h.Log.HttpInfo(r.Context(), "error while unmarshalling JSON:"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "error while unmarshalling JSON:"+err.Error())
 		return
 	}
 
@@ -186,8 +185,45 @@ func (h *PlaylistHandler) AddTrackToPlaylist(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err = h.PlaylistUC.AddTrackToPlaylist(plTracks); err != nil {
-		h.Log.HttpInfo(r.Context(), "cant add track to playlist:"+err.Error(), http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
+		h.sendBadRequest(w, r.Context(), "cant add track to playlist:"+err.Error())
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *PlaylistHandler) GetPlaylistsIDByTrack(w http.ResponseWriter, r *http.Request) {
+	id, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetPlaylistsIDByTrack", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	playlistIDs, err := h.PlaylistUC.GetPlaylistsIdByTrack(user.Id, id)
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetPlaylistsIDByTrack", "failed to get playlists:"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	writer := json.NewEncoder(w)
+	err = writer.Encode(struct {
+		IDs []string `json:"playlists"`
+	}{playlistIDs})
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetPlaylistsIDByTrack", "failed to encode:"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

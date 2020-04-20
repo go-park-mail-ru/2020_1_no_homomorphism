@@ -113,3 +113,25 @@ func (pr *DbPlaylistRepository) AddTrackToPlaylist(plTracks models.PlaylistTrack
 
 	return nil
 }
+
+func (pr *DbPlaylistRepository) GetPlaylistsIdByTrack(userID, trackID string) ([]string, error) {
+	var dbPlaylists []Playlists
+
+	db := pr.db.
+		Table("playlist_tracks as pt").
+		Select("playlist_ID as id").
+		Joins("join playlists as p on p.id = pt.playlist_id").
+		Where("p.user_ID = ? and track_ID = ?", userID, trackID).
+		Scan(&dbPlaylists)
+
+	if err := db.Error; err != nil && err != gorm.ErrRecordNotFound {
+		return nil, fmt.Errorf("query failed: %v", err)
+	}
+
+	playlists := make([]string, len(dbPlaylists))
+	for i, elem := range dbPlaylists {
+		playlists[i] = strconv.FormatUint(elem.Id, 10)
+	}
+
+	return playlists, nil
+}

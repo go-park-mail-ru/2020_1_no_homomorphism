@@ -138,6 +138,11 @@ CREATE TABLE playlist_tracks
     PRIMARY KEY (playlist_ID, track_ID)
 );
 
+SELECT *
+FROM playlist_tracks
+         JOIN playlists p on playlist_tracks.playlist_ID = p.ID
+WHERE p.user_ID = 1 and track_ID = 1;
+
 
 CREATE OR REPLACE FUNCTION before_playlist_track_insert_func() RETURNS TRIGGER AS
 $before_playlist_track_insert$
