@@ -20,3 +20,7 @@ func (uc AlbumUseCase) GetAlbumById(id string) (models.Album, error) {
 func (uc AlbumUseCase) GetBoundedAlbumsByArtistId(id string, start uint64, end uint64) ([]models.Album, error) {
 	return uc.AlbumRepository.GetBoundedAlbumsByArtistId(id, start, end)
 }
+
+func (uc AlbumUseCase) Search(text string, count uint) ([]models.AlbumSearch, error) {
+	return uc.AlbumRepository.Search(text, count)
+}

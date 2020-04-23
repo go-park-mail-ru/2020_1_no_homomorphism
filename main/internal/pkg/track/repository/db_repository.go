@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-type DbTrack struct {
+type Tracks struct {
 	Id       uint64 `gorm:"column:track_id"`
 	Name     string `gorm:"column:track_name"`
 	Artist   string `gorm:"column:artist_name"`
@@ -27,7 +27,17 @@ func NewDbTrackRepo(db *gorm.DB) DbTrackRepository {
 	}
 }
 
-func toModel(dbTrack DbTrack) models.Track {
+func toSearchModel(dbTrack Tracks) models.TrackSearch {
+	return models.TrackSearch{
+		TrackID:    strconv.FormatUint(dbTrack.Id, 10),
+		TrackName:  dbTrack.Name,
+		ArtistName: dbTrack.Artist,
+		ArtistID:   strconv.FormatUint(dbTrack.ArtistID, 10),
+		Image:      dbTrack.Image,
+	}
+}
+
+func toModel(dbTrack Tracks) models.Track {
 	return models.Track{
 		Id:       strconv.FormatUint(dbTrack.Id, 10),
 		Name:     dbTrack.Name,
@@ -40,7 +50,7 @@ func toModel(dbTrack DbTrack) models.Track {
 }
 
 func (tr *DbTrackRepository) GetTrackById(id string) (models.Track, error) {
-	var track DbTrack
+	var track Tracks
 
 	db := tr.db.
 		Table("full_track_info").
@@ -55,7 +65,7 @@ func (tr *DbTrackRepository) GetTrackById(id string) (models.Track, error) {
 }
 
 func (tr *DbTrackRepository) GetBoundedTracksByArtistId(id string, start, end uint64) ([]models.Track, error) {
-	var tracks []DbTrack
+	var tracks []Tracks
 	limit := end - start
 
 	db := tr.db.
@@ -79,7 +89,7 @@ func (tr *DbTrackRepository) GetBoundedTracksByArtistId(id string, start, end ui
 }
 
 func (tr *DbTrackRepository) GetBoundedTracksByPlaylistId(plId string, start, end uint64) ([]models.Track, error) {
-	var tracks []DbTrack
+	var tracks []Tracks
 	limit := end - start
 
 	db := tr.db.
@@ -103,7 +113,7 @@ func (tr *DbTrackRepository) GetBoundedTracksByPlaylistId(plId string, start, en
 }
 
 func (tr *DbTrackRepository) GetBoundedTracksByAlbumId(aId string, start, end uint64) ([]models.Track, error) {
-	var tracks []DbTrack
+	var tracks []Tracks
 	limit := end - start
 
 	db := tr.db.
@@ -124,4 +134,24 @@ func (tr *DbTrackRepository) GetBoundedTracksByAlbumId(aId string, start, end ui
 		modTracks[i] = toModel(elem)
 	}
 	return modTracks, nil
+}
+
+func (tr *DbTrackRepository) Search(text string, count uint) ([]models.TrackSearch, error) {
+	var tracks []Tracks
+
+	db := tr.db.
+		Table("full_track_info").
+		Where("track_name ILIKE ?", "%"+text+"%").
+		Limit(count).
+		Find(&tracks)
+
+	if err := db.Error; err != nil {
+		return nil, fmt.Errorf("failed to search tracks: %v", err)
+	}
+
+	trackSearch := make([]models.TrackSearch, len(tracks))
+	for i, elem := range tracks {
+		trackSearch[i] = toSearchModel(elem)
+	}
+	return trackSearch, nil
 }

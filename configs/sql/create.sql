@@ -6,6 +6,8 @@ CREATE TABLE artists
     genre VARCHAR(30)
 );
 
+select * from artists where name ILIKE '%a%';
+
 
 CREATE TABLE albums
 (

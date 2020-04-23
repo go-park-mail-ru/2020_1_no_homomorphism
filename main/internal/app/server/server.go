@@ -24,6 +24,8 @@ import (
 	playlistDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/playlist/delivery"
 	playlistRepo "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/playlist/repository"
 	playlistUC "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/playlist/usecase"
+	searchDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/search/delivery"
+	searchUC "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/search/usecase"
 	trackDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track/delivery"
 	trackRepo "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track/repository"
 	trackUC "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track/usecase"
@@ -44,6 +46,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 	playlistDelivery.PlaylistHandler,
 	albumDelivery.AlbumHandler,
 	artistDelivery.ArtistHandler,
+	searchDelivery.SearchHandler,
 	m.AuthMidleware,
 	m.CsrfMiddleware,
 ) {
@@ -104,14 +107,23 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 		Log:     mainLogger,
 	}
 
+	searchHandler := searchDelivery.SearchHandler{
+		SearchUC: searchUC.SearchUseCase{
+			ArtistRepo: &artistRep,
+			AlbumRepo:  &albumRep,
+			TrackRepo:  &trackRep,
+		},
+		Log: mainLogger,
+	}
+
 	auth := m.NewAuthMiddleware(sessManager, &UserUC, mainLogger)
 	csrf := m.NewCsrfMiddleware(&csrfToken)
 
-	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, auth, csrf
+	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, searchHandler, auth, csrf
 }
 
 func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient) http.Handler {
-	user, track, playlist, album, artist, auth, csrf := InitHandler(customLogger, db, csrfToken, sessManager)
+	user, track, playlist, album, artist, search, auth, csrf := InitHandler(customLogger, db, csrfToken, sessManager)
 
 	r := mux.NewRouter().PathPrefix(constants.ApiPrefix).Subrouter()
 
@@ -146,6 +158,8 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.Handle("/users/settings", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.Update), false)).Methods("PUT")
 	r.Handle("/users/profiles/{profile}", auth.AuthMiddleware(user.Profile, false)).Methods("GET")
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
+
+	r.HandleFunc("/media/{text}/{count:[0-9]+}", search.Search).Methods("GET")
 
 	accessMiddleware := m.AccessLogMiddleware(r, user.Log)
 	panicMiddleware := m.PanicMiddleware(accessMiddleware, user.Log)
@@ -188,7 +202,7 @@ func StartNew() {
 		logrus.Error("Failed to open logfile:", err)
 		customLogger = logger.NewLogger(os.Stdout)
 	} else {
-		customLogger = logger.NewLogger(os.Stdout)
+		customLogger = logger.NewLogger(f)
 	}
 	defer f.Close()
 

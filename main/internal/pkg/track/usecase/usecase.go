@@ -24,3 +24,7 @@ func (uc TrackUseCase) GetBoundedTracksByAlbumId(id string, start, end uint64) (
 func (uc TrackUseCase) GetBoundedTracksByPlaylistId(plId string, start, end uint64) ([]models.Track, error) {
 	return uc.Repository.GetBoundedTracksByPlaylistId(plId, start, end)
 }
+
+func (uc TrackUseCase) Search(text string, count uint) ([]models.TrackSearch, error) {
+	return uc.Repository.Search(text, count)
+}

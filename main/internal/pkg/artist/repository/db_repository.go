@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/jinzhu/gorm"
+	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	"github.com/jinzhu/gorm"
 	"strconv"
 )
 
@@ -20,6 +21,14 @@ type DbArtistRepository struct {
 func NewDbArtistRepository(database *gorm.DB) DbArtistRepository {
 	return DbArtistRepository{
 		db: database,
+	}
+}
+
+func toSearchModel(artist Artists) models.ArtistSearch {
+	return models.ArtistSearch{
+		ArtistID: strconv.FormatUint(artist.Id, 10),
+		Name:     artist.Name,
+		Image:    artist.Image,
 	}
 }
 
@@ -69,4 +78,24 @@ func (ar *DbArtistRepository) GetArtistStat(id string) (models.ArtistStat, error
 		return models.ArtistStat{}, err
 	}
 	return stat, nil
+}
+
+func (ar *DbArtistRepository) Search(text string, count uint) ([]models.ArtistSearch, error) {
+	var artists []Artists
+
+	db := ar.db.
+		Table("artists").
+		Where("name ILIKE ?", "%" + text + "%").
+		Limit(count).
+		Find(&artists)
+
+	if err := db.Error; err != nil {
+		return nil, fmt.Errorf("failed to search artists: %v", err)
+	}
+
+	artistSearch := make([]models.ArtistSearch, len(artists))
+	for i, elem := range artists {
+		artistSearch[i] = toSearchModel(elem)
+	}
+	return artistSearch, nil
 }

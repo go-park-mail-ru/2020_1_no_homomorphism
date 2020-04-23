@@ -13,3 +13,9 @@ type ArtistStat struct {
 	Albums      uint64 `json:"albums"`
 	Subscribers uint64 `json:"subscribers"`
 }
+
+type ArtistSearch struct {
+	ArtistID string `json:"artist_id"`
+	Name     string `json:"name"`
+	Image    string `json:"image"`
+}

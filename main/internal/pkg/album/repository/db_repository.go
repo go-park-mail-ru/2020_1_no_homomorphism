@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/jinzhu/gorm"
+	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	"github.com/jinzhu/gorm"
 	"strconv"
 	"time"
 )
@@ -23,6 +24,16 @@ type DbAlbumRepository struct {
 func NewDbAlbumRepository(database *gorm.DB) DbAlbumRepository {
 	return DbAlbumRepository{
 		db: database,
+	}
+}
+
+func toSearchModel(albums Albums) models.AlbumSearch {
+	return models.AlbumSearch{
+		AlbumID:    strconv.FormatUint(albums.Id, 10),
+		AlbumName:  albums.Name,
+		ArtistID:   strconv.FormatUint(albums.ArtistId, 10),
+		ArtistName: albums.ArtistName,
+		Image:      albums.Image,
 	}
 }
 
@@ -93,4 +104,24 @@ func (ar *DbAlbumRepository) GetBoundedAlbumsByArtistId(id string, start, end ui
 		albumsArray[i] = toModel(elem)
 	}
 	return albumsArray, nil
+}
+
+func (ar *DbAlbumRepository) Search(text string, count uint) ([]models.AlbumSearch, error) {
+	var albums []Albums
+
+	db := ar.db.
+		Table("albums").
+		Where("name ILIKE ?", "%"+text+"%").
+		Limit(count).
+		Find(&albums)
+
+	if err := db.Error; err != nil {
+		return nil, fmt.Errorf("failed to search albums: %v", err)
+	}
+
+	albumSearch := make([]models.AlbumSearch, len(albums))
+	for i, elem := range albums {
+		albumSearch[i] = toSearchModel(elem)
+	}
+	return albumSearch, nil
 }

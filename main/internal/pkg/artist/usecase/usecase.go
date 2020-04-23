@@ -20,3 +20,7 @@ func (uc *ArtistUseCase) GetBoundedArtists(start, end uint64) ([]models.Artist, 
 func (uc *ArtistUseCase) GetArtistStat(id string) (models.ArtistStat, error) {
 	return uc.ArtistRepository.GetArtistStat(id)
 }
+
+func (uc *ArtistUseCase) Search(text string, count uint) ([]models.ArtistSearch, error) {
+	return uc.ArtistRepository.Search(text, count)
+}

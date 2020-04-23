@@ -7,4 +7,5 @@ type UseCase interface {
 	GetBoundedTracksByArtistId(id string, start uint64, end uint64) ([]models.Track, error)
 	GetBoundedTracksByAlbumId(aId string, start, end uint64) ([]models.Track, error)
 	GetBoundedTracksByPlaylistId(plId string, start, end uint64) ([]models.Track, error)
+	Search(text string, count uint) ([]models.TrackSearch, error)
 }
