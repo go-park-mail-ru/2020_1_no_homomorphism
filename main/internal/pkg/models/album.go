@@ -10,8 +10,8 @@ type Album struct {
 }
 
 type AlbumSearch struct {
-	AlbumID    string `json:"album_id"`
-	AlbumName  string `json:"album_name"`
+	AlbumID    string `json:"id"`
+	AlbumName  string `json:"name"`
 	ArtistID   string `json:"artist_id"`
 	ArtistName string `json:"artist_name"`
 	Image      string `json:"image"`

@@ -15,7 +15,7 @@ type ArtistStat struct {
 }
 
 type ArtistSearch struct {
-	ArtistID string `json:"artist_id"`
+	ArtistID string `json:"id"`
 	Name     string `json:"name"`
 	Image    string `json:"image"`
 }

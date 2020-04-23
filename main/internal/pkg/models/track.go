@@ -11,9 +11,9 @@ type Track struct {
 }
 
 type TrackSearch struct {
-	TrackID    string `json:"track_id"`
-	TrackName  string `json:"track_name"`
-	ArtistName string `json:"artist_name"`
+	TrackID    string `json:"id"`
+	TrackName  string `json:"name"`
+	ArtistName string `json:"artist"`
 	ArtistID   string `json:"artist_id"`
 	Image      string `json:"image"`
 }
