@@ -8,6 +8,7 @@ import (
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
 	"github.com/kabukky/httpscerts"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"log"
 	"net/http"
@@ -160,6 +161,8 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
 
 	r.HandleFunc("/media/{text}/{count:[0-9]+}", search.Search).Methods("GET")
+
+	r.Handle("/metrics", promhttp.Handler())
 
 	accessMiddleware := m.AccessLogMiddleware(r, user.Log)
 	panicMiddleware := m.PanicMiddleware(accessMiddleware, user.Log)

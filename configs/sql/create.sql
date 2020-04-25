@@ -6,7 +6,9 @@ CREATE TABLE artists
     genre VARCHAR(30)
 );
 
-select * from artists where name ILIKE '%a%';
+select *
+from artists
+where name ILIKE '%a%';
 
 
 CREATE TABLE albums
@@ -178,7 +180,6 @@ BEGIN
         IF max_index IS NULL then
             max_index = 0;
         end if;
-
         NEW.index := max_index + 1;
 
         if NEW.image = '' then
@@ -217,6 +218,19 @@ CREATE TABLE artist_stat
     FOREIGN KEY (artist_id) REFERENCES artists (id)
 );
 
+explain analyse
+select *
+from full_track_info;
+
+
+analyze;
+
+explain analyse select count(*), tracks.name
+from artists a
+         join tracks on tracks.artist_id = a.ID
+GROUP BY tracks.name;
+
+CREATE INDEX idx_country_id ON tracks (artist_id);
 
 CREATE OR REPLACE VIEW full_track_info AS
 SELECT t.ID    as track_id,
