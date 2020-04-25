@@ -15,6 +15,7 @@ var CorsOptions = cors.Options{
 		"http://89.208.199.170:3001",
 		"http://localhost:3000",
 		"http://virusmusic.fun",
+		"https://virusmusic.fun",
 	},
 	AllowCredentials: true,
 	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
@@ -35,9 +36,7 @@ var CsrfSecret = "qsRY2e4hcM5T7X984E9WQ5uZ8Nty7fxB"
 var CsrfDuration int64 = 3600 //1 час
 
 var (
-	FileServerRoot = "resources"
-	FileServerAddr = "http://localhost:8082/"
-	AvatarDefault  = "http://localhost:8082/avatar/default.jpg"
+	AvatarDefault  = "https://virusmusic.fun/avatar/default.jpg"
 	AvatarDir      = "/avatar"
 	AvatarTypes    = map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/gif": "gif"}
 )

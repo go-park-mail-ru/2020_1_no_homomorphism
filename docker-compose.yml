@@ -10,6 +10,15 @@ services:
     restart: always
     network_mode:
       host
+  fileserver:
+    build:
+      context: .
+      dockerfile: fileserver/Dockerfile.Multistage
+    expose:
+      - "8082"
+    restart: always
+    network_mode:
+      host
   sessions:
     build:
       context: .
@@ -31,7 +40,6 @@ services:
       host
     expose:
       - "9090"
-
   node-exporter:
     image: prom/node-exporter
     restart: always

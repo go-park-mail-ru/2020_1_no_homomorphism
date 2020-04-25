@@ -172,10 +172,10 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 
 func generateSSL() {
 	// Проверяем, доступен ли cert файл.
-	err := httpscerts.Check("cert.pem", "key.pem")
+	err := httpscerts.Check("fullchain.pem", "privkey.pem")
 	// Если он недоступен, то генерируем новый.
 	if err != nil {
-		err = httpscerts.Generate("cert.pem", "key.pem", "https://127.0.0.1:8081")
+		err = httpscerts.Generate("fullchain.pem", "privkey.pem", "https://127.0.0.1:8081")
 		//err = httpscerts.Generate("cert.pem", "key.pem", "http://89.208.199.170:8001")
 		if err != nil {
 			logrus.Fatal("failed to generate https cert")
@@ -244,9 +244,11 @@ func StartNew() {
 
 	routes := InitRouter(customLogger, db, csrfToken, sessManager)
 
+	generateSSL()
+
 	fmt.Println("Starts server at 8081")
-	//err = http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", c.Handler(m.HeadersHandler(routes)))
-	err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
+	err = http.ListenAndServeTLS(":8081", "fullchain.pem", "privkey.pem", c.Handler(m.HeadersHandler(routes)))
+	//err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)
 		return

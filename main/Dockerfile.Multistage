@@ -3,12 +3,12 @@ ENV GO111MODULE=on
 WORKDIR /go/src/no_homo_main_1
 COPY main /go/src/no_homo_main_1
 COPY pkg/logger /go/src/no_homo_main_1/logger
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 FILE_ROOT="resources" FILE_SERVER="https://virusmusic.fun" go build .
 
 FROM alpine
 WORKDIR /app
 COPY --from=no_homo_main_1  /go/src/no_homo_main_1 /app
-RUN chmod +x .
+RUN chmod +x  .
 EXPOSE 8081/tcp
 EXPOSE 5432/tcp
 ENTRYPOINT [ "/app/no_homo_main" ]
