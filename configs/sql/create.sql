@@ -6,9 +6,26 @@ CREATE TABLE artists
     genre VARCHAR(30)
 );
 
-select *
-from artists
-where name ILIKE '%a%';
+CREATE OR REPLACE FUNCTION artists_trigger_func() RETURNS TRIGGER AS
+$artists_trigger$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        INSERT INTO artist_stat VALUES (NEW.ID, 0, 0, 0);
+        RETURN NEW;
+    END IF;
+    IF (TG_OP = 'DELETE') THEN
+        delete from artist_stat where artist_id = old.ID;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$artists_trigger$ LANGUAGE plpgsql;
+
+CREATE TRIGGER artists_trigger
+    AFTER INSERT or update or delete
+    ON artists
+    FOR EACH ROW
+EXECUTE PROCEDURE artists_trigger_func();
 
 
 CREATE TABLE albums
@@ -24,6 +41,25 @@ CREATE TABLE albums
         ON UPDATE CASCADE
 );
 
+CREATE OR REPLACE FUNCTION albums_trigger_func() RETURNS TRIGGER AS
+$albums_trigger$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        update artist_stat set albums = albums + 1 where artist_id = new.artist_ID;
+    END IF;
+    IF (TG_OP = 'DELETE') THEN
+        update artist_stat set albums = albums - 1 where artist_id = new.artist_ID;
+    END IF;
+    RETURN NULL;
+END;
+$albums_trigger$ LANGUAGE plpgsql;
+
+CREATE TRIGGER albums_trigger
+    AFTER INSERT or update or delete
+    ON albums
+    FOR EACH ROW
+EXECUTE PROCEDURE albums_trigger_func();
+
 
 CREATE TABLE tracks
 (
@@ -37,6 +73,25 @@ CREATE TABLE tracks
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+
+CREATE OR REPLACE FUNCTION tracks_trigger_func() RETURNS TRIGGER AS
+$tracks_trigger$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        update artist_stat set tracks = tracks + 1 where artist_id = new.artist_ID;
+    END IF;
+    IF (TG_OP = 'DELETE') THEN
+        update artist_stat set tracks = tracks - 1 where artist_id = new.artist_ID;
+    END IF;
+    RETURN NULL;
+END;
+$tracks_trigger$ LANGUAGE plpgsql;
+
+CREATE TRIGGER tracks_trigger
+    AFTER INSERT or update or delete
+    ON tracks
+    FOR EACH ROW
+EXECUTE PROCEDURE tracks_trigger_func();
 
 
 CREATE TABLE album_tracks
@@ -65,9 +120,6 @@ CREATE TABLE users
     image    VARCHAR(100) DEFAULT '/static/img/avatar/default.png'
 );
 
-insert into users (login, password, name, email, sex)
-VALUES ('tesgjfkldt', '$2a$04$FDsuiBXJdLkyENStXt7ituaN46L.SCxPbrV2ULNRK2Na1vL1dLeX2', 'TestName', 'test@mail.ru',
-        'yes');
 
 CREATE OR REPLACE FUNCTION after_user_insert_func() RETURNS TRIGGER AS
 $after_user_insert$
@@ -76,12 +128,16 @@ BEGIN
         INSERT INTO user_stat VALUES (NEW.ID, 0, 0, 0, 0);
         RETURN NEW;
     END IF;
+    IF (TG_OP = 'DELETE') THEN
+        delete from user_stat where user_id = old.ID;
+        RETURN NEW;
+    END IF;
     RETURN NULL;
 END;
 $after_user_insert$ LANGUAGE plpgsql;
 
 CREATE TRIGGER after_user_insert
-    AFTER INSERT
+    AFTER INSERT or delete
     ON users
     FOR EACH ROW
 EXECUTE PROCEDURE after_user_insert_func();
@@ -133,6 +189,7 @@ BEGIN
         if NEW.image = '' then
             new.image = '/static/img/playlist/default.png';
         end if;
+        update user_stat set playlists = playlists + 1 where user_ID = new.user_ID;
         RETURN NEW;
     END IF;
     RETURN NULL;
@@ -144,6 +201,22 @@ CREATE TRIGGER before_playlist_insert
     ON playlists
     FOR EACH ROW
 EXECUTE PROCEDURE before_playlist_insert_func();
+
+CREATE OR REPLACE FUNCTION after_playlist_delete_func() RETURNS TRIGGER AS
+$after_playlist_insert$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        update user_stat set playlists = playlists - 1 where user_ID = old.user_ID;
+    END IF;
+    RETURN NULL;
+END;
+$after_playlist_insert$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_playlist_delete
+    after delete
+    ON playlists
+    FOR EACH ROW
+EXECUTE PROCEDURE after_playlist_delete_func();
 
 
 CREATE TABLE playlist_tracks
@@ -225,7 +298,8 @@ from full_track_info;
 
 analyze;
 
-explain analyse select count(*), tracks.name
+explain analyse
+select count(*), tracks.name
 from artists a
          join tracks on tracks.artist_id = a.ID
 GROUP BY tracks.name;
@@ -329,4 +403,21 @@ SELECT a.ID as atrist_Id,
 FROM artists a,
      tracks t
 WHERE a.ID = t.artist_id;
+
+insert into artists (name, image, genre) VALUES ('Broke For Free', 'static/img/artist/Broke_For_Free.jpg', 'Indie');
+
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Golden Hour', 308, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_01_-_Golden_Hour.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Summer Spliffs', 277, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_02_-_Summer_Spliffs.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Wash Out', 207, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_03_-_Wash_Out.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Melt', 260, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_04_-_Melt.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Juparo', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_05_-_Juparo.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('A Beautiful Life', 288, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_06_-_A_Beautiful_Life.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('XXV', 240, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_07_-_XXV.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Feel Good ( Instrumental )', 260, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_08_-_Feel_Good__Instrumental_.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Add And', 249, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_09_-_Add_And.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Love Is Not', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_10_-_Love_Is_Not.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Solitude', 202, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_11_-_Solitude.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Heart Ache', 297, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_12_-_Heart_Ache.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Tropicks', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_13_-_Tropicks.mp3', 6);
+INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Miei', 176, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_14_-_Miei.mp3', 6);
 

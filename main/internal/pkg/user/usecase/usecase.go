@@ -1,15 +1,23 @@
 package usecase
 
 import (
+	"context"
 	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	"github.com/2020_1_no_homomorphism/no_homo_main/proto/filetransfer"
+	uuid "github.com/satori/go.uuid"
+	"google.golang.org/grpc/metadata"
 	"io"
+	"os"
+	"path/filepath"
 
 	users "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user"
 )
 
 type UserUseCase struct {
 	Repository users.Repository
+	Fileserver filetransfer.UploadServiceClient
+	AvatarDir  string
 }
 
 func (uc *UserUseCase) Create(user models.User) (users.SameUserExists, error) {
@@ -43,8 +51,41 @@ func (uc *UserUseCase) Update(user models.User, input models.UserSettings) (user
 }
 
 func (uc *UserUseCase) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
+	fileName := uuid.NewV4().String()
+	fullFileName := fileName+"."+fileType
 
-	return uc.Repository.UpdateAvatar(user, file, fileType)
+	md := metadata.New(map[string]string{"fileName": filepath.Join(os.Getenv("FILE_ROOT")+uc.AvatarDir, fullFileName)})
+	ctx := metadata.NewOutgoingContext(context.Background(), md)
+
+	stream, err := uc.Fileserver.Upload(ctx)
+	if err != nil {
+		panic(err) //todo fix
+	}
+
+	write := true
+	chunk := make([]byte, 1024)
+	for write {
+		size, err := file.Read(chunk)
+		if err != nil {
+			if err == io.EOF {
+				write = false
+				err = nil
+				continue
+			}
+			return "", fmt.Errorf("failed to read file: %v", err)
+		}
+		err = stream.Send(&filetransfer.Chunk{Content: chunk[:size]})
+		if err != nil {
+			return "", fmt.Errorf("failed to send file to service: %v", err)
+		}
+	}
+
+	status, err := stream.CloseAndRecv()
+	if err != nil {
+		return "", fmt.Errorf("error occured in filetransfer service: %v, status: %v", err, status)
+	}
+
+	return uc.Repository.UpdateAvatar(user, uc.AvatarDir, fullFileName)
 }
 
 func (uc *UserUseCase) GetUserByLogin(user string) (models.User, error) {
@@ -73,12 +114,12 @@ func (uc *UserUseCase) Login(input models.UserSignIn) (models.User, error) {
 
 func (uc *UserUseCase) GetOutputUserData(user models.User) models.User {
 	return models.User{
-		Id:       user.Id,
-		Name:     user.Name,
-		Login:    user.Login,
-		Sex:      user.Sex,
-		Image:    user.Image,
-		Email:    user.Email,
+		Id:    user.Id,
+		Name:  user.Name,
+		Login: user.Login,
+		Sex:   user.Sex,
+		Image: user.Image,
+		Email: user.Email,
 	}
 }
 

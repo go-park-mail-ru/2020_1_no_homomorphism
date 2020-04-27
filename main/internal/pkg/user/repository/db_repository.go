@@ -3,15 +3,13 @@ package repository
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 
-	"github.com/jinzhu/gorm"
-	uuid "github.com/satori/go.uuid"
-	"golang.org/x/crypto/bcrypt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	"github.com/jinzhu/gorm"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
@@ -27,14 +25,12 @@ type User struct {
 type DbUserRepository struct {
 	db           *gorm.DB
 	defaultImage string
-	avatarDir    string
 }
 
-func NewDbUserRepository(database *gorm.DB, defaultImage string, avatarDir string) DbUserRepository {
+func NewDbUserRepository(database *gorm.DB, defaultImage string) DbUserRepository {
 	return DbUserRepository{
 		db:           database,
 		defaultImage: defaultImage,
-		avatarDir:    avatarDir,
 	}
 }
 
@@ -125,28 +121,15 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	return db.Error
 }
 
-func (ur *DbUserRepository) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
-	fileName := uuid.NewV4().String()
-	filePath := filepath.Join(os.Getenv("FILE_ROOT")+ur.avatarDir, fileName+"."+fileType)
+func (ur *DbUserRepository) UpdateAvatar(user models.User, avatarDir string, fileName string) (string, error) {
 
-	newFile, err := os.Create(filePath)
-	if err != nil {
-		return "", fmt.Errorf("failed to create file: %v", err)
-	}
-	defer newFile.Close()
-
-	_, err = io.Copy(newFile, file)
-	if err != nil {
-		return "", fmt.Errorf("error while writing to file: %v", err)
-	}
-
-	serverFilePath := os.Getenv("FILE_SERVER") + filepath.Join(ur.avatarDir, fileName+"."+fileType)
+	serverFilePath := os.Getenv("FILE_SERVER") + filepath.Join(avatarDir, fileName)
 
 	db := ur.db.
 		Model(&user).
 		Update("image", serverFilePath)
 
-	err = db.Error
+	err := db.Error
 	if err != nil {
 		return "", fmt.Errorf("failed to update user: %v", err)
 	}

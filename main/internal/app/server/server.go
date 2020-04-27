@@ -6,6 +6,7 @@ import (
 	"github.com/2020_1_no_homomorphism/no_homo_main/constants"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf/repository"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/proto/filetransfer"
 	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
 	"github.com/kabukky/httpscerts"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -41,7 +42,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient) (
+func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient, fileserver filetransfer.UploadServiceClient) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
 	playlistDelivery.PlaylistHandler,
@@ -56,7 +57,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	artistRep := artistRepo.NewDbArtistRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, constants.AvatarDefault, constants.AvatarDir)
+	dbRep := userRepo.NewDbUserRepository(db, constants.AvatarDefault)
 
 	ArtistUC := artistUC.ArtistUseCase{
 		ArtistRepository: &artistRep,
@@ -72,6 +73,8 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 
 	UserUC := userUC.UserUseCase{
 		Repository: &dbRep,
+		Fileserver: fileserver,
+		AvatarDir:  constants.AvatarDir,
 	}
 	TrackUC := trackUC.TrackUseCase{
 		Repository: &trackRep,
@@ -123,8 +126,8 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 	return userHandler, trackHandler, playlistHandler, albumHandler, artistHandler, searchHandler, auth, csrf
 }
 
-func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient) http.Handler {
-	user, track, playlist, album, artist, search, auth, csrf := InitHandler(customLogger, db, csrfToken, sessManager)
+func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient, fileserver filetransfer.UploadServiceClient) http.Handler {
+	user, track, playlist, album, artist, search, auth, csrf := InitHandler(customLogger, db, csrfToken, sessManager, fileserver)
 
 	r := mux.NewRouter().PathPrefix(constants.ApiPrefix).Subrouter()
 
@@ -231,24 +234,35 @@ func StartNew() {
 		log.Fatalf("failed to init csrf token: %v", err)
 	}
 
-	grcpConn, err := grpc.Dial(
+	grpcSessionsConn, err := grpc.Dial(
 		"127.0.0.1:8083",
 		grpc.WithInsecure(),
 	)
 	if err != nil {
 		log.Fatalf("cant connect to grpc")
 	}
-	defer grcpConn.Close()
+	defer grpcSessionsConn.Close()
 
-	sessManager := session.NewAuthCheckerClient(grcpConn)
+	sessManager := session.NewAuthCheckerClient(grpcSessionsConn)
 
-	routes := InitRouter(customLogger, db, csrfToken, sessManager)
+	grpcFileserverConn, err := grpc.Dial(
+		"127.0.0.1:8084",
+		grpc.WithInsecure(),
+	)
+	if err != nil {
+		log.Fatalf("cant connect to grpc")
+	}
+	defer grpcFileserverConn.Close()
+
+	fileserver := filetransfer.NewUploadServiceClient(grpcFileserverConn)
+
+	routes := InitRouter(customLogger, db, csrfToken, sessManager, fileserver)
 
 	generateSSL()
 
 	fmt.Println("Starts server at 8081")
-	err = http.ListenAndServeTLS(":8081", "fullchain.pem", "privkey.pem", c.Handler(m.HeadersHandler(routes)))
-	//err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
+	//err = http.ListenAndServeTLS(":8081", "fullchain.pem", "privkey.pem", c.Handler(m.HeadersHandler(routes)))
+	err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)
 		return

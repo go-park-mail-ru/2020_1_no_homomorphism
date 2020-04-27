@@ -1,13 +1,15 @@
-FROM golang:1.14 AS no_homo_fileserver_1
-ENV GO111MODULE=on
-WORKDIR /go/src/no_homo_fileserver_1
-COPY fileserver /go/src/no_homo_fileserver_1
-COPY resources /go/src/no_homo_fileserver_1/resources
+FROM golang:1.14 AS stage1
+WORKDIR /go/src/stage1
+COPY fileserver /go/src/stage1
+COPY resources /go/src/stage1/resources
+COPY fullchain.pem /go/src/stage1
+COPY privkey.pem /go/src/stage1
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build .
 
 FROM alpine
 WORKDIR /app
-COPY --from=no_homo_fileserver_1  /go/src/no_homo_fileserver_1 /app
-RUN chmod +x .
+COPY --from=stage1  /go/src/stage1 /app
+RUN chmod +x ./fileserver
+ENTRYPOINT [ "/app/fileserver" ]
 EXPOSE 8082/tcp
-ENTRYPOINT [ "/app/no_homo_fileserver" ]
+EXPOSE 8084/tcp
