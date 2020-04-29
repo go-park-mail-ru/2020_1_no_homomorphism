@@ -5,8 +5,8 @@
 package track
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	models "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
 
@@ -91,4 +91,19 @@ func (m *MockUseCase) GetBoundedTracksByPlaylistId(plId string, start, end uint6
 func (mr *MockUseCaseMockRecorder) GetBoundedTracksByPlaylistId(plId, start, end interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByPlaylistId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedTracksByPlaylistId), plId, start, end)
+}
+
+// Search mocks base method
+func (m *MockUseCase) Search(text string, count uint) ([]models.TrackSearch, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Search", text, count)
+	ret0, _ := ret[0].([]models.TrackSearch)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Search indicates an expected call of Search
+func (mr *MockUseCaseMockRecorder) Search(text, count interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockUseCase)(nil).Search), text, count)
 }

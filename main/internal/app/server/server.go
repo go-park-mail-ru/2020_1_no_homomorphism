@@ -76,7 +76,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 
 	UserUC := userUC.UserUseCase{
 		Repository: &dbRep,
-		Fileserver: fileserver,
+		FileService: fileserver,
 		AvatarDir:  viper.GetString(config.ConfigFields.AvatarDir),
 	}
 	TrackUC := trackUC.TrackUseCase{

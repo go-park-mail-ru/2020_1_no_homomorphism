@@ -8,8 +8,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"log"
 	"net"
+
+	"log"
 	"net/http"
 )
 
@@ -31,11 +32,12 @@ func main() {
 
 	filetransfer.RegisterUploadServiceServer(server, delivery.NewFileTransferDelivery())
 
-	fmt.Println("starting grpc server at ", viper.GetString(config.ConfigFields.Port))
-	err = server.Serve(lis)
-	if err != nil {
-		fmt.Println("failed to serve grpc")
-	}
+	fmt.Println("starting grpc server at :8084")
+	go func() {
+		if err := server.Serve(lis); err != nil {
+			log.Fatalf("failed to start grpc server: %v", err)
+		}
+	}()
 
 	fmt.Println("Starts server at ", viper.GetString(config.ConfigFields.PortTLS))
 	//err := http.ListenAndServeTLS(viper.GetString(config.ConfigFields.PortTLS),"fullchain.pem","privkey.pem", http.FileServer(http.Dir(viper.GetString(config.ConfigFields.Dir)))))

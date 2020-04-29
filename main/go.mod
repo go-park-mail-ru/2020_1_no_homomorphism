@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.4.1
+	github.com/alicebob/miniredis/v2 v2.11.4
 	github.com/go-test/deep v1.0.5
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.3.3
@@ -14,6 +15,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/kabukky/httpscerts v0.0.0-20150320125433-617593d7dcb3
 	github.com/lib/pq v1.3.0
+	github.com/mailru/easyjson v0.7.1
 	github.com/prometheus/client_golang v1.5.1
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0

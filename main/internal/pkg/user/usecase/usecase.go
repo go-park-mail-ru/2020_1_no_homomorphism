@@ -15,9 +15,9 @@ import (
 )
 
 type UserUseCase struct {
-	Repository users.Repository
-	Fileserver filetransfer.UploadServiceClient
-	AvatarDir  string
+	Repository  users.Repository
+	FileService filetransfer.UploadServiceClient
+	AvatarDir   string
 }
 
 func (uc *UserUseCase) Create(user models.User) (users.SameUserExists, error) {
@@ -52,18 +52,19 @@ func (uc *UserUseCase) Update(user models.User, input models.UserSettings) (user
 
 func (uc *UserUseCase) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
 	fileName := uuid.NewV4().String()
-	fullFileName := fileName+"."+fileType
+	fullFileName := fileName + "." + fileType
 
 	md := metadata.New(map[string]string{"fileName": filepath.Join(os.Getenv("FILE_ROOT")+uc.AvatarDir, fullFileName)})
 	ctx := metadata.NewOutgoingContext(context.Background(), md)
 
-	stream, err := uc.Fileserver.Upload(ctx)
+	stream, err := uc.FileService.Upload(ctx)
 	if err != nil {
-		panic(err) //todo fix
+		return "", fmt.Errorf("failed to upload file: %v", err)
 	}
 
 	write := true
 	chunk := make([]byte, 1024)
+
 	for write {
 		size, err := file.Read(chunk)
 		if err != nil {

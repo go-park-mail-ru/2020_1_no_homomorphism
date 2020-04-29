@@ -97,10 +97,9 @@ func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *htt
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(struct {
-		Id     string         `json:"id"`
-		Tracks []models.Track `json:"tracks"`
-	}{id, tracks})
+	output := models.PlaylistTracksArray{Id: id, Tracks: tracks}
+
+	err = json.NewEncoder(w).Encode(output)
 
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetBoundedPlaylistTracks", "failed to encode json"+err.Error())
@@ -206,7 +205,7 @@ func (h *PlaylistHandler) GetPlaylistsIDByTrack(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	playlistIDs, err := h.PlaylistUC.GetPlaylistsIdByTrack(user.Id, id)
+	playlistIDs, err := h.PlaylistUC.GetUserPlaylistsIdByTrack(user.Id, id)
 
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetPlaylistsIDByTrack", "failed to get playlists:"+err.Error())
@@ -217,9 +216,7 @@ func (h *PlaylistHandler) GetPlaylistsIDByTrack(w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", "application/json")
 
 	writer := json.NewEncoder(w)
-	err = writer.Encode(struct {
-		IDs []string `json:"playlists"`
-	}{playlistIDs})
+	err = writer.Encode(models.PlaylistsID{IDs: playlistIDs})
 
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetPlaylistsIDByTrack", "failed to encode:"+err.Error())

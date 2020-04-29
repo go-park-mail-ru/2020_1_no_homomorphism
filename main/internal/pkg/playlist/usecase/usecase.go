@@ -26,8 +26,8 @@ func (uc PlaylistUseCase) AddTrackToPlaylist(plTracks models.PlaylistTracks) err
 	return uc.PlRepository.AddTrackToPlaylist(plTracks)
 }
 
-func (uc PlaylistUseCase) GetPlaylistsIdByTrack(userID, trackID string) ([]string, error) {
-	return uc.PlRepository.GetPlaylistsIdByTrack(userID, trackID)
+func (uc PlaylistUseCase) GetUserPlaylistsIdByTrack(userID, trackID string) ([]string, error) {
+	return uc.PlRepository.GetUserPlaylistsIdByTrack(userID, trackID)
 }
 
 func (uc PlaylistUseCase) DeletePlaylist(plID string) error {

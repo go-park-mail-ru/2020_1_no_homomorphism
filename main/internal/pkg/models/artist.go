@@ -19,3 +19,7 @@ type ArtistSearch struct {
 	Name     string `json:"name"`
 	Image    string `json:"image"`
 }
+
+type Artists struct {
+	Artists []Artist `json:"artists"`
+}

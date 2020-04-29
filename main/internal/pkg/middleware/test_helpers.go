@@ -2,10 +2,15 @@ package middleware
 
 import (
 	"context"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/gorilla/mux"
 	"net/http"
-	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 )
+
+type VarsPair struct {
+	Key   string
+	Value string
+}
 
 func AuthMiddlewareMock(next http.HandlerFunc, auth bool, user models.User, sessionId string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -21,6 +26,17 @@ func AuthMiddlewareMock(next http.HandlerFunc, auth bool, user models.User, sess
 func SetMuxVars(next http.HandlerFunc, key, value string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		req := mux.SetURLVars(r, map[string]string{key: value})
+		next(w, req)
+	}
+}
+
+func SetUnlimitedVars(next http.HandlerFunc, params ...VarsPair) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		varsMap := make(map[string]string, len(params))
+		for _, elem := range params {
+			varsMap[elem.Key] = elem.Value
+		}
+		req := mux.SetURLVars(r, varsMap)
 		next(w, req)
 	}
 }

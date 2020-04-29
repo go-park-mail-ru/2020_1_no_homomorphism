@@ -7,7 +7,7 @@ type Repository interface {
 	GetPlaylistById(pId string) (models.Playlist, error)
 	CreatePlaylist(name string, uID string) (plID string, err error)
 	AddTrackToPlaylist(plTracks models.PlaylistTracks) error
-	GetPlaylistsIdByTrack(userID, trackID string) ([]string, error)
+	GetUserPlaylistsIdByTrack(userID, trackID string) ([]string, error)
 	DeleteTrackFromPlaylist(plID, trackID string) error
 	DeletePlaylist(plID string) error
 }

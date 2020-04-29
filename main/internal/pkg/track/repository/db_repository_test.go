@@ -4,12 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"regexp"
 	"testing"
 )
@@ -34,6 +34,7 @@ func (s *Suite) SetupSuite() {
 		Name:     "test-name",
 		Artist:   "artist-name",
 		Duration: 123,
+		ArtistID: "41342",
 		Link:     "test_link1",
 	}
 	tr2 := models.Track{
@@ -41,6 +42,7 @@ func (s *Suite) SetupSuite() {
 		Name:     "test-namqweqwee",
 		Artist:   "artist-name",
 		Duration: 5235,
+		ArtistID: "41342",
 		Link:     "test_link2",
 	}
 	tr3 := models.Track{
@@ -48,6 +50,7 @@ func (s *Suite) SetupSuite() {
 		Name:     "test23452345",
 		Artist:   "artist-name",
 		Duration: 345,
+		ArtistID: "41342",
 		Link:     "test_link3",
 	}
 	s.tracks = []models.Track{tr1, tr2, tr3}
@@ -75,8 +78,8 @@ func (s *Suite) TestGetTrackByID() {
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "full_track_info" WHERE (track_id = $1)`)).
 		WithArgs(testTrack.Id).
-		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link"}).
-			AddRow(testTrack.Id, testTrack.Name, testTrack.Artist, testTrack.Duration, testTrack.Link))
+		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link", "artist_id"}).
+			AddRow(testTrack.Id, testTrack.Name, testTrack.Artist, testTrack.Duration, testTrack.Link, testTrack.ArtistID))
 
 	res, err := s.repository.GetTrackById(testTrack.Id)
 
@@ -87,6 +90,7 @@ func (s *Suite) TestGetTrackByID() {
 		Artist:   testTrack.Artist,
 		Duration: testTrack.Duration,
 		Link:     testTrack.Link,
+		ArtistID: testTrack.ArtistID,
 	}, res))
 
 	//test on db error
@@ -108,10 +112,10 @@ func (s *Suite) TestGetBoundedPlaylistTracks() {
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tracks_in_playlist" WHERE (playlist_id = $1) ORDER BY "index" LIMIT 3 OFFSET 0`)).
 		WithArgs(plId).
-		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link"}).
-			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link).
-			AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link).
-			AddRow(tr3.Id, tr3.Name, tr3.Artist, tr3.Duration, tr3.Link))
+		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link", "artist_id"}).
+			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link, tr1.ArtistID).
+			AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link, tr2.ArtistID).
+			AddRow(tr3.Id, tr3.Name, tr3.Artist, tr3.Duration, tr3.Link, tr3.ArtistID))
 
 	res, err := s.repository.GetBoundedTracksByPlaylistId(plId, 0, 3)
 
@@ -138,8 +142,8 @@ func (s *Suite) TestGetAlbumTracks() {
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "tracks_in_album" WHERE (album_id = $1) ORDER BY "index" LIMIT 2 OFFSET 0`)).
 		WithArgs(aId).
-		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link"}).
-			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link).AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link))
+		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "duration", "link", "artist_id"}).
+			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr1.Duration, tr1.Link, tr2.ArtistID).AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.Duration, tr2.Link, tr2.ArtistID))
 
 	res, err := s.repository.GetBoundedTracksByAlbumId(aId, 0, 2)
 

@@ -114,7 +114,7 @@ func (pr *DbPlaylistRepository) AddTrackToPlaylist(plTracks models.PlaylistTrack
 	return nil
 }
 
-func (pr *DbPlaylistRepository) GetPlaylistsIdByTrack(userID, trackID string) ([]string, error) {
+func (pr *DbPlaylistRepository) GetUserPlaylistsIdByTrack(userID, trackID string) ([]string, error) {
 	var dbPlaylists []Playlists
 
 	db := pr.db.

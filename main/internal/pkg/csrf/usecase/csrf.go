@@ -7,8 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf"
+	"io"
 	"time"
 )
 
