@@ -1,0 +1,3 @@
+port: ":8084"
+port_tls: ":8082"
+dir: "./resources"

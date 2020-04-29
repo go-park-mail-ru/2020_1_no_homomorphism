@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/2020_1_no_homomorphism/no_homo_sessions/config"
+	"github.com/joho/godotenv"
 	"log"
 	"net"
 
@@ -15,6 +17,14 @@ import (
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Failed to export env vars: %v", err)
+	}
+
+	if err := config.ExportConfig(); err != nil {
+		log.Fatalf("can't export config %v", err)
+	}
+
 	lis, err := net.Listen("tcp", tcpPort)
 	if err != nil {
 		log.Fatalln("cant listen port", err)

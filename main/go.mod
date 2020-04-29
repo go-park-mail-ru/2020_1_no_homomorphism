@@ -9,13 +9,16 @@ require (
 	github.com/golang/protobuf v1.3.3
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
+	github.com/hashicorp/consul/api v1.4.0
 	github.com/jinzhu/gorm v1.9.12
+	github.com/joho/godotenv v1.3.0
 	github.com/kabukky/httpscerts v0.0.0-20150320125433-617593d7dcb3
 	github.com/lib/pq v1.3.0
 	github.com/prometheus/client_golang v1.5.1
 	github.com/rs/cors v1.7.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.5.0
+	github.com/spf13/viper v1.6.3
 	github.com/steinfletcher/apitest v1.4.5
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904

@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/2020_1_no_homomorphism/no_homo_main/constants"
+	"github.com/2020_1_no_homomorphism/no_homo_main/config"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	users "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
+	"github.com/spf13/viper"
 	"net/http"
 
 	"time"
@@ -96,7 +97,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Value:    userSession.ID,
 		HttpOnly: true,
 		Path:     "/",
-		Expires:  time.Now().Add(constants.CookieExpireTime),
+		Expires:  time.Now().Add(viper.GetDuration(config.ConfigFields.CookieExpireTime)),
 	}
 	http.SetCookie(w, &cookie)
 
@@ -163,7 +164,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    userSession.ID,
 		HttpOnly: true,
 		Path:     "/",
-		Expires:  time.Now().Add(constants.CookieExpireTime),
+		Expires:  time.Now().Add(viper.GetDuration(config.ConfigFields.CookieExpireTime)),
 	}
 	http.SetCookie(w, &cookie)
 

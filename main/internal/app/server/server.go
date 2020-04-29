@@ -3,24 +3,18 @@ package server
 import (
 	"flag"
 	"fmt"
-	"github.com/2020_1_no_homomorphism/no_homo_main/constants"
-	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf/repository"
-	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
-	"github.com/2020_1_no_homomorphism/no_homo_main/proto/filetransfer"
-	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
-	"github.com/kabukky/httpscerts"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/2020_1_no_homomorphism/no_homo_main/config"
 	albumDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/album/delivery"
 	albumRepo "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/album/repository"
 	albumUC "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/album/usecase"
 	artistDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/artist/delivery"
 	artistRepo "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/artist/repository"
 	artistUC "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/artist/usecase"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf/repository"
 	csrfLib "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf/usecase"
 	m "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	playlistDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/playlist/delivery"
@@ -34,12 +28,21 @@ import (
 	userDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user/delivery"
 	userRepo "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user/repository"
 	userUC "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user/usecase"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
+	"github.com/2020_1_no_homomorphism/no_homo_main/proto/filetransfer"
+	"github.com/2020_1_no_homomorphism/no_homo_main/proto/session"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
+	"github.com/joho/godotenv"
+	"github.com/kabukky/httpscerts"
 	_ "github.com/lib/pq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 )
 
 func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient, fileserver filetransfer.UploadServiceClient) (
@@ -57,7 +60,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 	playlistRep := playlistRepo.NewDbPlaylistRepository(db)
 	albumRep := albumRepo.NewDbAlbumRepository(db)
 	artistRep := artistRepo.NewDbArtistRepository(db)
-	dbRep := userRepo.NewDbUserRepository(db, constants.AvatarDefault)
+	dbRep := userRepo.NewDbUserRepository(db, viper.GetString(config.ConfigFields.AvatarDefault))
 
 	ArtistUC := artistUC.ArtistUseCase{
 		ArtistRepository: &artistRep,
@@ -74,7 +77,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 	UserUC := userUC.UserUseCase{
 		Repository: &dbRep,
 		Fileserver: fileserver,
-		AvatarDir:  constants.AvatarDir,
+		AvatarDir:  viper.GetString(config.ConfigFields.AvatarDir),
 	}
 	TrackUC := trackUC.TrackUseCase{
 		Repository: &trackRep,
@@ -96,7 +99,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 		SessionDelivery: sessManager,
 		UserUC:          &UserUC,
 		Log:             mainLogger,
-		ImgTypes:        constants.AvatarTypes,
+		ImgTypes:        viper.GetStringMapString(config.ConfigFields.AvatarTypes),
 		CSRF:            &csrfToken,
 	}
 
@@ -129,7 +132,7 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient, fileserver filetransfer.UploadServiceClient) http.Handler {
 	user, track, playlist, album, artist, search, auth, csrf := InitHandler(customLogger, db, csrfToken, sessManager, fileserver)
 
-	r := mux.NewRouter().PathPrefix(constants.ApiPrefix).Subrouter()
+	r := mux.NewRouter().PathPrefix(viper.GetString(config.ConfigFields.ApiPrefix)).Subrouter()
 
 	r.Handle("/users/albums", auth.AuthMiddleware(album.GetUserAlbums, false)).Methods("GET")
 	r.HandleFunc("/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
@@ -186,24 +189,33 @@ func generateSSL() {
 	}
 }
 
+
+
 func StartNew() {
-	db, err := gorm.Open("postgres", constants.DbConn)
+	if err := godotenv.Load(); err != nil {
+		log.Fatalf("Failed to export env vars: %v", err)
+	}
+	if err := config.ExportConfig(); err != nil {
+		log.Fatalf("Failed to export config: %v", err)
+	}
+
+	db, err := gorm.Open("postgres", os.Getenv("DB_CONN"))
 	if err != nil {
 		log.Fatalf("Failed to start db: %v", err)
 	}
 
 	defer db.Close()
 
-	db.DB().SetMaxOpenConns(constants.DbMaxConnN)
+	db.DB().SetMaxOpenConns(viper.GetInt(config.ConfigFields.DBMaxConnNum))
 
 	if err := db.DB().Ping(); err != nil {
 		log.Fatalf("Failed to ping db: %v", err)
 	}
 
-	c := cors.New(constants.CorsOptions)
+	c := cors.New(config.CorsInit())
 
 	var customLogger *logger.MainLogger
-	f, err := os.OpenFile(constants.LogFile, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+	f, err := os.OpenFile(viper.GetString(config.ConfigFields.LogFile), os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
 		logrus.Error("Failed to open logfile:", err)
 		customLogger = logger.NewLogger(os.Stdout)
@@ -212,7 +224,7 @@ func StartNew() {
 	}
 	defer f.Close()
 
-	redisAddr := flag.String("addr", constants.RedisAddr, "redis addr")
+	redisAddr := flag.String("addr", viper.GetString(config.ConfigFields.RedisAddr), "redis addr")
 	redisConn := &redis.Pool{
 		MaxIdle:   80,
 		MaxActive: 12000,
@@ -229,7 +241,7 @@ func StartNew() {
 
 	csrfRepo := repository.NewRedisTokenManager(redisConn)
 
-	csrfToken, err := csrfLib.NewAesCryptHashToken(constants.CsrfSecret, constants.CsrfDuration, &csrfRepo)
+	csrfToken, err := csrfLib.NewAesCryptHashToken(os.Getenv("CSRF_SECRET"), viper.GetInt64(config.ConfigFields.CsrfDuration), &csrfRepo)
 	if err != nil {
 		log.Fatalf("failed to init csrf token: %v", err)
 	}
