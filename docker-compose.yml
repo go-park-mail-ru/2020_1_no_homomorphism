@@ -16,7 +16,6 @@ services:
       dockerfile: fileserver/Dockerfile.Multistage
     expose:
       - "8082"
-      - "8084"
     restart: always
     network_mode:
       host
@@ -62,6 +61,6 @@ services:
     #      - ./grafana/provisioning/:/etc/grafana/provisioning/
     env_file:
       - ./grafana/config.monitoring
-    #    network_mode:
-    #      host
+#    network_mode:
+#      host
     restart: always

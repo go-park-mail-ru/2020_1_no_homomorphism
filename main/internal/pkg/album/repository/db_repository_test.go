@@ -3,12 +3,12 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"regexp"
 	"testing"
 	"time"
@@ -108,6 +108,40 @@ func (s *Suite) TestGetUserAlbums() {
 		WithArgs(album[0].Id).WillReturnError(dbError)
 
 	_, err = s.repository.GetUserAlbums(album[0].Id)
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestSearch() {
+	album := []models.AlbumSearch{
+		{
+			AlbumID:    "23423",
+			AlbumName:  "testName",
+			ArtistID:   "124252",
+			ArtistName: "TestArtist",
+			Image:      "default.png",
+		},
+	}
+
+	text := "artis"
+	count := 5
+
+	s.mock.ExpectQuery("SELECT").
+		WithArgs("%" + text + "%").
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "artist_id", "artist_name", "image"}).
+			AddRow(album[0].AlbumID, album[0].AlbumName, album[0].ArtistID, album[0].ArtistName, album[0].Image))
+
+	res, err := s.repository.Search(text, uint(count))
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(album, res))
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WillReturnError(dbError)
+
+	_, err = s.repository.Search(text, uint(count))
 
 	require.Error(s.T(), err)
 }

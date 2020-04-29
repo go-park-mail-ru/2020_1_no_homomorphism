@@ -72,9 +72,9 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 	}
 
 	UserUC := userUC.UserUseCase{
-		Repository: &dbRep,
-		Fileserver: fileserver,
-		AvatarDir:  constants.AvatarDir,
+		Repository:  &dbRep,
+		FileService: fileserver,
+		AvatarDir:   constants.AvatarDir,
 	}
 	TrackUC := trackUC.TrackUseCase{
 		Repository: &trackRep,

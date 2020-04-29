@@ -34,7 +34,7 @@ func (s *Suite) SetupSuite() {
 		Name:     "Vasya",
 		Login:    "pupkin",
 		Sex:      "male",
-		Image:    "/image/test",
+		Image:    "/img/default/png",
 		Email:    "test@email.test",
 	}
 
@@ -47,7 +47,7 @@ func (s *Suite) SetupSuite() {
 	require.NoError(s.T(), err)
 	s.DB.LogMode(false)
 
-	s.repository = NewDbUserRepository(s.DB, "/image/test", "/avatar/test")
+	s.repository = NewDbUserRepository(s.DB, "/img/default/png")
 }
 
 func (s *Suite) AfterTest(_, _ string) {

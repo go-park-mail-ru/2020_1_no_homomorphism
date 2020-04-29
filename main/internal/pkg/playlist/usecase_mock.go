@@ -5,8 +5,8 @@
 package playlist
 
 import (
-	gomock "github.com/golang/mock/gomock"
 	models "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
 
@@ -63,6 +63,21 @@ func (mr *MockUseCaseMockRecorder) GetPlaylistById(id interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPlaylistById", reflect.TypeOf((*MockUseCase)(nil).GetPlaylistById), id)
 }
 
+// CreatePlaylist mocks base method
+func (m *MockUseCase) CreatePlaylist(name, uID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePlaylist", name, uID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePlaylist indicates an expected call of CreatePlaylist
+func (mr *MockUseCaseMockRecorder) CreatePlaylist(name, uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePlaylist", reflect.TypeOf((*MockUseCase)(nil).CreatePlaylist), name, uID)
+}
+
 // CheckAccessToPlaylist mocks base method
 func (m *MockUseCase) CheckAccessToPlaylist(userId, playlistId string) (bool, error) {
 	m.ctrl.T.Helper()
@@ -76,4 +91,61 @@ func (m *MockUseCase) CheckAccessToPlaylist(userId, playlistId string) (bool, er
 func (mr *MockUseCaseMockRecorder) CheckAccessToPlaylist(userId, playlistId interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAccessToPlaylist", reflect.TypeOf((*MockUseCase)(nil).CheckAccessToPlaylist), userId, playlistId)
+}
+
+// AddTrackToPlaylist mocks base method
+func (m *MockUseCase) AddTrackToPlaylist(plTracks models.PlaylistTracks) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddTrackToPlaylist", plTracks)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddTrackToPlaylist indicates an expected call of AddTrackToPlaylist
+func (mr *MockUseCaseMockRecorder) AddTrackToPlaylist(plTracks interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTrackToPlaylist", reflect.TypeOf((*MockUseCase)(nil).AddTrackToPlaylist), plTracks)
+}
+
+// GetUserPlaylistsIdByTrack mocks base method
+func (m *MockUseCase) GetUserPlaylistsIdByTrack(userID, trackID string) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserPlaylistsIdByTrack", userID, trackID)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserPlaylistsIdByTrack indicates an expected call of GetUserPlaylistsIdByTrack
+func (mr *MockUseCaseMockRecorder) GetUserPlaylistsIdByTrack(userID, trackID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserPlaylistsIdByTrack", reflect.TypeOf((*MockUseCase)(nil).GetUserPlaylistsIdByTrack), userID, trackID)
+}
+
+// DeleteTrackFromPlaylist mocks base method
+func (m *MockUseCase) DeleteTrackFromPlaylist(plID, trackID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteTrackFromPlaylist", plID, trackID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteTrackFromPlaylist indicates an expected call of DeleteTrackFromPlaylist
+func (mr *MockUseCaseMockRecorder) DeleteTrackFromPlaylist(plID, trackID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTrackFromPlaylist", reflect.TypeOf((*MockUseCase)(nil).DeleteTrackFromPlaylist), plID, trackID)
+}
+
+// DeletePlaylist mocks base method
+func (m *MockUseCase) DeletePlaylist(plID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePlaylist", plID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePlaylist indicates an expected call of DeletePlaylist
+func (mr *MockUseCaseMockRecorder) DeletePlaylist(plID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePlaylist", reflect.TypeOf((*MockUseCase)(nil).DeletePlaylist), plID)
 }

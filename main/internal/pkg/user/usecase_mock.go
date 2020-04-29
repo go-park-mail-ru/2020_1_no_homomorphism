@@ -5,9 +5,9 @@
 package user
 
 import (
+	models "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	gomock "github.com/golang/mock/gomock"
 	io "io"
-	models "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	reflect "reflect"
 )
 

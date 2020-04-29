@@ -13,3 +13,12 @@ type PlaylistTracks struct {
 	Index      string `json:"index,omitempty"`
 	Image      string `json:"image"`
 }
+
+type PlaylistsID struct {
+	IDs []string `json:"playlists"`
+}
+
+type PlaylistTracksArray struct {
+	Id     string  `json:"id"`
+	Tracks []Track `json:"tracks"`
+}

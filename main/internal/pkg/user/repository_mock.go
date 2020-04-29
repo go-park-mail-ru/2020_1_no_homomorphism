@@ -5,9 +5,8 @@
 package user
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	io "io"
 	models "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
 
@@ -63,18 +62,18 @@ func (mr *MockRepositoryMockRecorder) Update(user, input interface{}) *gomock.Ca
 }
 
 // UpdateAvatar mocks base method
-func (m *MockRepository) UpdateAvatar(user models.User, file io.Reader, fileType string) (string, error) {
+func (m *MockRepository) UpdateAvatar(user models.User, avatarDir, fileType string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateAvatar", user, file, fileType)
+	ret := m.ctrl.Call(m, "UpdateAvatar", user, avatarDir, fileType)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateAvatar indicates an expected call of UpdateAvatar
-func (mr *MockRepositoryMockRecorder) UpdateAvatar(user, file, fileType interface{}) *gomock.Call {
+func (mr *MockRepositoryMockRecorder) UpdateAvatar(user, avatarDir, fileType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockRepository)(nil).UpdateAvatar), user, file, fileType)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAvatar", reflect.TypeOf((*MockRepository)(nil).UpdateAvatar), user, avatarDir, fileType)
 }
 
 // GetUserByLogin mocks base method

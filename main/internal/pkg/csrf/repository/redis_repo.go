@@ -7,12 +7,12 @@ import (
 )
 
 type TokenManager struct {
-	redisPool redis.Pool
+	redisPool *redis.Pool
 }
 
 func NewRedisTokenManager(conn *redis.Pool) TokenManager {
 	return TokenManager{
-		redisPool: *conn,
+		redisPool: conn,
 	}
 }
 
@@ -31,8 +31,12 @@ func (sr *TokenManager) Add(token string, expire int64) error {
 func (sr *TokenManager) Check(token string) error {
 	conn := sr.redisPool.Get()
 	_, err := redis.String(conn.Do("GET", token))
+
 	if err != nil {
-		return nil
+		if err == redis.ErrNil {
+			return nil
+		}
+		return err
 	}
 	return fmt.Errorf("token is not valid")
 }
