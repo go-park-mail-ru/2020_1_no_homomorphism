@@ -1,0 +1,6 @@
+redis:
+  addr: "redis://user:@localhost:6379/0"
+tcp:
+  port: ":8083"
+cookie:
+  expired: "43200"
