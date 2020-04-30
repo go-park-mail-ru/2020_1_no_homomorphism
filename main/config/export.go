@@ -32,6 +32,14 @@ var ConfigFields = struct {
 	CorsDebug          string
 	// cookie
 	CookieExpireTime string
+	// grpc
+	GRPCsessions string
+	GRPCfs       string
+	// main
+	MainAddr string
+	// ssl
+	SSLkey       string
+	SSLfullchain string
 }{
 	DBMaxConnNum:       "db.max_conn_num",
 	LogFile:            "logger.file",
@@ -49,6 +57,11 @@ var ConfigFields = struct {
 	CorsAllowedMethods: "cors.allowed_methods",
 	CorsDebug:          "cors.debug",
 	CookieExpireTime:   "cookie.expire",
+	GRPCfs:             "grpc.fileserver",
+	GRPCsessions:       "grpc.sessions",
+	MainAddr:           "main.addr",
+	SSLkey:             "ssl.key",
+	SSLfullchain:       "ssl.fullchain",
 }
 
 func CorsInit() cors.Options {
