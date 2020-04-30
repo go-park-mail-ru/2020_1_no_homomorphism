@@ -58,7 +58,7 @@ var ConfigFields = struct {
 	CorsDebug:          "cors.debug",
 	CookieExpireTime:   "cookie.expire",
 	GRPCfs:             "grpc.fileserver",
-	GRPCsessions:       "grpc.sessions",
+	GRPCsessions:       "grpc.session",
 	MainAddr:           "main.addr",
 	SSLkey:             "ssl.key",
 	SSLfullchain:       "ssl.fullchain",

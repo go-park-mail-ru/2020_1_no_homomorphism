@@ -30,3 +30,11 @@ cors:
   debug: false
 cookie:
   expire: 30
+grpc:
+  session: "127.0.0.1:8083"
+  fileserver: "127.0.0.1:8084"
+main:
+  addr: ":8081"
+ssl:
+  key: "privkey.pem"
+  fullchain: "fullchain.pem"
