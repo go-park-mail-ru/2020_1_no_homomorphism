@@ -247,7 +247,7 @@ func StartNew() {
 	}
 
 	grpcSessionsConn, err := grpc.Dial(
-		"127.0.0.1:8083",
+		viper.GetString(config.ConfigFields.GRPCsessions),
 		grpc.WithInsecure(),
 	)
 	if err != nil {
@@ -258,7 +258,7 @@ func StartNew() {
 	sessManager := session.NewAuthCheckerClient(grpcSessionsConn)
 
 	grpcFileserverConn, err := grpc.Dial(
-		"127.0.0.1:8084",
+		viper.GetString(config.ConfigFields.GRPCfs),
 		grpc.WithInsecure(),
 	)
 	if err != nil {
@@ -272,9 +272,9 @@ func StartNew() {
 
 	generateSSL()
 
-	fmt.Println("Starts server at 8081")
-	//err = http.ListenAndServeTLS(":8081", "fullchain.pem", "privkey.pem", c.Handler(m.HeadersHandler(routes)))
-	err = http.ListenAndServe(":8081", c.Handler(m.HeadersHandler(routes)))
+	fmt.Println("Starts server at ", viper.GetString(config.ConfigFields.MainAddr))
+	//err = http.ListenAndServeTLS(viper.GetString(config.ConfigFields.MainAddr), viper.GetString(config.ConfigFields.SSLfullchain), viper.GetString(config.ConfigFields.SSLkey),c.Handler(m.HeadersHandler(routes)))
+	err = http.ListenAndServe(viper.GetString(config.ConfigFields.MainAddr), c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)
 		return
