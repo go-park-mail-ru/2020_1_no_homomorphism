@@ -1,21 +1,19 @@
 package delivery
 
 import (
+	session "github.com/2020_1_no_homomorphism/no_homo_sessions/internal"
+	uuid "github.com/satori/go.uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	session "github.com/2020_1_no_homomorphism/no_homo_sessions/internal"
-	"time"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type SessionDelivery struct {
 	UseCase    session.UseCase
-	ExpireTime time.Duration
+	ExpireTime uint64
 }
 
-func NewSessionDelivery(useCase session.UseCase, expire time.Duration) *SessionDelivery {
+func NewSessionDelivery(useCase session.UseCase, expire uint64) *SessionDelivery {
 	return &SessionDelivery{
 		UseCase:    useCase,
 		ExpireTime: expire,

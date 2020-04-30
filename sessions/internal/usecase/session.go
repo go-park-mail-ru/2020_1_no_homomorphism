@@ -3,8 +3,6 @@ package usecase
 import (
 	"errors"
 	session "github.com/2020_1_no_homomorphism/no_homo_sessions/internal"
-	"time"
-
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -16,7 +14,7 @@ func addPrefix(id uuid.UUID) string {
 	return "sessions:" + id.String()
 }
 
-func (uc *SessionUseCase) Create(login string, expires time.Duration) (uuid.UUID, error) {
+func (uc *SessionUseCase) Create(login string, expires uint64) (uuid.UUID, error) {
 	id := uuid.NewV4()
 	sId := addPrefix(id)
 	err := uc.Repository.Create(sId, login, expires)

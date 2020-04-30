@@ -97,7 +97,7 @@ func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Value:    userSession.ID,
 		HttpOnly: true,
 		Path:     "/",
-		Expires:  time.Now().Add(viper.GetDuration(config.ConfigFields.CookieExpireTime)),
+		Expires:  time.Now().AddDate(0, 0, viper.GetInt(config.ConfigFields.CookieExpireTime)),
 	}
 	http.SetCookie(w, &cookie)
 
@@ -164,7 +164,7 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    userSession.ID,
 		HttpOnly: true,
 		Path:     "/",
-		Expires:  time.Now().Add(viper.GetDuration(config.ConfigFields.CookieExpireTime)),
+		Expires:  time.Now().AddDate(0, 0, viper.GetInt(config.ConfigFields.CookieExpireTime)),
 	}
 	http.SetCookie(w, &cookie)
 

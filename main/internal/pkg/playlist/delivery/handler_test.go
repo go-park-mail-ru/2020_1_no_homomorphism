@@ -305,7 +305,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		start := "0"
 		end := "50"
 
-		boundedVars := middleware.GetBoundedVars(
+		boundedVars := middleware.BoundedVars(
 			middleware.AuthMiddlewareMock(plHandler.GetBoundedPlaylistTracks, true, testUser, ""),
 			plHandler.Log,
 		)
@@ -374,7 +374,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		start := "0"
 		end := "50"
 
-		boundedVars := middleware.GetBoundedVars(
+		boundedVars := middleware.BoundedVars(
 			middleware.AuthMiddlewareMock(plHandler.GetBoundedPlaylistTracks, true, testUser, ""),
 			plHandler.Log,
 		)
@@ -417,7 +417,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		start := "0"
 		end := "50"
 
-		boundedVars := middleware.GetBoundedVars(
+		boundedVars := middleware.BoundedVars(
 			middleware.AuthMiddlewareMock(plHandler.GetBoundedPlaylistTracks, true, testUser, ""),
 			plHandler.Log,
 		)

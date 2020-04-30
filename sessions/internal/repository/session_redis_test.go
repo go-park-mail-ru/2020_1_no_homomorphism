@@ -50,7 +50,7 @@ func (s *Suite) TestCreate() {
 	expire := time.Hour * 8
 	sID := uuid.NewV4()
 
-	err := s.session.Create(sID.String(), login, expire)
+	err := s.session.Create(sID.String(), login, uint64(expire.Seconds()))
 	require.NoError(s.T(), err)
 
 	value, err := s.redisServer.Get(sID.String())
@@ -66,7 +66,7 @@ func (s *Suite) TestCreate() {
 	//test on closed connection
 	s.redisServer.Close()
 
-	err = s.session.Create(sID.String(), login, expire)
+	err = s.session.Create(sID.String(), login, uint64(expire))
 	require.Error(s.T(), err)
 }
 

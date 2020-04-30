@@ -5,14 +5,15 @@ import (
 
 	"github.com/spf13/viper"
 )
-var ConfigFields = struct{
-	Port string
+
+var ConfigFields = struct {
+	GRPC    string
 	PortTLS string
-	Dir string
-} {
-	Port: "port",
+	Dir     string
+}{
+	GRPC:    "grpc",
 	PortTLS: "port_tls",
-	Dir: "dir",
+	Dir:     "dir",
 }
 
 func ExportConfig() error {

@@ -213,7 +213,7 @@ func TestGetBoundedAlbumsByArtistId(t *testing.T) {
 		start := "0"
 		end := "2"
 
-		boundedVars := middleware.GetBoundedVars(albumHandlers.GetBoundedAlbumsByArtistId, albumHandlers.Log)
+		boundedVars := middleware.BoundedVars(albumHandlers.GetBoundedAlbumsByArtistId, albumHandlers.Log)
 		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
 
 		ctrl := gomock.NewController(t)
@@ -278,7 +278,7 @@ func TestGetBoundedAlbumsByArtistId(t *testing.T) {
 		start := "0"
 		end := "2"
 
-		boundedVars := middleware.GetBoundedVars(albumHandlers.GetBoundedAlbumsByArtistId, albumHandlers.Log)
+		boundedVars := middleware.BoundedVars(albumHandlers.GetBoundedAlbumsByArtistId, albumHandlers.Log)
 		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
 
 		ctrl := gomock.NewController(t)

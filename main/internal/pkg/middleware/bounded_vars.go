@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func GetBoundedVars(next http.HandlerFunc, log *logger.MainLogger) http.HandlerFunc {
+func BoundedVars(next http.HandlerFunc, log *logger.MainLogger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 

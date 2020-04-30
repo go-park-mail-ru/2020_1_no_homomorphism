@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/2020_1_no_homomorphism/fileserver/config"
-	"github.com/2020_1_no_homomorphism/fileserver/proto/delivery"
+	"github.com/2020_1_no_homomorphism/fileserver/delivery"
 	"github.com/2020_1_no_homomorphism/fileserver/proto/filetransfer"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -23,8 +22,7 @@ func main() {
 		log.Fatalf("can't export config %v", err)
 	}
 
-
-	lis, err := net.Listen("tcp", viper.GetString(config.ConfigFields.Port))
+	lis, err := net.Listen("tcp", viper.GetString(config.ConfigFields.GRPC))
 	if err != nil {
 		log.Fatalln("cant listen port", err)
 	}
@@ -32,16 +30,16 @@ func main() {
 
 	filetransfer.RegisterUploadServiceServer(server, delivery.NewFileTransferDelivery())
 
-	fmt.Println("starting grpc server at :8084")
+	log.Println("starting grpc server at :8084")
 	go func() {
 		if err := server.Serve(lis); err != nil {
 			log.Fatalf("failed to start grpc server: %v", err)
 		}
 	}()
 
-	fmt.Println("Starts server at ", viper.GetString(config.ConfigFields.PortTLS))
+	log.Println("Starts server at ", viper.GetString(config.ConfigFields.PortTLS))
 	//err := http.ListenAndServeTLS(viper.GetString(config.ConfigFields.PortTLS),"fullchain.pem","privkey.pem", http.FileServer(http.Dir(viper.GetString(config.ConfigFields.Dir)))))
-	err = http.ListenAndServe(viper.GetString(config.ConfigFields.Port), http.FileServer(http.Dir(viper.GetString(config.ConfigFields.Dir))))
+	err = http.ListenAndServe(viper.GetString(config.ConfigFields.PortTLS), http.FileServer(http.Dir(viper.GetString(config.ConfigFields.Dir))))
 	if err != nil {
 		log.Println(err)
 		return

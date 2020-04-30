@@ -17,7 +17,7 @@ func NewCsrfMiddleware(csrf csrf.UseCase) CsrfMiddleware {
 	}
 }
 
-func (m *CsrfMiddleware) CSRFCheckMiddleware(next http.HandlerFunc) http.HandlerFunc {
+func (m *CsrfMiddleware) CSRFCheck(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		sid, ok := ctx.Value("session_id").(string)

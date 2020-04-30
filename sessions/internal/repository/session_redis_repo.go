@@ -2,8 +2,6 @@ package repository
 
 import (
 	"errors"
-	"time"
-
 	"github.com/gomodule/redigo/redis"
 )
 
@@ -17,9 +15,9 @@ func NewRedisSessionManager(conn *redis.Pool) *SessionManager {
 	}
 }
 
-func (sr *SessionManager) Create(sID string, login string, expire time.Duration) error {
+func (sr *SessionManager) Create(sID string, login string, expire uint64) error {
 	conn := sr.redisPool.Get()
-	result, err := redis.String(conn.Do("SET", sID, login, "EX", int(expire.Seconds())))
+	result, err := redis.String(conn.Do("SET", sID, login, "EX", expire))
 	if err != nil {
 		return errors.New("failed to write key: " + err.Error())
 	}

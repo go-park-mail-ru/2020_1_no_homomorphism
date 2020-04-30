@@ -23,7 +23,7 @@ func NewAuthMiddleware(sd session.AuthCheckerClient, uuc user.UseCase, logger *l
 	}
 }
 
-func (m *AuthMidleware) AuthMiddleware(next http.HandlerFunc, passNext bool) http.Handler {
+func (m *AuthMidleware) Auth(next http.HandlerFunc, passNext bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		cookie, err := r.Cookie("session_id")

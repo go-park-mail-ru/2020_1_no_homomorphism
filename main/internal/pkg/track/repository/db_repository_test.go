@@ -161,3 +161,69 @@ func (s *Suite) TestGetAlbumTracks() {
 
 	require.Error(s.T(), err)
 }
+
+func (s *Suite) TestGetBoundedTracksByArtistId() {
+	aId := "4123"
+
+	tr1 := s.tracks[0]
+	tr2 := s.tracks[1]
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "full_track_info"`)).
+		WithArgs(aId).
+		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "artist_id", "duration", "track_image", "link"}).
+			AddRow(tr1.Id, tr1.Name, tr1.Artist, tr2.ArtistID, tr1.Duration, tr1.Image, tr1.Link).
+			AddRow(tr2.Id, tr2.Name, tr2.Artist, tr2.ArtistID, tr2.Duration, tr2.Image, tr2.Link))
+
+	res, err := s.repository.GetBoundedTracksByArtistId(aId, 0, 2)
+
+	require.NoError(s.T(), err)
+	for i, elem := range res {
+		require.Nil(s.T(), deep.Equal(s.tracks[i], elem))
+	}
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WithArgs(aId).WillReturnError(dbError)
+
+	_, err = s.repository.GetBoundedTracksByArtistId(aId, 0, 2)
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestSearch() {
+	search := []models.TrackSearch{
+		{
+			TrackID:    "23423",
+			TrackName:  "keklol",
+			ArtistName: "TestArtist",
+			ArtistID:   "124252",
+			Image:      "default.png",
+		},
+	}
+
+	var trackID uint = 23423
+	var artistID uint = 124252
+
+	text := "trackSearch"
+	count := 5
+
+	s.mock.ExpectQuery("SELECT").
+		WithArgs("%" + text + "%").
+		WillReturnRows(sqlmock.NewRows([]string{"track_id", "track_name", "artist_name", "artist_id", "track_image"}).
+			AddRow(trackID, search[0].TrackName, search[0].ArtistName, artistID, search[0].Image))
+
+	res, err := s.repository.Search(text, uint(count))
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(search, res))
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WillReturnError(dbError)
+
+	_, err = s.repository.Search(text, uint(count))
+
+	require.Error(s.T(), err)
+}

@@ -120,7 +120,7 @@ func TestGetBoundedArtistTracks(t *testing.T) {
 		start := "0"
 		end := "2"
 
-		boundedVars := middleware.GetBoundedVars(trackHandler.GetBoundedArtistTracks, trackHandler.Log)
+		boundedVars := middleware.BoundedVars(trackHandler.GetBoundedArtistTracks, trackHandler.Log)
 		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
 
 		ctrl := gomock.NewController(t)
@@ -165,7 +165,7 @@ func TestGetBoundedArtistTracks(t *testing.T) {
 		start := "0"
 		end := "2"
 
-		boundedVars := middleware.GetBoundedVars(trackHandler.GetBoundedArtistTracks, trackHandler.Log)
+		boundedVars := middleware.BoundedVars(trackHandler.GetBoundedArtistTracks, trackHandler.Log)
 		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
 
 		ctrl := gomock.NewController(t)
@@ -200,7 +200,7 @@ func TestGetBoundedAlbumTracks(t *testing.T) {
 		start := "0"
 		end := "2"
 
-		boundedVars := middleware.GetBoundedVars(trackHandler.GetBoundedAlbumTracks, trackHandler.Log)
+		boundedVars := middleware.BoundedVars(trackHandler.GetBoundedAlbumTracks, trackHandler.Log)
 		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
 
 		ctrl := gomock.NewController(t)
@@ -245,7 +245,7 @@ func TestGetBoundedAlbumTracks(t *testing.T) {
 		start := "0"
 		end := "2"
 
-		boundedVars := middleware.GetBoundedVars(trackHandler.GetBoundedAlbumTracks, trackHandler.Log)
+		boundedVars := middleware.BoundedVars(trackHandler.GetBoundedAlbumTracks, trackHandler.Log)
 		vars := middleware.SetTripleVars(boundedVars, artistId, start, end)
 
 		ctrl := gomock.NewController(t)

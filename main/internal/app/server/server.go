@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/2020_1_no_homomorphism/no_homo_main/config"
 	albumDelivery "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/album/delivery"
@@ -45,6 +47,32 @@ import (
 	"google.golang.org/grpc"
 )
 
+func getInterceptor(mainLogger *logger.MainLogger) func(
+	ctx context.Context,
+	method string,
+	req interface{},
+	reply interface{},
+	cc *grpc.ClientConn,
+	invoker grpc.UnaryInvoker,
+	opts ...grpc.CallOption,
+) error {
+	return func(
+		ctx context.Context,
+		method string,
+		req interface{},
+		reply interface{},
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		start := time.Now()
+		err := invoker(ctx, method, req, reply, cc, opts...)
+		mainLogger.Tracef("call=%v req=%#v reply=%#v time=%v err=%v",
+			method, req, reply, time.Since(start), err)
+		return err
+	}
+}
+
 func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.CryptToken, sessManager session.AuthCheckerClient, fileserver filetransfer.UploadServiceClient) (
 	userDelivery.UserHandler,
 	trackDelivery.TrackHandler,
@@ -75,9 +103,9 @@ func InitHandler(mainLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.C
 	}
 
 	UserUC := userUC.UserUseCase{
-		Repository: &dbRep,
+		Repository:  &dbRep,
 		FileService: fileserver,
-		AvatarDir:  viper.GetString(config.ConfigFields.AvatarDir),
+		AvatarDir:   viper.GetString(config.ConfigFields.AvatarDir),
 	}
 	TrackUC := trackUC.TrackUseCase{
 		Repository: &trackRep,
@@ -134,37 +162,37 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 
 	r := mux.NewRouter().PathPrefix(viper.GetString(config.ConfigFields.ApiPrefix)).Subrouter()
 
-	r.Handle("/users/albums", auth.AuthMiddleware(album.GetUserAlbums, false)).Methods("GET")
+	r.Handle("/users/albums", auth.Auth(album.GetUserAlbums, false)).Methods("GET")
 	r.HandleFunc("/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
-	r.Handle("/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
 
 	r.HandleFunc("/artists/{id:[0-9]+}", artist.GetFullArtistInfo).Methods("GET")
 	r.HandleFunc("/artists/{id:[0-9]+}/stat", artist.GetArtistStat).Methods("GET")
 	r.HandleFunc("/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
 
-	r.Handle("/users/playlists", auth.AuthMiddleware(playlist.GetUserPlaylists, false)).Methods("GET")
-	r.Handle("/playlists/{id:[0-9]+}", auth.AuthMiddleware(playlist.GetFullPlaylistById, false)).Methods("GET")
-	r.Handle("/playlists/{id:[0-9]+}", auth.AuthMiddleware(playlist.DeletePlaylist, false)).Methods("DELETE")
-	r.Handle("/playlists/new/{name}", auth.AuthMiddleware(playlist.CreatePlaylist, false)).Methods("POST") //todo csrf
-	r.Handle("/playlists/tracks", auth.AuthMiddleware(playlist.AddTrackToPlaylist, false)).Methods("POST") //todo csrf
-	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.AuthMiddleware(m.GetBoundedVars(playlist.GetBoundedPlaylistTracks, user.Log), false)).Methods("GET")
-	r.Handle("/playlists/tracks/{id:[0-9]+}", auth.AuthMiddleware(playlist.GetPlaylistsIDByTrack, false)).Methods("GET")
-	r.Handle("/playlists/{playlist:[0-9]+}/tracks/{track:[0-9]+}", auth.AuthMiddleware(playlist.DeleteTrackFromPlaylist, false)).Methods("DELETE")
+	r.Handle("/users/playlists", auth.Auth(playlist.GetUserPlaylists, false)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}", auth.Auth(playlist.GetFullPlaylistById, false)).Methods("GET")
+	r.Handle("/playlists/tracks/{id:[0-9]+}", auth.Auth(playlist.GetPlaylistsIDByTrack, false)).Methods("GET")
+	r.Handle("/playlists/tracks", auth.Auth(csrf.CSRFCheck(playlist.AddTrackToPlaylist), false)).Methods("POST")
+	r.Handle("/playlists/new/{name}", auth.Auth(csrf.CSRFCheck(playlist.CreatePlaylist), false)).Methods("POST")
+	r.Handle("/playlists/{id:[0-9]+}", auth.Auth(csrf.CSRFCheck(playlist.DeletePlaylist), false)).Methods("DELETE")
+	r.Handle("/playlists/{playlist:[0-9]+}/tracks/{track:[0-9]+}", auth.Auth(playlist.DeleteTrackFromPlaylist, false)).Methods("DELETE")
+	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(playlist.GetBoundedPlaylistTracks, user.Log), false)).Methods("GET")
 
 	r.HandleFunc("/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
-	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
-	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.GetBoundedVars(track.GetBoundedArtistTracks, user.Log)).Methods("GET")
+	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(track.GetBoundedArtistTracks, user.Log)).Methods("GET")
 
-	r.Handle("/users", auth.AuthMiddleware(user.CheckAuth, false))
-	r.Handle("/users/token", auth.AuthMiddleware(user.GetCSRF, false)).Methods("GET")
-	r.Handle("/users/me", auth.AuthMiddleware(user.SelfProfile, false)).Methods("GET")
-	r.Handle("/users/login", auth.AuthMiddleware(user.Login, true)).Methods("POST")
-	r.Handle("/users/logout", auth.AuthMiddleware(user.Logout, false)).Methods("DELETE") //todo убрать глаголы
-	r.Handle("/users/images", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.UpdateAvatar), false)).Methods("POST")
-	r.Handle("/users/signup", auth.AuthMiddleware(user.Create, true)).Methods("POST")
-	r.Handle("/users/settings", auth.AuthMiddleware(csrf.CSRFCheckMiddleware(user.Update), false)).Methods("PUT")
-	r.Handle("/users/profiles/{profile}", auth.AuthMiddleware(user.Profile, false)).Methods("GET")
+	r.Handle("/users", auth.Auth(user.CheckAuth, false))
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
+	r.Handle("/users/login", auth.Auth(user.Login, true)).Methods("POST")
+	r.Handle("/users/signup", auth.Auth(user.Create, true)).Methods("POST")
+	r.Handle("/users/token", auth.Auth(user.GetCSRF, false)).Methods("GET")
+	r.Handle("/users/me", auth.Auth(user.SelfProfile, false)).Methods("GET")
+	r.Handle("/users/logout", auth.Auth(user.Logout, false)).Methods("DELETE") //todo убрать глаголы
+	r.Handle("/users/profiles/{profile}", auth.Auth(user.Profile, false)).Methods("GET")
+	r.Handle("/users/settings", auth.Auth(csrf.CSRFCheck(user.Update), false)).Methods("PUT")
+	r.Handle("/users/images", auth.Auth(csrf.CSRFCheck(user.UpdateAvatar), false)).Methods("POST")
 
 	r.HandleFunc("/media/{text}/{count:[0-9]+}", search.Search).Methods("GET")
 
@@ -188,8 +216,6 @@ func generateSSL() {
 		}
 	}
 }
-
-
 
 func StartNew() {
 	if err := godotenv.Load(); err != nil {
@@ -222,6 +248,7 @@ func StartNew() {
 	} else {
 		customLogger = logger.NewLogger(f)
 	}
+	customLogger.SetLevel(logrus.TraceLevel)
 	defer f.Close()
 
 	redisAddr := flag.String("addr", viper.GetString(config.ConfigFields.RedisAddr), "redis addr")
@@ -248,6 +275,7 @@ func StartNew() {
 
 	grpcSessionsConn, err := grpc.Dial(
 		"127.0.0.1:8083",
+		grpc.WithUnaryInterceptor(getInterceptor(customLogger)),
 		grpc.WithInsecure(),
 	)
 	if err != nil {

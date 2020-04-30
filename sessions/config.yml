@@ -3,4 +3,4 @@ redis:
 tcp:
   port: ":8083"
 cookie:
-  expired: 2678400
+  expired: "43200"
