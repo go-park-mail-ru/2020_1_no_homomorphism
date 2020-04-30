@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  main:
+    build:
+      context: .
+      dockerfile: main/Dockerfile.Multistage
+    expose:
+      - "8081"
+    restart: always
+    network_mode:
+      host
+  fileserver:
+    build:
+      context: .
+      dockerfile: fileserver/Dockerfile.Multistage
+    expose:
+      - "8082"
+    restart: always
+    network_mode:
+      host
+  sessions:
+    build:
+      context: .
+      dockerfile: sessions/Dockerfile.Multistage
+    restart: always
+    expose:
+      - "8083"
+    network_mode:
+      host
+  prometheus:
+    image: prom/prometheus
+    privileged: true
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    network_mode:
+      host
+    expose:
+      - "9090"
+  node-exporter:
+    image: prom/node-exporter
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    ports:
+      - '9100:9100'
+  grafana:
+    image: grafana/grafana
+    user: "grafana"
+    depends_on:
+      - prometheus
+    ports:
+      - 3001:3000
+    #    volumes:
+    #      - ./grafana:/var/lib/grafana
+    #      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    env_file:
+      - ./grafana/config.monitoring
+#    network_mode:
+#      host
+    restart: always
