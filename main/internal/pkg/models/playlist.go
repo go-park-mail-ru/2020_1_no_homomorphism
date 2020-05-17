@@ -5,7 +5,7 @@ type Playlist struct {
 	Name    string `json:"name,omitempty"`
 	Image   string `json:"image,omitempty"`
 	UserId  string `json:"user_id"`
-	Private bool   `json:"private,omitempty"`
+	Private bool   `json:"private"`
 }
 
 type PlaylistTracks struct {

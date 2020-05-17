@@ -156,6 +156,27 @@ CREATE TABLE liked_artists
     PRIMARY KEY (user_ID, artist_ID)
 );
 
+CREATE OR REPLACE FUNCTION after_liked_artists_func() RETURNS TRIGGER AS
+$after_liked_artists$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        update artist_stat set subscribers = subscribers + 1 where user_ID = new.user_ID;
+        RETURN NEW;
+    END IF;
+    IF (TG_OP = 'DELETE') THEN
+        update artist_stat set subscribers = subscribers - 1 where user_ID = new.user_ID;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$after_liked_artists$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_liked_artists
+    AFTER INSERT or DELETE
+    ON liked_artists
+    FOR EACH ROW
+EXECUTE PROCEDURE after_liked_artists_func();
+
 
 CREATE TABLE liked_albums
 (
@@ -332,16 +353,29 @@ WHERE liked.user_id = u.id
   AND liked.album_id = al.id;
 
 
-CREATE VIEW user_artists AS
+CREATE or replace VIEW user_artists AS
 SELECT u.id    as user_id,
        a.ID    as artist_id,
-       a.name  as artist_name,
-       a.image as artist_image
+       a.name  as name,
+       a.image as image
 FROM users u,
      artists a,
      liked_artists liked
 WHERE u.id = liked.user_id
   AND a.id = liked.artist_id;
+
+CREATE or replace VIEW sub_artists AS
+SELECT liked.user_ID as user_id,
+       a.ID          as artist_id,
+       a.name        as name,
+       a.image       as image
+FROM artists a,
+     liked_artists liked
+WHERE a.id = liked.artist_id;
+
+select *
+from sub_artists
+where user_id = 5;
 
 
 CREATE VIEW full_album_info AS
@@ -383,5 +417,9 @@ FROM artists a,
      tracks t
 WHERE a.ID = t.artist_id;
 
-update playlists set private = not private where id = 32;
-select private from playlists  where id = 32;
+update playlists
+set private = not private
+where id = 32;
+select private
+from playlists
+where id = 32;

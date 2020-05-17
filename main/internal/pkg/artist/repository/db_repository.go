@@ -14,6 +14,11 @@ type Artists struct {
 	Genre string `gorm:"column:genre"`
 }
 
+type LikedArtists struct {
+	UserID   uint64 `gorm:"column:user_id"`
+	ArtistID uint64 `gorm:"column:artist_id"`
+}
+
 type DbArtistRepository struct {
 	db *gorm.DB
 }
@@ -85,7 +90,7 @@ func (ar *DbArtistRepository) Search(text string, count uint) ([]models.ArtistSe
 
 	db := ar.db.
 		Table("artists").
-		Where("name ILIKE ?", "%" + text + "%").
+		Where("name ILIKE ?", "%"+text+"%").
 		Limit(count).
 		Find(&artists)
 
@@ -98,4 +103,68 @@ func (ar *DbArtistRepository) Search(text string, count uint) ([]models.ArtistSe
 		artistSearch[i] = toSearchModel(elem)
 	}
 	return artistSearch, nil
+}
+
+func (ar *DbArtistRepository) IsSubscribed(uID string, aID string) bool {
+	var likedArtists LikedArtists
+
+	artistID, err1 := strconv.ParseUint(aID, 10, 64)
+	userID, err2 := strconv.ParseUint(uID, 10, 64)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+	likedArtists.UserID = userID
+	likedArtists.ArtistID = artistID
+
+	db := ar.db.First(&likedArtists)
+	if err := db.Error; err != nil {
+		return false
+	}
+	return true
+}
+
+func (ar *DbArtistRepository) Subscription(aID string, uID string) error {
+	var likedArtists LikedArtists
+
+	artistID, err1 := strconv.ParseUint(aID, 10, 64)
+	userID, err2 := strconv.ParseUint(uID, 10, 64)
+	if err1 != nil || err2 != nil {
+		return fmt.Errorf("failed to parse artistID or userID: %v, %v", err1, err2)
+	}
+
+	likedArtists.ArtistID = artistID
+	likedArtists.UserID = userID
+
+	db := ar.db.Table("liked_artists").First(&likedArtists)
+	switch db.Error {
+	case gorm.ErrRecordNotFound:
+		db := ar.db.Table("liked_artists").Create(&likedArtists)
+		if err := db.Error; err != nil {
+			return fmt.Errorf("failed to insert in liked_artists: %v", err)
+		}
+	case nil:
+		db := ar.db.Table("liked_artists").Delete(&likedArtists)
+		if err := db.Error; err != nil {
+			return fmt.Errorf("failed to delete in liked_artists: %v", err)
+		}
+	default:
+		return fmt.Errorf("failed to check liked_artists: %v", db.Error)
+	}
+
+	return nil
+}
+
+func (ar *DbArtistRepository) SubscriptionsList(uID string) ([]models.ArtistSearch, error) {
+	var artists []models.ArtistSearch
+
+	db := ar.db.
+		Table("sub_artists").
+		Where("user_id = ?", uID).
+		Find(&artists)
+
+	if err := db.Error; err != nil {
+		return nil, fmt.Errorf("failed to get subscribed artists: %v", err)
+	}
+
+	return artists, nil
 }

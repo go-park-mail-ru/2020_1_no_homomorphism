@@ -7,4 +7,7 @@ type Repository interface {
 	GetBoundedArtists(start, end uint64) ([]models.Artist, error)
 	GetArtistStat(id string) (models.ArtistStat, error)
 	Search(text string, count uint) ([]models.ArtistSearch, error)
+	IsSubscribed(uID string, aID string) bool
+	Subscription(aID string, uID string) error
+	SubscriptionsList(uID string) ([]models.ArtistSearch, error)
 }
