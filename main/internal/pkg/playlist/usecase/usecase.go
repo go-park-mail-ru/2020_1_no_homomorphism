@@ -69,10 +69,14 @@ func (uc PlaylistUseCase) AddSharedPlaylist(plID string, uID string) (string, er
 	return newPl, nil
 }
 
-func (uc PlaylistUseCase) CheckAccessToPlaylist(userId string, playlistId string) (bool, error) {
+func (uc PlaylistUseCase) CheckAccessToPlaylist(userId string, playlistId string, isStrict bool) (bool, error) {
 	pl, err := uc.PlRepository.GetPlaylistById(playlistId)
 	if err != nil {
 		return false, fmt.Errorf("cant get playlist: %v", err)
+	}
+
+	if isStrict {
+		return pl.UserId == userId, nil
 	}
 	return pl.UserId == userId || !pl.Private, nil
 }

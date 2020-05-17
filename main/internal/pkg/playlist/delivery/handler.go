@@ -53,7 +53,7 @@ func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, varId); err != nil {
+	if err := h.checkUserAccess(w, r, varId, false); err != nil {
 		return
 	}
 
@@ -86,7 +86,7 @@ func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, id); err != nil {
+	if err := h.checkUserAccess(w, r, id, false); err != nil {
 		return
 	}
 
@@ -115,13 +115,13 @@ func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Cont
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, playlistID string) error {
+func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, playlistID string, isStrict bool) error {
 	user, ok := r.Context().Value("user").(models.User)
 	if !ok {
 		user = models.User{Id: "0"}
 	}
 
-	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, playlistID)
+	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, playlistID, isStrict)
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "failed to check access: "+err.Error())
 		return errors.New("failed to check access")
@@ -177,7 +177,7 @@ func (h *PlaylistHandler) AddTrackToPlaylist(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err = h.checkUserAccess(w, r, plTracks.PlaylistID); err != nil {
+	if err = h.checkUserAccess(w, r, plTracks.PlaylistID, true); err != nil {
 		return
 	}
 
@@ -238,7 +238,7 @@ func (h *PlaylistHandler) DeleteTrackFromPlaylist(w http.ResponseWriter, r *http
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, playlistID); err != nil {
+	if err := h.checkUserAccess(w, r, playlistID, true); err != nil {
 		return
 	}
 
@@ -257,7 +257,7 @@ func (h *PlaylistHandler) DeletePlaylist(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, playlistID); err != nil {
+	if err := h.checkUserAccess(w, r, playlistID, true); err != nil {
 		return
 	}
 
@@ -297,7 +297,7 @@ func (h *PlaylistHandler) AddSharedPlaylist(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, varId); err != nil {
+	if err := h.checkUserAccess(w, r, varId, false); err != nil {
 		return
 	}
 
