@@ -17,7 +17,7 @@ jobs:
       - name: Login to DockerHub Registry
         run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build Docker image
-        run: docker build -t bulletmys/music_app_main:${GITHUB_SHA::8} ./main
+        run: docker build -t bulletmys/music_app_main:${GITHUB_SHA::8} -f main/Docckerfile .
       - name: Push the image
         run: docker push bulletmys/music_app_main:${GITHUB_SHA::8}
 
