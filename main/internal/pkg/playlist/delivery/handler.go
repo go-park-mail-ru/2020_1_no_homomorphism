@@ -118,9 +118,7 @@ func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Cont
 func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, playlistID string) error {
 	user, ok := r.Context().Value("user").(models.User)
 	if !ok {
-		h.Log.LogWarning(r.Context(), "playlist delivery", "checkUserAccess", "failed to get from ctx")
-		w.WriteHeader(http.StatusInternalServerError)
-		return errors.New("failed to get from ctx")
+		user = models.User{Id: "0"}
 	}
 
 	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, playlistID)
