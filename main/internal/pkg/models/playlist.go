@@ -1,10 +1,11 @@
 package models
 
 type Playlist struct {
-	Id     string `json:"id"`
-	Name   string `json:"name,omitempty"`
-	Image  string `json:"image,omitempty"`
-	UserId string `json:"-"`
+	Id      string `json:"id"`
+	Name    string `json:"name,omitempty"`
+	Image   string `json:"image,omitempty"`
+	UserId  string `json:"user_id"`
+	Private bool   `json:"private,omitempty"`
 }
 
 type PlaylistTracks struct {

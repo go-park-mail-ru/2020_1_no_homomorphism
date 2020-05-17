@@ -11,4 +11,6 @@ type UseCase interface {
 	GetUserPlaylistsIdByTrack(userID, trackID string) ([]string, error)
 	DeleteTrackFromPlaylist(plID, trackID string) error
 	DeletePlaylist(plID string) error
+	ChangePrivacy(plID string) error
+	AddSharedPlaylist(plID string, uID string) (string, error)
 }

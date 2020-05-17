@@ -270,3 +270,55 @@ func (h *PlaylistHandler) DeletePlaylist(w http.ResponseWriter, r *http.Request)
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
+
+func (h *PlaylistHandler) ChangePrivacy(w http.ResponseWriter, r *http.Request) {
+	varId, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+
+	err := h.PlaylistUC.ChangePrivacy(varId)
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "failed to change playlist privacy: "+err.Error())
+		return
+	}
+}
+
+func (h *PlaylistHandler) AddSharedPlaylist(w http.ResponseWriter, r *http.Request) {
+	varId, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.checkUserAccess(w, r, varId); err != nil {
+		return
+	}
+
+	id, err := h.PlaylistUC.AddSharedPlaylist(varId, user.Id)
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "failed to copy playlist"+err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	output := models.Playlist{Id: id}
+
+	err = json.NewEncoder(w).Encode(output)
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}

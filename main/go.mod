@@ -8,6 +8,7 @@ require (
 	github.com/go-test/deep v1.0.5
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.3.3
+	github.com/golangci/golangci-lint v1.27.0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.7.4
 	github.com/jinzhu/gorm v1.9.12
@@ -26,5 +27,4 @@ require (
 	golang.org/x/crypto v0.0.0-20200414173820-0848c9571904
 	golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9 // indirect
 	google.golang.org/grpc v1.28.1
-	gopkg.in/yaml.v2 v2.2.8 // indirect
 )

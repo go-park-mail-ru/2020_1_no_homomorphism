@@ -177,6 +177,7 @@ CREATE TABLE playlists
     name    VARCHAR(50) NOT NULL,
     image   VARCHAR(100) DEFAULT '/static/img/default.png',
     user_ID BIGSERIAL   NOT NULL,
+    private bool         default TRUE,
     FOREIGN KEY (user_ID) REFERENCES users (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -234,13 +235,6 @@ CREATE TABLE playlist_tracks
     PRIMARY KEY (playlist_ID, track_ID)
 );
 
-SELECT *
-FROM playlist_tracks
-         JOIN playlists p on playlist_tracks.playlist_ID = p.ID
-WHERE p.user_ID = 1
-  and track_ID = 1;
-
-
 CREATE OR REPLACE FUNCTION before_playlist_track_insert_func() RETURNS TRIGGER AS
 $before_playlist_track_insert$
 DECLARE
@@ -291,20 +285,6 @@ CREATE TABLE artist_stat
     FOREIGN KEY (artist_id) REFERENCES artists (id)
 );
 
-explain analyse
-select *
-from full_track_info;
-
-
-analyze;
-
-explain analyse
-select count(*), tracks.name
-from artists a
-         join tracks on tracks.artist_id = a.ID
-GROUP BY tracks.name;
-
-CREATE INDEX idx_country_id ON tracks (artist_id);
 
 CREATE OR REPLACE VIEW full_track_info AS
 SELECT t.ID    as track_id,
@@ -393,9 +373,8 @@ WHERE at.track_id = t.track_id
   AND at.album_id = a.ID;
 
 -- Если при вставки пишет, что id повторяется, значит траблы с последовательностью, ее надо обновить:
-SELECT setval(pg_get_serial_sequence('artists', 'id'), coalesce(max(id) + 1, 1), false)
-FROM artists;
-
+-- SELECT setval(pg_get_serial_sequence('artists', 'id'), coalesce(max(id) + 1, 1), false)
+-- FROM artists;
 
 CREATE VIEW artist_tracks AS
 SELECT a.ID as atrist_Id,
@@ -404,20 +383,5 @@ FROM artists a,
      tracks t
 WHERE a.ID = t.artist_id;
 
-insert into artists (name, image, genre) VALUES ('Broke For Free', 'static/img/artist/Broke_For_Free.jpg', 'Indie');
-
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Golden Hour', 308, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_01_-_Golden_Hour.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Summer Spliffs', 277, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_02_-_Summer_Spliffs.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Wash Out', 207, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_03_-_Wash_Out.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Melt', 260, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_04_-_Melt.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Juparo', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_05_-_Juparo.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('A Beautiful Life', 288, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_06_-_A_Beautiful_Life.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('XXV', 240, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_07_-_XXV.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Feel Good ( Instrumental )', 260, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_08_-_Feel_Good__Instrumental_.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Add And', 249, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_09_-_Add_And.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Love Is Not', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_10_-_Love_Is_Not.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Solitude', 202, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_11_-_Solitude.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Heart Ache', 297, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_12_-_Heart_Ache.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Tropicks', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_13_-_Tropicks.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Miei', 176, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_14_-_Miei.mp3', 6);
-
+update playlists set private = not private where id = 32;
+select private from playlists  where id = 32;
