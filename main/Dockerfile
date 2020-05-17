@@ -2,8 +2,6 @@ FROM golang:1.14 AS no_homo_main_1
 ENV GO111MODULE=on
 WORKDIR /go/src/no_homo_main_1
 COPY main /go/src/no_homo_main_1
-COPY fullchain.pem /go/src/no_homo_main_1
-COPY privkey.pem /go/src/no_homo_main_1
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 FILE_ROOT="resources" FILE_SERVER="https://localhost:8083" go build .
 
 FROM alpine
