@@ -8,4 +8,5 @@ type UseCase interface {
 	GetArtistStat(id string) (models.ArtistStat, error)
 	Search(text string, count uint) ([]models.ArtistSearch, error)
 	Subscription(aID, uID string) error
+	SubscriptionList(uID string) ([]models.ArtistSearch, error)
 }

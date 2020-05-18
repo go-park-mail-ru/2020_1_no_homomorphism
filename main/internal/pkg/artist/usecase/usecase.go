@@ -26,6 +26,10 @@ func (uc *ArtistUseCase) Subscription(aID, uID string) error {
 	return uc.ArtistRepository.Subscription(aID, uID)
 }
 
+func (uc *ArtistUseCase) SubscriptionList(uID string) ([]models.ArtistSearch, error) {
+	return uc.ArtistRepository.SubscriptionsList(uID)
+}
+
 func (uc *ArtistUseCase) GetBoundedArtists(start, end uint64) ([]models.Artist, error) {
 	return uc.ArtistRepository.GetBoundedArtists(start, end)
 }

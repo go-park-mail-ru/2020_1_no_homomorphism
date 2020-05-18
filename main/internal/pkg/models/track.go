@@ -8,6 +8,7 @@ type Track struct {
 	Image    string `json:"image"`
 	ArtistID string `json:"artist_id"`
 	Link     string `json:"link"`
+	IsLiked  bool   `json:"is_liked"`
 }
 
 type TrackSearch struct {

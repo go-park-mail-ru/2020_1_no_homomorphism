@@ -111,15 +111,44 @@ CREATE TABLE album_tracks
 
 CREATE TABLE users
 (
-    ID       BIGSERIAL PRIMARY KEY,
-    login    VARCHAR(32)  NOT NULL UNIQUE,
-    password BYTEA        NOT NULL,
-    name     VARCHAR(50)  NOT NULL,
-    email    VARCHAR(320) NOT NULL UNIQUE,
-    sex      VARCHAR(10)  NOT NULL,
-    image    VARCHAR(100) DEFAULT '/static/img/avatar/default.png'
+    ID           BIGSERIAL PRIMARY KEY,
+    login        VARCHAR(32)  NOT NULL UNIQUE,
+    password     BYTEA        NOT NULL,
+    name         VARCHAR(50)  NOT NULL,
+    email        VARCHAR(320) NOT NULL UNIQUE,
+    sex          VARCHAR(10)  NOT NULL,
+    image        VARCHAR(100) DEFAULT '/static/img/avatar/default.png',
+    liked_tracks integer[]    DEFAULT '{}'
 );
 
+CREATE OR REPLACE VIEW user_liked_tracks AS
+with liked as (
+    select unnest(liked_tracks) as liked_id
+    from users
+    where id = ?
+)
+select row_number() over () as index,
+       t.ID                 as id,
+       t.name               as name,
+       a.name               as artist,
+       t.duration           as duration,
+       t.image              as image,
+       artist_id            as artist_id,
+       t.link               as link
+from liked
+         join tracks as t on liked.liked_id = t.ID
+         join artists as a on t.artist_id = a.ID
+order by index desc;
+
+select *
+from user_liked_tracks;
+
+select unnest(liked_tracks) as liked_id
+    from users
+    where id = ?;
+
+update users set liked_tracks = liked_tracks || '{545}' where id = 1002;
+update users set liked_tracks = array_remove(liked_tracks, 45) where id = 1002;
 
 CREATE OR REPLACE FUNCTION after_user_insert_func() RETURNS TRIGGER AS
 $after_user_insert$
@@ -160,11 +189,13 @@ CREATE OR REPLACE FUNCTION after_liked_artists_func() RETURNS TRIGGER AS
 $after_liked_artists$
 BEGIN
     IF (TG_OP = 'INSERT') THEN
-        update artist_stat set subscribers = subscribers + 1 where user_ID = new.user_ID;
+        update artist_stat set subscribers = subscribers + 1 where artist_id = new.artist_ID;
+        update user_stat set artists = artists + 1 where user_ID = new.user_ID;
         RETURN NEW;
     END IF;
     IF (TG_OP = 'DELETE') THEN
-        update artist_stat set subscribers = subscribers - 1 where user_ID = new.user_ID;
+        update artist_stat set subscribers = subscribers - 1 where artist_id = old.artist_ID;
+        update user_stat set artists = artists - 1 where user_ID = old.user_ID;
         RETURN NEW;
     END IF;
     RETURN NULL;
@@ -372,6 +403,13 @@ SELECT liked.user_ID as user_id,
 FROM artists a,
      liked_artists liked
 WHERE a.id = liked.artist_id;
+
+select *
+from liked_artists
+where user_id = 5
+  and artist_id = 4;
+insert into liked_artists (artist_id, user_id)
+values (5, 5);
 
 select *
 from sub_artists

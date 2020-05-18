@@ -534,6 +534,8 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.ArtistID = string(in.String())
 		case "link":
 			out.Link = string(in.String())
+		case "is_liked":
+			out.IsLiked = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -582,6 +584,11 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		const prefix string = ",\"link\":"
 		out.RawString(prefix)
 		out.String(string(in.Link))
+	}
+	{
+		const prefix string = ",\"is_liked\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsLiked))
 	}
 	out.RawByte('}')
 }

@@ -15,8 +15,8 @@ type Artists struct {
 }
 
 type LikedArtists struct {
-	UserID   uint64 `gorm:"column:user_id"`
-	ArtistID uint64 `gorm:"column:artist_id"`
+	UserID   int64 `gorm:"column:user_id"`
+	ArtistID int64 `gorm:"column:artist_id"`
 }
 
 type DbArtistRepository struct {
@@ -105,7 +105,7 @@ func (ar *DbArtistRepository) Search(text string, count uint) ([]models.ArtistSe
 	return artistSearch, nil
 }
 
-func (ar *DbArtistRepository) IsSubscribed(uID string, aID string) bool {
+func (ar *DbArtistRepository) IsSubscribed(aID string, uID string) bool {
 	var likedArtists LikedArtists
 
 	artistID, err1 := strconv.ParseUint(aID, 10, 64)
@@ -113,10 +113,8 @@ func (ar *DbArtistRepository) IsSubscribed(uID string, aID string) bool {
 	if err1 != nil || err2 != nil {
 		return false
 	}
-	likedArtists.UserID = userID
-	likedArtists.ArtistID = artistID
 
-	db := ar.db.First(&likedArtists)
+	db := ar.db.Where("user_id = ? and artist_id = ?", userID, artistID).Find(&likedArtists)
 	if err := db.Error; err != nil {
 		return false
 	}
@@ -126,8 +124,8 @@ func (ar *DbArtistRepository) IsSubscribed(uID string, aID string) bool {
 func (ar *DbArtistRepository) Subscription(aID string, uID string) error {
 	var likedArtists LikedArtists
 
-	artistID, err1 := strconv.ParseUint(aID, 10, 64)
-	userID, err2 := strconv.ParseUint(uID, 10, 64)
+	artistID, err1 := strconv.ParseInt(aID, 10, 64)
+	userID, err2 := strconv.ParseInt(uID, 10, 64)
 	if err1 != nil || err2 != nil {
 		return fmt.Errorf("failed to parse artistID or userID: %v, %v", err1, err2)
 	}
@@ -135,15 +133,15 @@ func (ar *DbArtistRepository) Subscription(aID string, uID string) error {
 	likedArtists.ArtistID = artistID
 	likedArtists.UserID = userID
 
-	db := ar.db.Table("liked_artists").First(&likedArtists)
+	db := ar.db.Table("liked_artists").Where("user_id = ? and artist_id = ?", userID, artistID).Find(&likedArtists)
 	switch db.Error {
 	case gorm.ErrRecordNotFound:
-		db := ar.db.Table("liked_artists").Create(&likedArtists)
+		db := ar.db.Exec("insert into liked_artists (artist_id, user_id) values (?, ?)", artistID, userID)
 		if err := db.Error; err != nil {
 			return fmt.Errorf("failed to insert in liked_artists: %v", err)
 		}
 	case nil:
-		db := ar.db.Table("liked_artists").Delete(&likedArtists)
+		db := ar.db.Table("liked_artists").Where("user_id = ? and artist_id = ?", userID, artistID).Delete(&likedArtists)
 		if err := db.Error; err != nil {
 			return fmt.Errorf("failed to delete in liked_artists: %v", err)
 		}

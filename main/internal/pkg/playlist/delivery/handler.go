@@ -90,7 +90,12 @@ func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	tracks, err := h.TrackUC.GetBoundedTracksByPlaylistId(id, start, end)
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		user = models.User{Id: ""}
+	}
+
+	tracks, err := h.TrackUC.GetBoundedTracksByPlaylistId(id, start, end, user.Id)
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "failed to get tracks"+err.Error())
 		return

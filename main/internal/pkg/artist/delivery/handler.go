@@ -134,3 +134,28 @@ func (h *ArtistHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
+
+func (h *ArtistHandler) SubscriptionList(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "GetUserPlaylists", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	subscriptions, err := h.ArtistUC.SubscriptionList(user.Id)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get user's subscriptions"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(subscriptions)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "artist delivery", "SubscriptionList", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}

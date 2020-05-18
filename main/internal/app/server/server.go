@@ -166,6 +166,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.HandleFunc("/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
 
+	r.Handle("/users/artists", auth.Auth(artist.SubscriptionList, false)).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}", auth.Auth(artist.GetFullArtistInfo, true)).Methods("GET")
 	r.HandleFunc("/artists/{id:[0-9]+}/stat", artist.GetArtistStat).Methods("GET")
 	r.HandleFunc("/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
@@ -182,9 +183,11 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.Handle("/playlists/{id:[0-9]+}/privacy", auth.Auth(playlist.ChangePrivacy, false)).Methods("POST")    //todo csrf
 	r.Handle("/playlists/shared/{id:[0-9]+}", auth.Auth(playlist.AddSharedPlaylist, false)).Methods("POST") //todo csrf
 
+	r.Handle("/users/tracks", auth.Auth(track.GetUserTracks, false)).Methods("GET")
 	r.HandleFunc("/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
-	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
-	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(track.GetBoundedArtistTracks, user.Log)).Methods("GET")
+	r.Handle("/tracks/{id:[0-9]+}/rating", auth.Auth(track.RateTrack, false)).Methods("POST")
+	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedAlbumTracks, user.Log), true)).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedArtistTracks, user.Log), true)).Methods("GET")
 
 	r.Handle("/users", auth.Auth(user.CheckAuth, false))
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
