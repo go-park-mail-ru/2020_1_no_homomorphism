@@ -27,6 +27,10 @@ CREATE TRIGGER artists_trigger
     FOR EACH ROW
 EXECUTE PROCEDURE artists_trigger_func();
 
+select id, name, image, release, artist_name, artist_id, album_ID is not null as is_liked
+from albums
+         full join liked_albums la on albums.ID = la.album_ID
+where ;
 
 CREATE TABLE albums
 (
@@ -140,15 +144,36 @@ from liked
          join artists as a on t.artist_id = a.ID
 order by index desc;
 
-select *
-from user_liked_tracks;
+-- select *
+-- from user_liked_tracks;
+--
+-- select unnest(liked_tracks) as liked_id
+--     from users
+--     where id = ?;
+--
+-- update users set liked_tracks = liked_tracks || '{555}' where id = 1;
+-- update users set liked_tracks = array_remove(liked_tracks, 555) where id = 1;
 
-select unnest(liked_tracks) as liked_id
-    from users
-    where id = ?;
+CREATE OR REPLACE FUNCTION after_user_update_func() RETURNS TRIGGER AS
+$after_user_update$
+declare
+    likes int;
+BEGIN
+    likes := cardinality(new.liked_tracks) - cardinality(old.liked_tracks);
+    if likes <> 0 then
+        update user_stat as us set tracks = tracks + likes where us.user_id = new.id;
+    end if;
+    RETURN NEW;
+END;
+$after_user_update$ LANGUAGE plpgsql;
 
-update users set liked_tracks = liked_tracks || '{545}' where id = 1002;
-update users set liked_tracks = array_remove(liked_tracks, 45) where id = 1002;
+CREATE TRIGGER after_user_update
+    AFTER UPDATE
+    ON users
+    for each row
+EXECUTE PROCEDURE after_user_update_func();
+
+
 
 CREATE OR REPLACE FUNCTION after_user_insert_func() RETURNS TRIGGER AS
 $after_user_insert$
@@ -222,6 +247,27 @@ CREATE TABLE liked_albums
     PRIMARY KEY (user_ID, album_ID)
 );
 
+
+CREATE OR REPLACE FUNCTION after_liked_albums_func() RETURNS TRIGGER AS
+$after_liked_albums$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        update user_stat set albums = albums + 1 where user_ID = new.user_ID;
+        RETURN NEW;
+    END IF;
+    IF (TG_OP = 'DELETE') THEN
+        update user_stat set albums = albums - 1 where user_ID = old.user_ID;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$after_liked_albums$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_liked_albums
+    AFTER INSERT or DELETE
+    ON liked_albums
+    FOR EACH ROW
+EXECUTE PROCEDURE after_liked_albums_func();
 
 CREATE TABLE playlists
 (

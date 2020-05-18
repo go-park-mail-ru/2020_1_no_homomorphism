@@ -17,6 +17,11 @@ type Albums struct {
 	ArtistId   uint64    `gorm:"column:artist_id"`
 }
 
+type LikedAlbums struct {
+	ArtistID string `gorm:"column:album_id"`
+	UserID   string `gorm:"column:user_id"`
+}
+
 type DbAlbumRepository struct {
 	db *gorm.DB
 }
@@ -65,6 +70,7 @@ func (ar *DbAlbumRepository) GetUserAlbums(id string) ([]models.Album, error) {
 	albums := make([]models.Album, len(dbAlbum))
 	for i, elem := range dbAlbum {
 		albums[i] = toModel(elem)
+		albums[i].IsLiked = true
 	}
 	return albums, nil
 }
@@ -124,4 +130,40 @@ func (ar *DbAlbumRepository) Search(text string, count uint) ([]models.AlbumSear
 		albumSearch[i] = toSearchModel(elem)
 	}
 	return albumSearch, nil
+}
+
+func (ar *DbAlbumRepository) RateAlbum(aID, uID string) error {
+	liked := LikedAlbums{}
+
+	db := ar.db.Raw("select * from liked_albums where user_id = ? and album_id = ?", uID, aID).Scan(&liked)
+	switch db.Error {
+	case gorm.ErrRecordNotFound:
+		db := ar.db.Exec("insert into liked_albums(user_id, album_id) values (?, ?)", uID, aID)
+		if err := db.Error; err != nil {
+			return err
+		}
+	case nil:
+		db := ar.db.Exec("delete from liked_albums where user_id = ? and album_id = ?", uID, aID)
+		if err := db.Error; err != nil {
+			return err
+		}
+	default:
+		return db.Error
+	}
+	return nil
+}
+
+func (ar *DbAlbumRepository) CheckLike(aID, uID string) bool {
+	var liked LikedAlbums
+
+	db := ar.db.
+		Table("liked_albums").
+		Where("album_id = ? and user_id = ?", aID, uID).
+		Find(&liked)
+
+	if err := db.Error; err != nil {
+		return false
+	}
+
+	return true
 }

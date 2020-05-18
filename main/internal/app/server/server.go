@@ -163,7 +163,8 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r := mux.NewRouter().PathPrefix(viper.GetString(config.ConfigFields.ApiPrefix)).Subrouter()
 
 	r.Handle("/users/albums", auth.Auth(album.GetUserAlbums, false)).Methods("GET")
-	r.HandleFunc("/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
+	r.Handle("/albums/{id:[0-9]+}", auth.Auth(album.GetFullAlbum, true)).Methods("GET")
+	r.Handle("/albums/{id:[0-9]+}/rating", auth.Auth(album.RateAlbum, false)).Methods("POST")
 	r.Handle("/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
 
 	r.Handle("/users/artists", auth.Auth(artist.SubscriptionList, false)).Methods("GET")
