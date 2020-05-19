@@ -8,4 +8,7 @@ type Repository interface {
 	GetBoundedTracksByAlbumId(aId string, start, end uint64) ([]models.Track, error)
 	GetBoundedTracksByArtistId(id string, start, end uint64) ([]models.Track, error)
 	Search(text string, count uint) ([]models.TrackSearch, error)
+	GetUserTracks(uID string) ([]models.Track, error)
+	GetUserLikedTracksIDs(uID string) ([]int64, error)
+	RateTrack(uID string, tID string) error
 }

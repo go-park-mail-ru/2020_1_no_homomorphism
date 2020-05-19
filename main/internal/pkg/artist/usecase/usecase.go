@@ -9,8 +9,25 @@ type ArtistUseCase struct {
 	ArtistRepository artist.Repository
 }
 
-func (uc *ArtistUseCase) GetArtistById(id string) (models.Artist, error) {
-	return uc.ArtistRepository.GetArtist(id)
+func (uc *ArtistUseCase) GetArtistById(aID, uID string) (models.Artist, error) {
+	dbArtist, err := uc.ArtistRepository.GetArtist(aID)
+	if err != nil {
+		return models.Artist{}, err
+	}
+
+	if uID != "" {
+		dbArtist.IsSubscribed = uc.ArtistRepository.IsSubscribed(aID, uID)
+	}
+
+	return dbArtist, nil
+}
+
+func (uc *ArtistUseCase) Subscription(aID, uID string) error {
+	return uc.ArtistRepository.Subscription(aID, uID)
+}
+
+func (uc *ArtistUseCase) SubscriptionList(uID string) ([]models.ArtistSearch, error) {
+	return uc.ArtistRepository.SubscriptionsList(uID)
 }
 
 func (uc *ArtistUseCase) GetBoundedArtists(start, end uint64) ([]models.Artist, error) {

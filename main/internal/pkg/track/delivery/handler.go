@@ -2,11 +2,11 @@ package delivery
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"net/http"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	track "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
+	"github.com/gorilla/mux"
+	"net/http"
 )
 
 type TrackHandler struct {
@@ -49,7 +49,12 @@ func (h *TrackHandler) GetBoundedArtistTracks(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	tracks, err := h.TrackUC.GetBoundedTracksByArtistId(id, start, end)
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		user = models.User{Id: ""}
+	}
+
+	tracks, err := h.TrackUC.GetBoundedTracksByArtistId(id, start, end, user.Id)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "failed to get tracks"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -82,7 +87,12 @@ func (h *TrackHandler) GetBoundedAlbumTracks(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	tracks, err := h.TrackUC.GetBoundedTracksByAlbumId(id, start, end)
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		user = models.User{Id: ""}
+	}
+
+	tracks, err := h.TrackUC.GetBoundedTracksByAlbumId(id, start, end, user.Id)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "failed to get tracks"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -104,3 +114,56 @@ func (h *TrackHandler) GetBoundedAlbumTracks(w http.ResponseWriter, r *http.Requ
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
+func (h *TrackHandler) GetUserTracks(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "delivery", "GetUserTracks", "failed to get from context")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	tracks, err := h.TrackUC.GetUserTracks(user.Id)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get tracks"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(struct {
+		Tracks []models.Track `json:"tracks"`
+	}{tracks})
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "tracks delivery", "GetBoundedAlbumTracks", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *TrackHandler) RateTrack(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "delivery", "GetUserTracks", "failed to get from context")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	varId, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err := h.TrackUC.RateTrack(user.Id, varId)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get tracks"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}

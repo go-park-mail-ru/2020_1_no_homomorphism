@@ -13,8 +13,15 @@ func (uc AlbumUseCase) GetUserAlbums(id string) ([]models.Album, error) {
 	return uc.AlbumRepository.GetUserAlbums(id)
 }
 
-func (uc AlbumUseCase) GetAlbumById(id string) (models.Album, error) {
-	return uc.AlbumRepository.GetAlbumById(id)
+func (uc AlbumUseCase) GetAlbumById(aID, uID string) (models.Album, error) {
+	dbAlbum, err := uc.AlbumRepository.GetAlbumById(aID)
+	if err != nil {
+		return models.Album{}, err
+	}
+	if uID != "" {
+		dbAlbum.IsLiked = uc.AlbumRepository.CheckLike(aID, uID)
+	}
+	return dbAlbum, nil
 }
 
 func (uc AlbumUseCase) GetBoundedAlbumsByArtistId(id string, start uint64, end uint64) ([]models.Album, error) {
@@ -23,4 +30,8 @@ func (uc AlbumUseCase) GetBoundedAlbumsByArtistId(id string, start uint64, end u
 
 func (uc AlbumUseCase) Search(text string, count uint) ([]models.AlbumSearch, error) {
 	return uc.AlbumRepository.Search(text, count)
+}
+
+func (uc AlbumUseCase) RateAlbum(aID, uID string) error {
+	return uc.AlbumRepository.RateAlbum(aID, uID)
 }

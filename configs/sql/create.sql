@@ -27,6 +27,10 @@ CREATE TRIGGER artists_trigger
     FOR EACH ROW
 EXECUTE PROCEDURE artists_trigger_func();
 
+select id, name, image, release, artist_name, artist_id, album_ID is not null as is_liked
+from albums
+         full join liked_albums la on albums.ID = la.album_ID
+where ;
 
 CREATE TABLE albums
 (
@@ -111,14 +115,64 @@ CREATE TABLE album_tracks
 
 CREATE TABLE users
 (
-    ID       BIGSERIAL PRIMARY KEY,
-    login    VARCHAR(32)  NOT NULL UNIQUE,
-    password BYTEA        NOT NULL,
-    name     VARCHAR(50)  NOT NULL,
-    email    VARCHAR(320) NOT NULL UNIQUE,
-    sex      VARCHAR(10)  NOT NULL,
-    image    VARCHAR(100) DEFAULT '/static/img/avatar/default.png'
+    ID           BIGSERIAL PRIMARY KEY,
+    login        VARCHAR(32)  NOT NULL UNIQUE,
+    password     BYTEA        NOT NULL,
+    name         VARCHAR(50)  NOT NULL,
+    email        VARCHAR(320) NOT NULL UNIQUE,
+    sex          VARCHAR(10)  NOT NULL,
+    image        VARCHAR(100) DEFAULT '/static/img/avatar/default.png',
+    liked_tracks integer[]    DEFAULT '{}'
 );
+
+CREATE OR REPLACE VIEW user_liked_tracks AS
+with liked as (
+    select unnest(liked_tracks) as liked_id
+    from users
+    where id = ?
+)
+select row_number() over () as index,
+       t.ID                 as id,
+       t.name               as name,
+       a.name               as artist,
+       t.duration           as duration,
+       t.image              as image,
+       artist_id            as artist_id,
+       t.link               as link
+from liked
+         join tracks as t on liked.liked_id = t.ID
+         join artists as a on t.artist_id = a.ID
+order by index desc;
+
+-- select *
+-- from user_liked_tracks;
+--
+-- select unnest(liked_tracks) as liked_id
+--     from users
+--     where id = ?;
+--
+-- update users set liked_tracks = liked_tracks || '{555}' where id = 1;
+-- update users set liked_tracks = array_remove(liked_tracks, 555) where id = 1;
+
+CREATE OR REPLACE FUNCTION after_user_update_func() RETURNS TRIGGER AS
+$after_user_update$
+declare
+    likes int;
+BEGIN
+    likes := cardinality(new.liked_tracks) - cardinality(old.liked_tracks);
+    if likes <> 0 then
+        update user_stat as us set tracks = tracks + likes where us.user_id = new.id;
+    end if;
+    RETURN NEW;
+END;
+$after_user_update$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_user_update
+    AFTER UPDATE
+    ON users
+    for each row
+EXECUTE PROCEDURE after_user_update_func();
+
 
 
 CREATE OR REPLACE FUNCTION after_user_insert_func() RETURNS TRIGGER AS
@@ -156,6 +210,29 @@ CREATE TABLE liked_artists
     PRIMARY KEY (user_ID, artist_ID)
 );
 
+CREATE OR REPLACE FUNCTION after_liked_artists_func() RETURNS TRIGGER AS
+$after_liked_artists$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        update artist_stat set subscribers = subscribers + 1 where artist_id = new.artist_ID;
+        update user_stat set artists = artists + 1 where user_ID = new.user_ID;
+        RETURN NEW;
+    END IF;
+    IF (TG_OP = 'DELETE') THEN
+        update artist_stat set subscribers = subscribers - 1 where artist_id = old.artist_ID;
+        update user_stat set artists = artists - 1 where user_ID = old.user_ID;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$after_liked_artists$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_liked_artists
+    AFTER INSERT or DELETE
+    ON liked_artists
+    FOR EACH ROW
+EXECUTE PROCEDURE after_liked_artists_func();
+
 
 CREATE TABLE liked_albums
 (
@@ -171,12 +248,34 @@ CREATE TABLE liked_albums
 );
 
 
+CREATE OR REPLACE FUNCTION after_liked_albums_func() RETURNS TRIGGER AS
+$after_liked_albums$
+BEGIN
+    IF (TG_OP = 'INSERT') THEN
+        update user_stat set albums = albums + 1 where user_ID = new.user_ID;
+        RETURN NEW;
+    END IF;
+    IF (TG_OP = 'DELETE') THEN
+        update user_stat set albums = albums - 1 where user_ID = old.user_ID;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$after_liked_albums$ LANGUAGE plpgsql;
+
+CREATE TRIGGER after_liked_albums
+    AFTER INSERT or DELETE
+    ON liked_albums
+    FOR EACH ROW
+EXECUTE PROCEDURE after_liked_albums_func();
+
 CREATE TABLE playlists
 (
     ID      BIGSERIAL PRIMARY KEY,
     name    VARCHAR(50) NOT NULL,
     image   VARCHAR(100) DEFAULT '/static/img/default.png',
     user_ID BIGSERIAL   NOT NULL,
+    private bool         default TRUE,
     FOREIGN KEY (user_ID) REFERENCES users (ID)
         ON DELETE CASCADE
         ON UPDATE CASCADE
@@ -234,13 +333,6 @@ CREATE TABLE playlist_tracks
     PRIMARY KEY (playlist_ID, track_ID)
 );
 
-SELECT *
-FROM playlist_tracks
-         JOIN playlists p on playlist_tracks.playlist_ID = p.ID
-WHERE p.user_ID = 1
-  and track_ID = 1;
-
-
 CREATE OR REPLACE FUNCTION before_playlist_track_insert_func() RETURNS TRIGGER AS
 $before_playlist_track_insert$
 DECLARE
@@ -291,20 +383,6 @@ CREATE TABLE artist_stat
     FOREIGN KEY (artist_id) REFERENCES artists (id)
 );
 
-explain analyse
-select *
-from full_track_info;
-
-
-analyze;
-
-explain analyse
-select count(*), tracks.name
-from artists a
-         join tracks on tracks.artist_id = a.ID
-GROUP BY tracks.name;
-
-CREATE INDEX idx_country_id ON tracks (artist_id);
 
 CREATE OR REPLACE VIEW full_track_info AS
 SELECT t.ID    as track_id,
@@ -352,16 +430,36 @@ WHERE liked.user_id = u.id
   AND liked.album_id = al.id;
 
 
-CREATE VIEW user_artists AS
+CREATE or replace VIEW user_artists AS
 SELECT u.id    as user_id,
        a.ID    as artist_id,
-       a.name  as artist_name,
-       a.image as artist_image
+       a.name  as name,
+       a.image as image
 FROM users u,
      artists a,
      liked_artists liked
 WHERE u.id = liked.user_id
   AND a.id = liked.artist_id;
+
+CREATE or replace VIEW sub_artists AS
+SELECT liked.user_ID as user_id,
+       a.ID          as artist_id,
+       a.name        as name,
+       a.image       as image
+FROM artists a,
+     liked_artists liked
+WHERE a.id = liked.artist_id;
+
+select *
+from liked_artists
+where user_id = 5
+  and artist_id = 4;
+insert into liked_artists (artist_id, user_id)
+values (5, 5);
+
+select *
+from sub_artists
+where user_id = 5;
 
 
 CREATE VIEW full_album_info AS
@@ -393,9 +491,8 @@ WHERE at.track_id = t.track_id
   AND at.album_id = a.ID;
 
 -- Если при вставки пишет, что id повторяется, значит траблы с последовательностью, ее надо обновить:
-SELECT setval(pg_get_serial_sequence('artists', 'id'), coalesce(max(id) + 1, 1), false)
-FROM artists;
-
+-- SELECT setval(pg_get_serial_sequence('artists', 'id'), coalesce(max(id) + 1, 1), false)
+-- FROM artists;
 
 CREATE VIEW artist_tracks AS
 SELECT a.ID as atrist_Id,
@@ -404,20 +501,9 @@ FROM artists a,
      tracks t
 WHERE a.ID = t.artist_id;
 
-insert into artists (name, image, genre) VALUES ('Broke For Free', 'static/img/artist/Broke_For_Free.jpg', 'Indie');
-
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Golden Hour', 308, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_01_-_Golden_Hour.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Summer Spliffs', 277, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_02_-_Summer_Spliffs.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Wash Out', 207, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_03_-_Wash_Out.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Melt', 260, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_04_-_Melt.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Juparo', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_05_-_Juparo.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('A Beautiful Life', 288, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_06_-_A_Beautiful_Life.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('XXV', 240, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_07_-_XXV.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Feel Good ( Instrumental )', 260, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_08_-_Feel_Good__Instrumental_.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Add And', 249, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_09_-_Add_And.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Love Is Not', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_10_-_Love_Is_Not.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Solitude', 202, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_11_-_Solitude.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Heart Ache', 297, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_12_-_Heart_Ache.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Tropicks', 248, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_13_-_Tropicks.mp3', 6);
-INSERT INTO tracks (name, duration, image, link, artist_id) VALUES ('Miei', 176, '/static/img/track/Broke_For_Free.jpg', '/static/audio/Broke_For_Free/Broke_For_Free_-_14_-_Miei.mp3', 6);
-
+update playlists
+set private = not private
+where id = 32;
+select private
+from playlists
+where id = 32;

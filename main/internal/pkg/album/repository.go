@@ -7,4 +7,6 @@ type Repository interface {
 	GetAlbumById(aId string) (models.Album, error)
 	GetBoundedAlbumsByArtistId(id string, start, end uint64) ([]models.Album, error)
 	Search(text string, count uint) ([]models.AlbumSearch, error)
+	RateAlbum(aID, uID string) error
+	CheckLike(aID, uID string) bool
 }

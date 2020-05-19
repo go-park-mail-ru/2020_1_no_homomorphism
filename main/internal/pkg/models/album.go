@@ -7,6 +7,7 @@ type Album struct {
 	Release    string `json:"release"`
 	ArtistName string `json:"artist_name"`
 	ArtistId   string `json:"artist_id"`
+	IsLiked    bool   `json:"is_liked"`
 }
 
 type AlbumSearch struct {

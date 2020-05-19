@@ -53,7 +53,7 @@ func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, varId); err != nil {
+	if err := h.checkUserAccess(w, r, varId, false); err != nil {
 		return
 	}
 
@@ -86,11 +86,16 @@ func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, id); err != nil {
+	if err := h.checkUserAccess(w, r, id, false); err != nil {
 		return
 	}
 
-	tracks, err := h.TrackUC.GetBoundedTracksByPlaylistId(id, start, end)
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		user = models.User{Id: ""}
+	}
+
+	tracks, err := h.TrackUC.GetBoundedTracksByPlaylistId(id, start, end, user.Id)
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "failed to get tracks"+err.Error())
 		return
@@ -115,15 +120,13 @@ func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Cont
 	w.WriteHeader(http.StatusBadRequest)
 }
 
-func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, playlistID string) error {
+func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, playlistID string, isStrict bool) error {
 	user, ok := r.Context().Value("user").(models.User)
 	if !ok {
-		h.Log.LogWarning(r.Context(), "playlist delivery", "checkUserAccess", "failed to get from ctx")
-		w.WriteHeader(http.StatusInternalServerError)
-		return errors.New("failed to get from ctx")
+		user = models.User{Id: "0"}
 	}
 
-	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, playlistID)
+	ok, err := h.PlaylistUC.CheckAccessToPlaylist(user.Id, playlistID, isStrict)
 	if err != nil {
 		h.sendBadRequest(w, r.Context(), "failed to check access: "+err.Error())
 		return errors.New("failed to check access")
@@ -179,7 +182,7 @@ func (h *PlaylistHandler) AddTrackToPlaylist(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err = h.checkUserAccess(w, r, plTracks.PlaylistID); err != nil {
+	if err = h.checkUserAccess(w, r, plTracks.PlaylistID, true); err != nil {
 		return
 	}
 
@@ -240,7 +243,7 @@ func (h *PlaylistHandler) DeleteTrackFromPlaylist(w http.ResponseWriter, r *http
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, playlistID); err != nil {
+	if err := h.checkUserAccess(w, r, playlistID, true); err != nil {
 		return
 	}
 
@@ -259,12 +262,64 @@ func (h *PlaylistHandler) DeletePlaylist(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := h.checkUserAccess(w, r, playlistID); err != nil {
+	if err := h.checkUserAccess(w, r, playlistID, true); err != nil {
 		return
 	}
 
 	if err := h.PlaylistUC.DeletePlaylist(playlistID); err != nil {
 		h.sendBadRequest(w, r.Context(), "cant delete track from playlist:"+err.Error())
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *PlaylistHandler) ChangePrivacy(w http.ResponseWriter, r *http.Request) {
+	varId, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+
+	err := h.PlaylistUC.ChangePrivacy(varId)
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "failed to change playlist privacy: "+err.Error())
+		return
+	}
+}
+
+func (h *PlaylistHandler) AddSharedPlaylist(w http.ResponseWriter, r *http.Request) {
+	varId, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+
+	user, ok := r.Context().Value("user").(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to get from ctx")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.checkUserAccess(w, r, varId, false); err != nil {
+		return
+	}
+
+	id, err := h.PlaylistUC.AddSharedPlaylist(varId, user.Id)
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "failed to copy playlist"+err.Error())
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	output := models.Playlist{Id: id}
+
+	err = json.NewEncoder(w).Encode(output)
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
