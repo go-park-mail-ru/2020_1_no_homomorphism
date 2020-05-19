@@ -153,7 +153,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 		}
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, testPl.Id).
+			CheckAccessToPlaylist(testUser.Id, testPl.Id, false).
 			Return(true, nil)
 
 		m.EXPECT().
@@ -208,7 +208,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 		}
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, testPl.Id).
+			CheckAccessToPlaylist(testUser.Id, testPl.Id, false).
 			Return(false, testError)
 
 		apitest.New("GetFullPlaylistById-CheckAccessError").
@@ -245,7 +245,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 		}
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, testPl.Id).
+			CheckAccessToPlaylist(testUser.Id, testPl.Id, false).
 			Return(false, nil)
 
 		apitest.New("GetFullPlaylistById-NoAccess").
@@ -282,7 +282,7 @@ func TestGetFullPlaylistById(t *testing.T) {
 		testError := errors.New("test error")
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, testPl.Id).
+			CheckAccessToPlaylist(testUser.Id, testPl.Id, false).
 			Return(true, nil)
 
 		m.EXPECT().
@@ -332,7 +332,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		}
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, testPl.Id).
+			CheckAccessToPlaylist(testUser.Id, testPl.Id, false).
 			Return(true, nil)
 
 		var startUint uint64 = 0
@@ -348,7 +348,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		assert.NoError(t, err)
 
 		tr.EXPECT().
-			GetBoundedTracksByPlaylistId(id, startUint, endUint).
+			GetBoundedTracksByPlaylistId(id, startUint, endUint, testUser.Id).
 			Return(tracks, nil)
 
 		apitest.New("GetBoundedPlaylistTracks-OK").
@@ -401,7 +401,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		}
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, testPl.Id).
+			CheckAccessToPlaylist(testUser.Id, testPl.Id, false).
 			Return(false, nil)
 
 		apitest.New("GetBoundedPlaylistTracks-CheckAccessErr").
@@ -444,7 +444,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		}
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, testPl.Id).
+			CheckAccessToPlaylist(testUser.Id, testPl.Id, false).
 			Return(true, nil)
 
 		var startUint uint64 = 0
@@ -453,7 +453,7 @@ func TestGetBoundedPlaylistTracks(t *testing.T) {
 		testError := errors.New("testError")
 
 		tr.EXPECT().
-			GetBoundedTracksByPlaylistId(id, startUint, endUint).
+			GetBoundedTracksByPlaylistId(id, startUint, endUint, testUser.Id).
 			Return([]models.Track{}, testError)
 
 		apitest.New("GetBoundedPlaylistTracks-Error").
@@ -547,7 +547,7 @@ func TestAddTrackToPlaylist(t *testing.T) { //todo check errors, body check
 		assert.NoError(t, err)
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, plTracks.PlaylistID).
+			CheckAccessToPlaylist(testUser.Id, plTracks.PlaylistID, true).
 			Return(true, nil)
 
 		m.EXPECT().
@@ -597,7 +597,7 @@ func TestAddTrackToPlaylist(t *testing.T) { //todo check errors, body check
 		assert.NoError(t, err)
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, plTracks.PlaylistID).
+			CheckAccessToPlaylist(testUser.Id, plTracks.PlaylistID, true).
 			Return(false, nil)
 
 		apitest.New("AddTrackToPlaylist-NoAccess").
@@ -634,7 +634,7 @@ func TestAddTrackToPlaylist(t *testing.T) { //todo check errors, body check
 		testError := errors.New("testError")
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, plTracks.PlaylistID).
+			CheckAccessToPlaylist(testUser.Id, plTracks.PlaylistID, true).
 			Return(true, nil)
 
 		m.EXPECT().
@@ -758,7 +758,7 @@ func TestDeletePlaylist(t *testing.T) { //todo check errors, body check
 		plHandler.PlaylistUC = m
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, id).
+			CheckAccessToPlaylist(testUser.Id, id, true).
 			Return(true, nil)
 
 		m.EXPECT().
@@ -790,12 +790,23 @@ func TestDeletePlaylist(t *testing.T) { //todo check errors, body check
 			id,
 		)
 
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := playlist.NewMockUseCase(ctrl)
+
+		plHandler.PlaylistUC = m
+
+		m.EXPECT().
+			CheckAccessToPlaylist("0", id, true).
+			Return(false, nil)
+
 		apitest.New("DeletePlaylist-NoAccess").
 			Handler(handler).
 			Method("Delete").
 			URL("/api/v1/playlists/tracks").
 			Expect(t).
-			Status(http.StatusInternalServerError).
+			Status(http.StatusForbidden).
 			End()
 	})
 	t.Run("DeletePlaylist-Error", func(t *testing.T) {
@@ -814,7 +825,7 @@ func TestDeletePlaylist(t *testing.T) { //todo check errors, body check
 		plHandler.PlaylistUC = m
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, id).
+			CheckAccessToPlaylist(testUser.Id, id, true).
 			Return(true, nil)
 
 		testError := errors.New("testError")
@@ -857,7 +868,7 @@ func TestDeleteTrackFromPlaylist(t *testing.T) { //todo check errors, body check
 		plHandler.PlaylistUC = m
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, pl.Value).
+			CheckAccessToPlaylist(testUser.Id, pl.Value, true).
 			Return(true, nil)
 
 		m.EXPECT().
@@ -925,12 +936,23 @@ func TestDeleteTrackFromPlaylist(t *testing.T) { //todo check errors, body check
 			pl, tr,
 		)
 
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := playlist.NewMockUseCase(ctrl)
+
+		plHandler.PlaylistUC = m
+
+		m.EXPECT().
+			CheckAccessToPlaylist("0", pl.Value, true).
+			Return(false, nil)
+
 		apitest.New("DeleteTrackFromPlaylist-NoAccess").
 			Handler(handler).
 			Method("Delete").
 			URL("/api/v1/playlists/tracks").
 			Expect(t).
-			Status(http.StatusInternalServerError).
+			Status(http.StatusForbidden).
 			End()
 	})
 	t.Run("DeleteTrackFromPlaylist-Error", func(t *testing.T) {
@@ -956,7 +978,7 @@ func TestDeleteTrackFromPlaylist(t *testing.T) { //todo check errors, body check
 		plHandler.PlaylistUC = m
 
 		m.EXPECT().
-			CheckAccessToPlaylist(testUser.Id, pl.Value).
+			CheckAccessToPlaylist(testUser.Id, pl.Value, true).
 			Return(true, nil)
 
 		testError := errors.New("testError")

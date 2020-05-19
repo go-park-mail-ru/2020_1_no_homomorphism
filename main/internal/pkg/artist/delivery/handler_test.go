@@ -50,7 +50,7 @@ func TestGetFullArtistInfo(t *testing.T) {
 		assert.NoError(t, err)
 
 		m.EXPECT().
-			GetArtistById(id).
+			GetArtistById(id, "").
 			Return(artist1, nil)
 
 		apitest.New("GetFullArtistInfo-OK").
@@ -86,7 +86,7 @@ func TestGetFullArtistInfo(t *testing.T) {
 		testError := errors.New("testError")
 
 		m.EXPECT().
-			GetArtistById(id).
+			GetArtistById(id, "").
 			Return(models.Artist{}, testError)
 
 		apitest.New("GetFullArtistInfo-GetArtistByIdError").

@@ -67,7 +67,7 @@ func TestGetUserAlbums(t *testing.T) {
 
 		albumHandlers.AlbumUC = m
 
-		albumStr := `{"artist_id":"%s", "artist_name":"%s", "id":"%s", "image":"%s", "name":"%s", "release":"%s"}`
+		albumStr := `{"artist_id":"%s", "artist_name":"%s", "id":"%s", "image":"%s", "name":"%s", "release":"%s", "is_liked":%s}`
 		bodyStr := strings.Join([]string{albumStr, albumStr}, ",")
 		bodyStr = `{"albums":[` + bodyStr + `]}`
 
@@ -84,12 +84,14 @@ func TestGetUserAlbums(t *testing.T) {
 				albums[0].Image,
 				albums[0].Name,
 				albums[0].Release,
+				"false",
 				albums[1].ArtistId,
 				albums[1].ArtistName,
 				albums[1].Id,
 				albums[1].Image,
 				albums[1].Name,
 				albums[1].Release,
+				"false",
 			)).
 			Status(http.StatusOK).
 			End()
@@ -149,7 +151,7 @@ func TestGetFullAlbum(t *testing.T) {
 		m := album.NewMockUseCase(ctrl)
 
 		m.EXPECT().
-			GetAlbumById(idVal).
+			GetAlbumById(idVal, "").
 			Return(albumModel, nil)
 
 		albumHandlers.AlbumUC = m
@@ -191,7 +193,7 @@ func TestGetFullAlbum(t *testing.T) {
 		testError := errors.New("test error")
 
 		m.EXPECT().
-			GetAlbumById(idVal).
+			GetAlbumById(idVal, "").
 			Return(models.Album{}, testError)
 
 		albumHandlers.AlbumUC = m

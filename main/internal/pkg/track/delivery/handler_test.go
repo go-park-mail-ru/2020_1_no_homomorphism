@@ -137,7 +137,7 @@ func TestGetBoundedArtistTracks(t *testing.T) {
 		var endUint uint64 = 2
 
 		m.EXPECT().
-			GetBoundedTracksByArtistId(artistId, startUint, endUint).
+			GetBoundedTracksByArtistId(artistId, startUint, endUint, "").
 			Return(tracksArray, nil)
 
 		str := fmt.Sprintf(`{"id":"%v","tracks":%v}`, artistId, string(tracksMarshal))
@@ -180,7 +180,7 @@ func TestGetBoundedArtistTracks(t *testing.T) {
 		testError := errors.New("testError")
 
 		m.EXPECT().
-			GetBoundedTracksByArtistId(artistId, startUint, endUint).
+			GetBoundedTracksByArtistId(artistId, startUint, endUint, "").
 			Return([]models.Track{}, testError)
 
 
@@ -217,7 +217,7 @@ func TestGetBoundedAlbumTracks(t *testing.T) {
 		var endUint uint64 = 2
 
 		m.EXPECT().
-			GetBoundedTracksByAlbumId(artistId, startUint, endUint).
+			GetBoundedTracksByAlbumId(artistId, startUint, endUint, "").
 			Return(tracksArray, nil)
 
 		str := fmt.Sprintf(`{"id":"%v","tracks":%v}`, artistId, string(tracksMarshal))
@@ -260,7 +260,7 @@ func TestGetBoundedAlbumTracks(t *testing.T) {
 		testError := errors.New("testError")
 
 		m.EXPECT().
-			GetBoundedTracksByAlbumId(artistId, startUint, endUint).
+			GetBoundedTracksByAlbumId(artistId, startUint, endUint, "").
 			Return([]models.Track{}, testError)
 
 

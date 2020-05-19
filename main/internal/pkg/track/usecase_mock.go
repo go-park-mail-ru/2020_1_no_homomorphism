@@ -49,48 +49,48 @@ func (mr *MockUseCaseMockRecorder) GetTrackById(id interface{}) *gomock.Call {
 }
 
 // GetBoundedTracksByArtistId mocks base method
-func (m *MockUseCase) GetBoundedTracksByArtistId(id string, start, end uint64) ([]models.Track, error) {
+func (m *MockUseCase) GetBoundedTracksByArtistId(id string, start, end uint64, uID string) ([]models.Track, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoundedTracksByArtistId", id, start, end)
+	ret := m.ctrl.Call(m, "GetBoundedTracksByArtistId", id, start, end, uID)
 	ret0, _ := ret[0].([]models.Track)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBoundedTracksByArtistId indicates an expected call of GetBoundedTracksByArtistId
-func (mr *MockUseCaseMockRecorder) GetBoundedTracksByArtistId(id, start, end interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) GetBoundedTracksByArtistId(id, start, end, uID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByArtistId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedTracksByArtistId), id, start, end)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByArtistId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedTracksByArtistId), id, start, end, uID)
 }
 
 // GetBoundedTracksByAlbumId mocks base method
-func (m *MockUseCase) GetBoundedTracksByAlbumId(aId string, start, end uint64) ([]models.Track, error) {
+func (m *MockUseCase) GetBoundedTracksByAlbumId(aId string, start, end uint64, uID string) ([]models.Track, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoundedTracksByAlbumId", aId, start, end)
+	ret := m.ctrl.Call(m, "GetBoundedTracksByAlbumId", aId, start, end, uID)
 	ret0, _ := ret[0].([]models.Track)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBoundedTracksByAlbumId indicates an expected call of GetBoundedTracksByAlbumId
-func (mr *MockUseCaseMockRecorder) GetBoundedTracksByAlbumId(aId, start, end interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) GetBoundedTracksByAlbumId(aId, start, end, uID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByAlbumId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedTracksByAlbumId), aId, start, end)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByAlbumId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedTracksByAlbumId), aId, start, end, uID)
 }
 
 // GetBoundedTracksByPlaylistId mocks base method
-func (m *MockUseCase) GetBoundedTracksByPlaylistId(plId string, start, end uint64) ([]models.Track, error) {
+func (m *MockUseCase) GetBoundedTracksByPlaylistId(plId string, start, end uint64, uID string) ([]models.Track, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBoundedTracksByPlaylistId", plId, start, end)
+	ret := m.ctrl.Call(m, "GetBoundedTracksByPlaylistId", plId, start, end, uID)
 	ret0, _ := ret[0].([]models.Track)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetBoundedTracksByPlaylistId indicates an expected call of GetBoundedTracksByPlaylistId
-func (mr *MockUseCaseMockRecorder) GetBoundedTracksByPlaylistId(plId, start, end interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) GetBoundedTracksByPlaylistId(plId, start, end, uID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByPlaylistId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedTracksByPlaylistId), plId, start, end)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoundedTracksByPlaylistId", reflect.TypeOf((*MockUseCase)(nil).GetBoundedTracksByPlaylistId), plId, start, end, uID)
 }
 
 // Search mocks base method
@@ -106,4 +106,33 @@ func (m *MockUseCase) Search(text string, count uint) ([]models.TrackSearch, err
 func (mr *MockUseCaseMockRecorder) Search(text, count interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockUseCase)(nil).Search), text, count)
+}
+
+// GetUserTracks mocks base method
+func (m *MockUseCase) GetUserTracks(uID string) ([]models.Track, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserTracks", uID)
+	ret0, _ := ret[0].([]models.Track)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserTracks indicates an expected call of GetUserTracks
+func (mr *MockUseCaseMockRecorder) GetUserTracks(uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTracks", reflect.TypeOf((*MockUseCase)(nil).GetUserTracks), uID)
+}
+
+// RateTrack mocks base method
+func (m *MockUseCase) RateTrack(uID, tID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RateTrack", uID, tID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RateTrack indicates an expected call of RateTrack
+func (mr *MockUseCaseMockRecorder) RateTrack(uID, tID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RateTrack", reflect.TypeOf((*MockUseCase)(nil).RateTrack), uID, tID)
 }

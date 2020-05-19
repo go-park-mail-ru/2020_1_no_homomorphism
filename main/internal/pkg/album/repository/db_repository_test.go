@@ -86,6 +86,7 @@ func (s *Suite) TestGetUserAlbums() {
 		Release:    "12-01-1999",
 		ArtistName: "artist_name",
 		ArtistId:   "1234123",
+		IsLiked:    true,
 	},
 	}
 
