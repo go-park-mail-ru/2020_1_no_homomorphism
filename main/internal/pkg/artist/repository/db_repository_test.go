@@ -148,3 +148,36 @@ func (s *Suite) TestSearch() {
 
 	require.Error(s.T(), err)
 }
+
+func (s *Suite) TestGetArtistStat() {
+
+	stat := models.ArtistStat{
+		ArtistId:    "14124",
+		Tracks:      52134,
+		Albums:      532,
+		Subscribers: 42324513,
+	}
+
+	query := `SELECT * FROM "artist_stat" WHERE (artist_id = $1)`
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(stat.ArtistId).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "tracks", "albums", "subscribers"}).
+			AddRow(stat.ArtistId, stat.Tracks, stat.Albums, stat.Subscribers))
+
+	res, err := s.repository.GetArtistStat(stat.ArtistId)
+
+	stat.ArtistId = ""
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(stat, res))
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WillReturnError(dbError)
+
+	_, err = s.repository.GetArtistStat(stat.ArtistId)
+
+	require.Error(s.T(), err)
+}

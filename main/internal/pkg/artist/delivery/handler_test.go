@@ -31,6 +31,16 @@ var artist2 = models.Artist{
 	Genre: "rock",
 }
 
+var testUser = models.User{
+	Id:       "1234",
+	Password: "76453647fvd",
+	Name:     "TestName",
+	Login:    "nnnagibator",
+	Sex:      "Man",
+	Image:    "/static/avatar/default.png",
+	Email:    "klsJDLKfj@mail.ru",
+}
+
 func init() {
 	artistHandler.Log = logger.NewLogger(os.Stdout)
 }
@@ -255,6 +265,170 @@ func TestGetArtistStat(t *testing.T) {
 			Handler(handler).
 			Method("Get").
 			URL("/api/v1/artists/stat").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+}
+
+func TestSubscribe(t *testing.T) {
+	t.Run("Subscribe-OK", func(t *testing.T) {
+		id := "43423"
+
+		handler := middleware.AuthMiddlewareMock(
+			middleware.SetMuxVars(artistHandler.Subscribe, "id", id),
+			true,
+			testUser,
+			"",
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := artist.NewMockUseCase(ctrl)
+		artistHandler.ArtistUC = m
+
+		m.EXPECT().
+			Subscription(id, testUser.Id).
+			Return(nil)
+
+		apitest.New("Subscribe-OK").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusOK).
+			End()
+	})
+	t.Run("Subscribe-NoAuth", func(t *testing.T) {
+		apitest.New("Subscribe-NoAuth").
+			Handler(http.HandlerFunc(artistHandler.Subscribe)).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+	t.Run("Subscribe-NoMuxVars", func(t *testing.T) {
+		handler := middleware.AuthMiddlewareMock(
+			artistHandler.Subscribe,
+			true,
+			testUser,
+			"",
+		)
+
+		apitest.New("Subscribe-NoMuxVars").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+	t.Run("Subscribe-Error", func(t *testing.T) {
+		id := "43423"
+
+		handler := middleware.AuthMiddlewareMock(
+			middleware.SetMuxVars(artistHandler.Subscribe, "id", id),
+			true,
+			testUser,
+			"",
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := artist.NewMockUseCase(ctrl)
+		artistHandler.ArtistUC = m
+
+		testError := errors.New("test error")
+
+		m.EXPECT().
+			Subscription(id, testUser.Id).
+			Return(testError)
+
+		apitest.New("Subscribe-Error").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+}
+
+func TestSubscriptionList(t *testing.T) {
+	t.Run("SubscriptionList-OK", func(t *testing.T) {
+		handler := middleware.AuthMiddlewareMock(
+			artistHandler.SubscriptionList,
+			true,
+			testUser,
+			"",
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := artist.NewMockUseCase(ctrl)
+		artistHandler.ArtistUC = m
+
+		subList := []models.ArtistSearch{
+			{
+				ArtistID: "123",
+				Name:     "test",
+				Image:    "image",
+			},
+			{
+				ArtistID: "43124",
+				Name:     "test2",
+				Image:    "image2",
+			},
+		}
+
+		m.EXPECT().
+			SubscriptionList(testUser.Id).
+			Return(subList, nil)
+
+		jsonData, err := json.Marshal(subList)
+		assert.NoError(t, err)
+
+		apitest.New("SubscriptionList-OK").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Body(string(jsonData)).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("SubscriptionList-NoAuth", func(t *testing.T) {
+		apitest.New("SubscriptionList-NoAuth").
+			Handler(http.HandlerFunc(artistHandler.SubscriptionList)).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+
+	t.Run("SubscriptionList-Error", func(t *testing.T) {
+		handler := middleware.AuthMiddlewareMock(
+			artistHandler.SubscriptionList,
+			true,
+			testUser,
+			"",
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := artist.NewMockUseCase(ctrl)
+		artistHandler.ArtistUC = m
+
+		testError := errors.New("test error")
+
+		m.EXPECT().
+			SubscriptionList(testUser.Id).
+			Return(nil, testError)
+
+		apitest.New("SubscriptionList-Error").
+			Handler(handler).
+			Method("Get").
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()

@@ -174,3 +174,45 @@ func (s *Suite) TestDeleteTrackFromPlaylist() {
 
 	require.Error(s.T(), err)
 }
+
+func (s *Suite) TestAddTrackToPlaylist() {
+	var plID int64 = 53452
+	var tID int64 = 23423425
+	var index int64 = 0
+
+	pl := models.PlaylistTracks{
+		PlaylistID: strconv.FormatInt(plID, 10),
+		TrackID:    strconv.FormatInt(tID, 10),
+		Index:      strconv.FormatInt(index, 10),
+		Image:      "default",
+	}
+
+	query := `INSERT INTO "playlist_tracks" ("playlist_id","track_id","index","image") VALUES ($1,$2,$3,$4) RETURNING "playlist_tracks"."playlist_id"`
+
+	s.mock.ExpectBegin()
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(plID, tID, index, pl.Image).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).
+		AddRow(plID))
+
+	s.mock.ExpectCommit()
+
+	err := s.repository.AddTrackToPlaylist(pl)
+
+	require.NoError(s.T(), err)
+
+	//test on db error
+	dbError := errors.New("db_error")
+
+	s.mock.ExpectBegin()
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(plID, tID, index, pl.Image).WillReturnError(dbError)
+
+	s.mock.ExpectRollback()
+
+	err = s.repository.AddTrackToPlaylist(pl)
+
+	require.Error(s.T(), err)
+}

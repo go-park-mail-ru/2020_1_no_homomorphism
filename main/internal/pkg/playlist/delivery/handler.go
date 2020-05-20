@@ -313,9 +313,11 @@ func (h *PlaylistHandler) AddSharedPlaylist(w http.ResponseWriter, r *http.Reque
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	output := models.Playlist{Id: id}
+	//output := models.Playlist{Id: id}
 
-	err = json.NewEncoder(w).Encode(output)
+	err = json.NewEncoder(w).Encode(struct {
+		Id string `json:"id"`
+	}{id})
 
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to encode json"+err.Error())

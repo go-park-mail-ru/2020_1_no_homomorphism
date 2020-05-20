@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
@@ -16,10 +17,10 @@ import (
 
 type Suite struct {
 	suite.Suite
-	DB   *gorm.DB
-	mock sqlmock.Sqlmock
-
+	DB         *gorm.DB
+	mock       sqlmock.Sqlmock
 	repository DbAlbumRepository
+	albums     []models.Album
 }
 
 func (s *Suite) SetupSuite() {
@@ -34,6 +35,27 @@ func (s *Suite) SetupSuite() {
 	s.DB, err = gorm.Open("postgres", db)
 	require.NoError(s.T(), err)
 	s.DB.LogMode(false)
+
+	s.albums = []models.Album{
+		{
+			Id:         "123",
+			Name:       "test-name",
+			Image:      "img-test",
+			Release:    "12-01-1999",
+			ArtistName: "artist_name",
+			ArtistId:   "1234123",
+			IsLiked:    false,
+		},
+		{
+			Id:         "523523",
+			Name:       "te5235sdfgst-name",
+			Image:      "img-test3",
+			Release:    "11-11-2011",
+			ArtistName: "kek",
+			ArtistId:   "2344123",
+			IsLiked:    false,
+		},
+	}
 
 	s.repository = NewDbAlbumRepository(s.DB)
 }
@@ -79,16 +101,9 @@ func (s *Suite) TestAlbumById() {
 }
 
 func (s *Suite) TestGetUserAlbums() {
-	album := []models.Album{{
-		Id:         "123",
-		Name:       "test-name",
-		Image:      "img-test",
-		Release:    "12-01-1999",
-		ArtistName: "artist_name",
-		ArtistId:   "1234123",
-		IsLiked:    true,
-	},
-	}
+	album := s.albums
+
+	album[0].IsLiked = true
 
 	loc := time.Local
 	testTime := time.Date(1999, 1, 12, 0, 0, 0, 0, loc)
@@ -101,7 +116,7 @@ func (s *Suite) TestGetUserAlbums() {
 	res, err := s.repository.GetUserAlbums(album[0].Id)
 
 	require.NoError(s.T(), err)
-	require.Nil(s.T(), deep.Equal(album, res))
+	require.Nil(s.T(), deep.Equal(album[:1], res))
 
 	//test on db error
 	dbError := errors.New("db_error")
@@ -143,6 +158,39 @@ func (s *Suite) TestSearch() {
 		WillReturnError(dbError)
 
 	_, err = s.repository.Search(text, uint(count))
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestGetBoundedAlbumsByArtistId() {
+	var start uint64 = 15
+	var end uint64 = 30
+	limit := end - start
+
+	album := s.albums
+
+	testTime1, _ := time.Parse("02-01-2006", album[0].Release)
+	testTime2, _ := time.Parse("02-01-2006", album[1].Release)
+
+	query := fmt.Sprintf(`SELECT * FROM "albums" WHERE (artist_id = $1) ORDER BY "release" LIMIT %d OFFSET %d`, limit, start)
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(album[0].ArtistId).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "release", "image", "artist_id", "artist_name"}).
+			AddRow(album[0].Id, album[0].Name, testTime1, album[0].Image, album[0].ArtistId, album[0].ArtistName).
+			AddRow(album[1].Id, album[1].Name, testTime2, album[1].Image, album[1].ArtistId, album[1].ArtistName))
+
+	res, err := s.repository.GetBoundedAlbumsByArtistId(album[0].ArtistId, start, end)
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(album, res))
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WillReturnError(dbError)
+
+	_, err = s.repository.GetBoundedAlbumsByArtistId(album[0].ArtistId, start, end)
 
 	require.Error(s.T(), err)
 }

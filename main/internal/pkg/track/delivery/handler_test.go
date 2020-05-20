@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang/mock/gomock"
-	"github.com/steinfletcher/apitest"
-	"github.com/stretchr/testify/assert"
-	"net/http"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
+	"github.com/golang/mock/gomock"
+	"github.com/steinfletcher/apitest"
+	"github.com/stretchr/testify/assert"
+	"net/http"
 	"os"
 	"testing"
 )
@@ -183,7 +183,6 @@ func TestGetBoundedArtistTracks(t *testing.T) {
 			GetBoundedTracksByArtistId(artistId, startUint, endUint, "").
 			Return([]models.Track{}, testError)
 
-
 		apitest.New("GetBoundedArtistTracks-UseCaseError").
 			Handler(vars).
 			Method("Get").
@@ -192,7 +191,6 @@ func TestGetBoundedArtistTracks(t *testing.T) {
 			End()
 	})
 }
-
 
 func TestGetBoundedAlbumTracks(t *testing.T) {
 	t.Run("GetBoundedAlbumTracks-OK", func(t *testing.T) {
@@ -263,10 +261,169 @@ func TestGetBoundedAlbumTracks(t *testing.T) {
 			GetBoundedTracksByAlbumId(artistId, startUint, endUint, "").
 			Return([]models.Track{}, testError)
 
-
 		apitest.New("GetBoundedAlbumTracks-UseCaseError").
 			Handler(vars).
 			Method("Get").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+}
+
+var testUser = models.User{
+	Id:       "1234",
+	Password: "76453647fvd",
+	Name:     "TestName",
+	Login:    "nnnagibator",
+	Sex:      "Man",
+	Image:    "/static/avatar/default.png",
+	Email:    "klsJDLKfj@mail.ru",
+}
+
+func TestGetUserTracks(t *testing.T) {
+	t.Run("GetUserTracks-OK", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := track.NewMockUseCase(ctrl)
+		trackHandler.TrackUC = m
+
+		tracksArray := []models.Track{testTrack, testTrack2}
+		tracksMarshal, err := json.Marshal(tracksArray)
+		assert.NoError(t, err)
+
+		handler := middleware.AuthMiddlewareMock(trackHandler.GetUserTracks, true, testUser, "")
+
+		m.EXPECT().
+			GetUserTracks(testUser.Id).
+			Return(tracksArray, nil)
+
+		str := fmt.Sprintf(`{"tracks":%v}`, string(tracksMarshal))
+
+		apitest.New("GetUserTracks-OK").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Body(str).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("GetUserTracks-NoAuth", func(t *testing.T) {
+		apitest.New("GetUserTracks-NoAuth").
+			Handler(http.HandlerFunc(trackHandler.GetUserTracks)).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+
+	t.Run("GetUserTracks-Error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := track.NewMockUseCase(ctrl)
+		trackHandler.TrackUC = m
+
+		testError := errors.New("test error")
+
+		handler := middleware.AuthMiddlewareMock(trackHandler.GetUserTracks, true, testUser, "")
+
+		m.EXPECT().
+			GetUserTracks(testUser.Id).
+			Return([]models.Track{}, testError)
+
+		apitest.New("GetUserTracks-Error").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+}
+
+func TestRateTrack(t *testing.T) {
+	t.Run("RateTrack-OK", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := track.NewMockUseCase(ctrl)
+		trackHandler.TrackUC = m
+
+		handler := middleware.AuthMiddlewareMock(
+			middleware.SetMuxVars(
+				trackHandler.RateTrack,
+				"id", testTrack.Id),
+			true,
+			testUser,
+			"")
+
+		m.EXPECT().
+			RateTrack(testUser.Id, testTrack.Id).
+			Return(nil)
+
+		apitest.New("RateTrack-OK").
+			Handler(handler).
+			Method("POST").
+			Expect(t).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("RateTrack-NotAuth", func(t *testing.T) {
+		apitest.New("RateTrack-NotAuth").
+			Handler(http.HandlerFunc(trackHandler.RateTrack)).
+			Method("POST").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+
+	t.Run("RateTrack-NoMuxVars", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := track.NewMockUseCase(ctrl)
+		trackHandler.TrackUC = m
+
+		handler := middleware.AuthMiddlewareMock(
+			trackHandler.RateTrack,
+			true,
+			testUser,
+			"")
+
+		apitest.New("RateTrack-NoMuxVars").
+			Handler(handler).
+			Method("POST").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+
+	t.Run("RateTrack-Error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := track.NewMockUseCase(ctrl)
+		trackHandler.TrackUC = m
+
+		handler := middleware.AuthMiddlewareMock(
+			middleware.SetMuxVars(
+				trackHandler.RateTrack,
+				"id", testTrack.Id),
+			true,
+			testUser,
+			"")
+
+		testError := errors.New("test error")
+
+		m.EXPECT().
+			RateTrack(testUser.Id, testTrack.Id).
+			Return(testError)
+
+		apitest.New("RateTrack-Error").
+			Handler(handler).
+			Method("POST").
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()

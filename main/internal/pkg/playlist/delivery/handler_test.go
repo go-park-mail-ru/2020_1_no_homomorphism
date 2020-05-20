@@ -996,3 +996,114 @@ func TestDeleteTrackFromPlaylist(t *testing.T) { //todo check errors, body check
 			End()
 	})
 }
+
+func TestAddSharedPlaylist(t *testing.T) {
+	t.Run("AddSharedPlaylist-OK", func(t *testing.T) {
+		id := "123"
+
+		handler := middleware.SetMuxVars(
+			middleware.AuthMiddlewareMock(
+				plHandler.AddSharedPlaylist, true, testUser, ""),
+			"id",
+			id,
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := playlist.NewMockUseCase(ctrl)
+
+		plHandler.PlaylistUC = m
+
+		m.EXPECT().
+			CheckAccessToPlaylist(testUser.Id, id, false).
+			Return(true, nil)
+
+		newID := "1234243"
+
+		m.EXPECT().
+			AddSharedPlaylist(id, testUser.Id).
+			Return(newID, nil)
+
+		apitest.New("AddSharedPlaylist-OK").
+			Handler(handler).
+			Method("POST").
+			Expect(t).
+			Body(fmt.Sprintf(`{"id": "%s"}`, newID)).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("AddSharedPlaylist-NoMuxVars", func(t *testing.T) {
+		apitest.New("AddSharedPlaylist-NoMuxVars").
+			Handler(http.HandlerFunc(plHandler.AddSharedPlaylist)).
+			Method("POST").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+
+	t.Run("AddSharedPlaylist-NoAuth", func(t *testing.T) {
+		id := "123"
+
+		handler := middleware.SetMuxVars(
+			middleware.AuthMiddlewareMock(
+				plHandler.AddSharedPlaylist, false, models.User{}, ""),
+			"id",
+			id,
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := playlist.NewMockUseCase(ctrl)
+
+		plHandler.PlaylistUC = m
+
+		m.EXPECT().
+			CheckAccessToPlaylist("", id, false).
+			Return(false, nil)
+
+		apitest.New("AddSharedPlaylist-NoAuth").
+			Handler(handler).
+			Method("POST").
+			Expect(t).
+			Status(http.StatusForbidden).
+			End()
+	})
+
+	t.Run("AddSharedPlaylist-Error", func(t *testing.T) {
+		id := "123"
+
+		handler := middleware.SetMuxVars(
+			middleware.AuthMiddlewareMock(
+				plHandler.AddSharedPlaylist, true, testUser, ""),
+			"id",
+			id,
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := playlist.NewMockUseCase(ctrl)
+
+		plHandler.PlaylistUC = m
+
+		m.EXPECT().
+			CheckAccessToPlaylist(testUser.Id, id, false).
+			Return(true, nil)
+
+		testError := errors.New("test error")
+
+		m.EXPECT().
+			AddSharedPlaylist(id, testUser.Id).
+			Return("", testError)
+
+		apitest.New("AddSharedPlaylist-Error").
+			Handler(handler).
+			Method("POST").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+}
