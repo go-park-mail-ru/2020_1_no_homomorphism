@@ -3,6 +3,7 @@ package delivery
 import (
 	"encoding/json"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/artist"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
@@ -24,7 +25,7 @@ func (h *ArtistHandler) GetFullArtistInfo(w http.ResponseWriter, r *http.Request
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		user = models.User{Id: ""}
 	}
@@ -112,7 +113,7 @@ func (h *ArtistHandler) GetArtistStat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ArtistHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "artist delivery", "Subscription", "failed to get from ctx")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -136,7 +137,7 @@ func (h *ArtistHandler) Subscribe(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ArtistHandler) SubscriptionList(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetUserPlaylists", "failed to get from ctx")
 		w.WriteHeader(http.StatusInternalServerError)

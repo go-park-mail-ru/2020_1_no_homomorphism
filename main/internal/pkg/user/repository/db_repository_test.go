@@ -104,8 +104,7 @@ func (s *Suite) TestUpdate() {
 
 	s.getMockSelectAll(user, hash)
 
-	var id int64
-	id = 1
+	var id int64 = 1
 	s.mock.ExpectBegin()
 	s.mock.ExpectExec("UPDATE").WithArgs(user.Login, hash, userSettings.Name, userSettings.Email, user.Sex, user.Image, id).
 		WillReturnResult(sqlmock.NewResult(1, 1))

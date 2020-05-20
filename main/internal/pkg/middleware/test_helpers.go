@@ -15,10 +15,10 @@ type VarsPair struct {
 func AuthMiddlewareMock(next http.HandlerFunc, auth bool, user models.User, sessionId string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		ctx = context.WithValue(ctx, "isAuth", auth)
-		ctx = context.WithValue(ctx, "user", user)
-		ctx = context.WithValue(ctx, "session_id", sessionId)
-		ctx = context.WithValue(ctx, "isCSRFTokenCorrect", true)
+		ctx = context.WithValue(ctx, AuthKey, auth)
+		ctx = context.WithValue(ctx, UserKey, user)
+		ctx = context.WithValue(ctx, SessionIDKey, sessionId)
+		ctx = context.WithValue(ctx, CSRFTokenCorrect, true)
 		next(w, r.WithContext(ctx))
 	}
 }

@@ -18,15 +18,15 @@ type TestStruct struct {
 }
 
 func (ts TestStruct) MockHandler(w http.ResponseWriter, r *http.Request) {
-	ctxID, ok := r.Context().Value("id").(string)
+	ctxID, ok := r.Context().Value(Id).(string)
 	assert.T(ts.t, ok, true)
 	assert.Equal(ts.t, ts.id, ctxID)
 
-	ctxStart, ok := r.Context().Value("start").(uint64)
+	ctxStart, ok := r.Context().Value(Start).(uint64)
 	assert.T(ts.t, ok, true)
 	assert.Equal(ts.t, ts.start, ctxStart)
 
-	ctxEnd, ok := r.Context().Value("end").(uint64)
+	ctxEnd, ok := r.Context().Value(End).(uint64)
 	assert.T(ts.t, ok, true)
 	assert.Equal(ts.t, ts.end, ctxEnd)
 }

@@ -70,7 +70,6 @@ func (uc *UserUseCase) UpdateAvatar(user models.User, file io.Reader, fileType s
 		if err != nil {
 			if err == io.EOF {
 				write = false
-				err = nil
 				continue
 			}
 			return "", fmt.Errorf("failed to read file: %v", err)

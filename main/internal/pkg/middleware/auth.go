@@ -9,6 +9,14 @@ import (
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user"
 )
 
+type CtxKey string
+
+const (
+	AuthKey      CtxKey = "isAuth"
+	UserKey      CtxKey = "user"
+	SessionIDKey CtxKey = "session_id"
+)
+
 type AuthMidleware struct {
 	SessionDelivery session.AuthCheckerClient
 	UserUC          user.UseCase
@@ -28,25 +36,25 @@ func (m *AuthMidleware) Auth(next http.HandlerFunc, passNext bool) http.Handler 
 		ctx := r.Context()
 		cookie, err := r.Cookie("session_id")
 		if err != nil {
-			ctx = context.WithValue(ctx, "isAuth", false)
+			ctx = context.WithValue(ctx, AuthKey, false)
 			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
 		sess, err := m.SessionDelivery.Check(context.Background(), &session.SessionID{ID: cookie.Value})
 		if err != nil {
-			ctx = context.WithValue(ctx, "isAuth", false)
+			ctx = context.WithValue(ctx, AuthKey, false)
 			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
 		profile, err := m.UserUC.GetUserByLogin(sess.Login)
 		if err != nil {
-			ctx = context.WithValue(ctx, "isAuth", false)
+			ctx = context.WithValue(ctx, AuthKey, false)
 			m.passNext(passNext, next, w, r, ctx)
 			return
 		}
-		ctx = context.WithValue(ctx, "isAuth", true)
-		ctx = context.WithValue(ctx, "user", profile)
-		ctx = context.WithValue(ctx, "session_id", cookie.Value)
+		ctx = context.WithValue(ctx, AuthKey, true)
+		ctx = context.WithValue(ctx, UserKey, profile)
+		ctx = context.WithValue(ctx, SessionIDKey, cookie.Value)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

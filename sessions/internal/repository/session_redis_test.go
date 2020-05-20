@@ -76,11 +76,12 @@ func (s *Suite) TestDelete() {
 	require.NoError(s.T(), s.redisServer.Set(sID.String(), testValue))
 
 	value, err := s.redisServer.Get(sID.String())
+	require.NoError(s.T(), err)
 	require.Equal(s.T(), value, testValue)
 
 	require.NoError(s.T(), s.session.Delete(sID.String()))
 
-	value, err = s.redisServer.Get(sID.String())
+	_, err = s.redisServer.Get(sID.String())
 	require.Equal(s.T(), err, errors.New("ERR no such key"))
 
 	//test on closed connection
