@@ -1,6 +1,4 @@
 # Исключение по паттерну из issue list
-run:
-  modules-download-mode: vendor
 issues:
   exclude:
     - w.Write
