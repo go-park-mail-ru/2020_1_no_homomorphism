@@ -228,9 +228,16 @@ func StartNew() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Failed to export env vars: %v", err)
 	}
+	fmt.Println(os.Getenv("DB_CONN"))
+	fmt.Println(os.Getenv("CSRF_SECRET"))
+	fmt.Println(os.Getenv("MAIN_CONFIG_PATH"))
+	fmt.Println(os.Getenv("MAIN_CONFIG_NAME"))
+
+
 	if err := config.ExportConfig(); err != nil {
 		log.Fatalf("Failed to export config: %v", err)
 	}
+
 
 	db, err := gorm.Open("postgres", os.Getenv("DB_CONN"))
 	if err != nil {
