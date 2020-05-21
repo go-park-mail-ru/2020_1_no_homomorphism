@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/2020_1_no_homomorphism/no_homo_main/config"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/csrf"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	users "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/user"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
@@ -27,14 +28,14 @@ type UserHandler struct {
 }
 
 func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
-	token, ok := r.Context().Value("isCSRFTokenCorrect").(bool)
+	token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
 	if !token || !ok {
 		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "delivery", "Update", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -219,7 +220,7 @@ func (h *UserHandler) Profile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) SelfProfile(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context().Value("user")
+	ctx := r.Context().Value(middleware.UserKey)
 	user, ok := ctx.(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "delivery", "selfProfile", "failed to get from context")
@@ -241,13 +242,13 @@ func (h *UserHandler) SelfProfile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) UpdateAvatar(w http.ResponseWriter, r *http.Request) {
-	token, ok := r.Context().Value("isCSRFTokenCorrect").(bool)
+	token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
 	if !token || !ok {
 		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "delivery", "UpdateAvatar", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -308,7 +309,7 @@ func (h *UserHandler) CheckAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) GetCSRF(w http.ResponseWriter, r *http.Request) {
-	sId, ok := r.Context().Value("session_id").(string)
+	sId, ok := r.Context().Value(middleware.SessionIDKey).(string)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "user delivery", "GetCSRF", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -329,7 +330,7 @@ func (h *UserHandler) GetCSRF(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *UserHandler) checkNoAuth(w http.ResponseWriter, r *http.Request) error {
-	auth, ok := r.Context().Value("isAuth").(bool)
+	auth, ok := r.Context().Value(middleware.AuthKey).(bool)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "user delivery", "checkNoAuth", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)

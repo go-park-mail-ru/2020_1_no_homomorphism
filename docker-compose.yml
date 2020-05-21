@@ -2,27 +2,21 @@ version: '3'
 
 services:
   main:
-    build:
-      context: .
-      dockerfile: main/Dockerfile.Multistage
+    image: bulletmys/music_app_main:${MUSIC_APP_VERSION}
     expose:
       - "8081"
     restart: always
     network_mode:
       host
   fileserver:
-    build:
-      context: .
-      dockerfile: fileserver/Dockerfile.Multistage
+    image: bulletmys/music_app_fileserver:${MUSIC_APP_VERSION}
     expose:
       - "8082"
     restart: always
     network_mode:
       host
   sessions:
-    build:
-      context: .
-      dockerfile: sessions/Dockerfile.Multistage
+    image: bulletmys/music_app_sessions:${MUSIC_APP_VERSION}
     restart: always
     expose:
       - "8083"
@@ -56,11 +50,6 @@ services:
       - prometheus
     ports:
       - 3001:3000
-    #    volumes:
-    #      - ./grafana:/var/lib/grafana
-    #      - ./grafana/provisioning/:/etc/grafana/provisioning/
     env_file:
       - ./grafana/config.monitoring
-#    network_mode:
-#      host
     restart: always

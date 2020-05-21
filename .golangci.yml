@@ -1,0 +1,9 @@
+# Исключение по паттерну из issue list
+issues:
+  exclude:
+    - w.Write
+
+# Исключение из errcheck по функции или пакет+функция
+#linters-settings:
+#  errcheck:
+#    ignore: fmt:.*,Write.*

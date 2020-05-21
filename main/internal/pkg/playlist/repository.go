@@ -10,4 +10,6 @@ type Repository interface {
 	GetUserPlaylistsIdByTrack(userID, trackID string) ([]string, error)
 	DeleteTrackFromPlaylist(plID, trackID string) error
 	DeletePlaylist(plID string) error
+	ChangePrivacy(plID string) error
+	GetAllPlaylistTracks(plID string) ([]models.PlaylistTracks, error)
 }

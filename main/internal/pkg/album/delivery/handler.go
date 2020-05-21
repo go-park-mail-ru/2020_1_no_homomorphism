@@ -3,6 +3,7 @@ package delivery
 import (
 	"encoding/json"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/album"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
@@ -23,7 +24,13 @@ func (h *AlbumHandler) GetFullAlbum(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	albumData, err := h.AlbumUC.GetAlbumById(varId)
+
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
+	if !ok {
+		user = models.User{Id: ""}
+	}
+
+	albumData, err := h.AlbumUC.GetAlbumById(varId, user.Id)
 	if err != nil {
 		h.Log.HttpInfo(r.Context(), "failed to get album data"+err.Error(), http.StatusBadRequest)
 		w.WriteHeader(http.StatusBadRequest)
@@ -43,7 +50,7 @@ func (h *AlbumHandler) GetFullAlbum(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AlbumHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "album delivery", "GetUserAlbums", "failed to from ctx")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -73,9 +80,9 @@ func (h *AlbumHandler) GetUserAlbums(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AlbumHandler) GetBoundedAlbumsByArtistId(w http.ResponseWriter, r *http.Request) {
-	artistId, okId := r.Context().Value("id").(string)
-	start, okStart := r.Context().Value("start").(uint64)
-	end, okEnd := r.Context().Value("end").(uint64)
+	artistId, okId := r.Context().Value(middleware.Id).(string)
+	start, okStart := r.Context().Value(middleware.Start).(uint64)
+	end, okEnd := r.Context().Value(middleware.End).(uint64)
 
 	if !okId || !okStart || !okEnd {
 		h.Log.LogWarning(r.Context(), "album delivery", "GetBoundedArtistTracks", "failed to get vars")
@@ -101,6 +108,32 @@ func (h *AlbumHandler) GetBoundedAlbumsByArtistId(w http.ResponseWriter, r *http
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *AlbumHandler) RateAlbum(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "delivery", "RateAlbum", "failed to get from context")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	varId, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	err := h.AlbumUC.RateAlbum(varId, user.Id)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to rate albums"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	w.Write([]byte("kek"))
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }

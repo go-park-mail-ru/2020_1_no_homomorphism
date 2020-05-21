@@ -38,7 +38,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 	"github.com/joho/godotenv"
-	"github.com/kabukky/httpscerts"
 	_ "github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
@@ -163,25 +162,32 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r := mux.NewRouter().PathPrefix(viper.GetString(config.ConfigFields.ApiPrefix)).Subrouter()
 
 	r.Handle("/users/albums", auth.Auth(album.GetUserAlbums, false)).Methods("GET")
-	r.HandleFunc("/albums/{id:[0-9]+}", album.GetFullAlbum).Methods("GET")
+	r.Handle("/albums/{id:[0-9]+}", auth.Auth(album.GetFullAlbum, true)).Methods("GET")
+	r.Handle("/albums/{id:[0-9]+}/rating", auth.Auth(album.RateAlbum, false)).Methods("POST")
 	r.Handle("/artists/{id:[0-9]+}/albums/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(album.GetBoundedAlbumsByArtistId, user.Log)).Methods("GET")
 
-	r.HandleFunc("/artists/{id:[0-9]+}", artist.GetFullArtistInfo).Methods("GET")
+	r.Handle("/users/artists", auth.Auth(artist.SubscriptionList, false)).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}", auth.Auth(artist.GetFullArtistInfo, true)).Methods("GET")
 	r.HandleFunc("/artists/{id:[0-9]+}/stat", artist.GetArtistStat).Methods("GET")
 	r.HandleFunc("/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}/subscription", auth.Auth(artist.Subscribe, false)).Methods("POST") //todo csrf
 
 	r.Handle("/users/playlists", auth.Auth(playlist.GetUserPlaylists, false)).Methods("GET")
-	r.Handle("/playlists/{id:[0-9]+}", auth.Auth(playlist.GetFullPlaylistById, false)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}", auth.Auth(playlist.GetFullPlaylistById, true)).Methods("GET")
 	r.Handle("/playlists/tracks/{id:[0-9]+}", auth.Auth(playlist.GetPlaylistsIDByTrack, false)).Methods("GET")
 	r.Handle("/playlists/tracks", auth.Auth(csrf.CSRFCheck(playlist.AddTrackToPlaylist), false)).Methods("POST")
 	r.Handle("/playlists/new/{name}", auth.Auth(csrf.CSRFCheck(playlist.CreatePlaylist), false)).Methods("POST")
 	r.Handle("/playlists/{id:[0-9]+}", auth.Auth(csrf.CSRFCheck(playlist.DeletePlaylist), false)).Methods("DELETE")
 	r.Handle("/playlists/{playlist:[0-9]+}/tracks/{track:[0-9]+}", auth.Auth(playlist.DeleteTrackFromPlaylist, false)).Methods("DELETE")
-	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(playlist.GetBoundedPlaylistTracks, user.Log), false)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(playlist.GetBoundedPlaylistTracks, user.Log), true)).Methods("GET")
+	r.Handle("/playlists/{id:[0-9]+}/privacy", auth.Auth(playlist.ChangePrivacy, false)).Methods("POST")    //todo csrf
+	r.Handle("/playlists/shared/{id:[0-9]+}", auth.Auth(playlist.AddSharedPlaylist, false)).Methods("POST") //todo csrf
 
+	r.Handle("/users/tracks", auth.Auth(track.GetUserTracks, false)).Methods("GET")
 	r.HandleFunc("/tracks/{id:[0-9]+}", track.GetTrack).Methods("GET")
-	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(track.GetBoundedAlbumTracks, user.Log)).Methods("GET")
-	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", m.BoundedVars(track.GetBoundedArtistTracks, user.Log)).Methods("GET")
+	r.Handle("/tracks/{id:[0-9]+}/rating", auth.Auth(track.RateTrack, false)).Methods("POST")
+	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedAlbumTracks, user.Log), true)).Methods("GET")
+	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedArtistTracks, user.Log), true)).Methods("GET")
 
 	r.Handle("/users", auth.Auth(user.CheckAuth, false))
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
@@ -202,19 +208,6 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	panicMiddleware := m.PanicMiddleware(accessMiddleware, user.Log)
 
 	return panicMiddleware
-}
-
-func generateSSL() {
-	// Проверяем, доступен ли cert файл.
-	err := httpscerts.Check("fullchain.pem", "privkey.pem")
-	// Если он недоступен, то генерируем новый.
-	if err != nil {
-		err = httpscerts.Generate("fullchain.pem", "privkey.pem", "https://127.0.0.1:8081")
-		//err = httpscerts.Generate("cert.pem", "key.pem", "http://89.208.199.170:8001")
-		if err != nil {
-			logrus.Fatal("failed to generate https cert")
-		}
-	}
 }
 
 func StartNew() {
@@ -298,10 +291,7 @@ func StartNew() {
 
 	routes := InitRouter(customLogger, db, csrfToken, sessManager, fileserver)
 
-	generateSSL()
-
 	fmt.Println("Starts server at ", viper.GetString(config.ConfigFields.MainAddr))
-	//err = http.ListenAndServeTLS(viper.GetString(config.ConfigFields.MainAddr), viper.GetString(config.ConfigFields.SSLfullchain), viper.GetString(config.ConfigFields.SSLkey),c.Handler(m.HeadersHandler(routes)))
 	err = http.ListenAndServe(viper.GetString(config.ConfigFields.MainAddr), c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)

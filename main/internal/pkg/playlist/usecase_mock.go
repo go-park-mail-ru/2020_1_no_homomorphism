@@ -79,18 +79,18 @@ func (mr *MockUseCaseMockRecorder) CreatePlaylist(name, uID interface{}) *gomock
 }
 
 // CheckAccessToPlaylist mocks base method
-func (m *MockUseCase) CheckAccessToPlaylist(userId, playlistId string) (bool, error) {
+func (m *MockUseCase) CheckAccessToPlaylist(userId, playlistId string, isStrict bool) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckAccessToPlaylist", userId, playlistId)
+	ret := m.ctrl.Call(m, "CheckAccessToPlaylist", userId, playlistId, isStrict)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CheckAccessToPlaylist indicates an expected call of CheckAccessToPlaylist
-func (mr *MockUseCaseMockRecorder) CheckAccessToPlaylist(userId, playlistId interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) CheckAccessToPlaylist(userId, playlistId, isStrict interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAccessToPlaylist", reflect.TypeOf((*MockUseCase)(nil).CheckAccessToPlaylist), userId, playlistId)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckAccessToPlaylist", reflect.TypeOf((*MockUseCase)(nil).CheckAccessToPlaylist), userId, playlistId, isStrict)
 }
 
 // AddTrackToPlaylist mocks base method
@@ -148,4 +148,33 @@ func (m *MockUseCase) DeletePlaylist(plID string) error {
 func (mr *MockUseCaseMockRecorder) DeletePlaylist(plID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePlaylist", reflect.TypeOf((*MockUseCase)(nil).DeletePlaylist), plID)
+}
+
+// ChangePrivacy mocks base method
+func (m *MockUseCase) ChangePrivacy(plID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ChangePrivacy", plID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ChangePrivacy indicates an expected call of ChangePrivacy
+func (mr *MockUseCaseMockRecorder) ChangePrivacy(plID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ChangePrivacy", reflect.TypeOf((*MockUseCase)(nil).ChangePrivacy), plID)
+}
+
+// AddSharedPlaylist mocks base method
+func (m *MockUseCase) AddSharedPlaylist(plID, uID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddSharedPlaylist", plID, uID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddSharedPlaylist indicates an expected call of AddSharedPlaylist
+func (mr *MockUseCaseMockRecorder) AddSharedPlaylist(plID, uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSharedPlaylist", reflect.TypeOf((*MockUseCase)(nil).AddSharedPlaylist), plID, uID)
 }

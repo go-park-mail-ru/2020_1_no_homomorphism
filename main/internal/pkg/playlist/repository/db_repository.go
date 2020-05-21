@@ -8,10 +8,11 @@ import (
 )
 
 type Playlists struct {
-	Id     uint64 `gorm:"column:id;primary_key"`
-	Name   string `gorm:"column:name"`
-	Image  string `gorm:"column:image"`
-	UserId uint64 `gorm:"column:user_id"`
+	Id      uint64 `gorm:"column:id;primary_key"`
+	Name    string `gorm:"column:name"`
+	Image   string `gorm:"column:image"`
+	UserId  uint64 `gorm:"column:user_id"`
+	Private bool   `gorm:"private"`
 }
 
 type TrackInPlaylist struct {
@@ -33,10 +34,11 @@ func NewDbPlaylistRepository(database *gorm.DB) DbPlaylistRepository {
 
 func toModel(pl Playlists) models.Playlist {
 	return models.Playlist{
-		Id:     strconv.FormatUint(pl.Id, 10),
-		Name:   pl.Name,
-		Image:  pl.Image,
-		UserId: strconv.FormatUint(pl.UserId, 10),
+		Id:      strconv.FormatUint(pl.Id, 10),
+		Name:    pl.Name,
+		Image:   pl.Image,
+		UserId:  strconv.FormatUint(pl.UserId, 10),
+		Private: pl.Private,
 	}
 }
 
@@ -181,4 +183,35 @@ func (pr *DbPlaylistRepository) DeletePlaylist(plID string) error {
 	}
 
 	return nil
+}
+
+func (pr *DbPlaylistRepository) ChangePrivacy(plID string) error {
+	id, err := strconv.ParseUint(plID, 10, 64)
+	if err != nil {
+		return fmt.Errorf("failed to convert playlist id: %v", err)
+	}
+
+	db := pr.db.Exec("update playlists set private = not private where id = ?", id)
+
+	if err := db.Error; err != nil {
+		return fmt.Errorf("query failed: %v", err)
+	}
+
+	return nil
+}
+
+func (pr *DbPlaylistRepository) GetAllPlaylistTracks(plID string) ([]models.PlaylistTracks, error) {
+	var tracks []models.PlaylistTracks
+
+	db := pr.db.
+		Table("playlist_tracks").
+		Where("playlist_id = ?", plID).
+		Find(&tracks)
+
+	err := db.Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to select query: %e", err)
+	}
+
+	return tracks, nil
 }

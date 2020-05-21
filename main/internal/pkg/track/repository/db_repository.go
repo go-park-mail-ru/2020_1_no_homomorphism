@@ -155,3 +155,71 @@ func (tr *DbTrackRepository) Search(text string, count uint) ([]models.TrackSear
 	}
 	return trackSearch, nil
 }
+
+func (tr *DbTrackRepository) GetUserTracks(uID string) ([]models.Track, error) {
+	var tracks []models.Track
+
+	db := tr.db.Raw(
+		"with liked as (select unnest(liked_tracks) as liked_id from users where id = ?)"+
+			"select row_number() over () as index,"+
+			" t.ID as id,"+
+			" t.name as name,"+
+			" a.name as artist,"+
+			" t.duration as duration,"+
+			" t.image as image,"+
+			" artist_id as artist_id,"+
+			" t.link as link"+
+			" from liked join tracks as t on liked.liked_id = t.ID join artists as a on t.artist_id = a.ID"+
+			" order by index desc", uID).Scan(&tracks)
+
+	if err := db.Error; err != nil {
+		return nil, fmt.Errorf("failed to get user tracks: %v", err)
+	}
+	for i := range tracks {
+		tracks[i].IsLiked = true
+	}
+
+	return tracks, nil
+}
+
+func (tr *DbTrackRepository) GetUserLikedTracksIDs(uID string) ([]int64, error) {
+	var dbTracks []struct {
+		ID int64 `gorm:"column:liked_id"`
+	}
+
+	db := tr.db.Raw("select unnest(liked_tracks) as liked_id from users where id = ?", uID).Scan(&dbTracks)
+	if err := db.Error; err != nil {
+		return nil, fmt.Errorf("failed to get user liked tracks: %v", err)
+	}
+
+	tracks := make([]int64, len(dbTracks))
+	for i, elem := range dbTracks {
+		tracks[i] = elem.ID
+	}
+	return tracks, nil
+}
+
+func (tr *DbTrackRepository) RateTrack(uID string, tID string) error {
+	var isLiked struct {
+		IsLiked bool `gorm:"column:is_liked"`
+	}
+
+	db := tr.db.Raw("select ? = any(liked_tracks) as is_liked from users where id = ?", tID, uID).Scan(&isLiked)
+	if err := db.Error; err != nil {
+		return fmt.Errorf("failed to check like: %v", err)
+	}
+
+	if isLiked.IsLiked {
+		db = tr.db.Exec("update users set liked_tracks = array_remove(liked_tracks, ?::INTEGER) where id = ?", tID, uID)
+		if err := db.Error; err != nil {
+			return fmt.Errorf("failed to delete like: %v", err)
+		}
+	} else {
+		db = tr.db.Exec("update users set liked_tracks = liked_tracks || ?::INTEGER where id = ?", tID, uID)
+		if err := db.Error; err != nil {
+			return fmt.Errorf("failed to set like: %v", err)
+		}
+	}
+
+	return nil
+}

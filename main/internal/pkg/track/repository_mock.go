@@ -107,3 +107,47 @@ func (mr *MockRepositoryMockRecorder) Search(text, count interface{}) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockRepository)(nil).Search), text, count)
 }
+
+// GetUserTracks mocks base method
+func (m *MockRepository) GetUserTracks(uID string) ([]models.Track, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserTracks", uID)
+	ret0, _ := ret[0].([]models.Track)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserTracks indicates an expected call of GetUserTracks
+func (mr *MockRepositoryMockRecorder) GetUserTracks(uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserTracks", reflect.TypeOf((*MockRepository)(nil).GetUserTracks), uID)
+}
+
+// GetUserLikedTracksIDs mocks base method
+func (m *MockRepository) GetUserLikedTracksIDs(uID string) ([]int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserLikedTracksIDs", uID)
+	ret0, _ := ret[0].([]int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserLikedTracksIDs indicates an expected call of GetUserLikedTracksIDs
+func (mr *MockRepositoryMockRecorder) GetUserLikedTracksIDs(uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserLikedTracksIDs", reflect.TypeOf((*MockRepository)(nil).GetUserLikedTracksIDs), uID)
+}
+
+// RateTrack mocks base method
+func (m *MockRepository) RateTrack(uID, tID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RateTrack", uID, tID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RateTrack indicates an expected call of RateTrack
+func (mr *MockRepositoryMockRecorder) RateTrack(uID, tID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RateTrack", reflect.TypeOf((*MockRepository)(nil).RateTrack), uID, tID)
+}

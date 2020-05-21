@@ -534,6 +534,8 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.ArtistID = string(in.String())
 		case "link":
 			out.Link = string(in.String())
+		case "is_liked":
+			out.IsLiked = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -582,6 +584,11 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		const prefix string = ",\"link\":"
 		out.RawString(prefix)
 		out.String(string(in.Link))
+	}
+	{
+		const prefix string = ",\"is_liked\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsLiked))
 	}
 	out.RawByte('}')
 }
@@ -883,7 +890,112 @@ func (v *PlaylistsID) UnmarshalJSON(data []byte) error {
 func (v *PlaylistsID) UnmarshalEasyJSON(l *jlexer.Lexer) {
 	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels7(l, v)
 }
-func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(in *jlexer.Lexer, out *PlaylistTracks) {
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(in *jlexer.Lexer, out *PlaylistTracksArray) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "id":
+			out.Id = string(in.String())
+		case "tracks":
+			if in.IsNull() {
+				in.Skip()
+				out.Tracks = nil
+			} else {
+				in.Delim('[')
+				if out.Tracks == nil {
+					if !in.IsDelim(']') {
+						out.Tracks = make([]Track, 0, 1)
+					} else {
+						out.Tracks = []Track{}
+					}
+				} else {
+					out.Tracks = (out.Tracks)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v13 Track
+					(v13).UnmarshalEasyJSON(in)
+					out.Tracks = append(out.Tracks, v13)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(out *jwriter.Writer, in PlaylistTracksArray) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"id\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.Id))
+	}
+	{
+		const prefix string = ",\"tracks\":"
+		out.RawString(prefix)
+		if in.Tracks == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v14, v15 := range in.Tracks {
+				if v14 > 0 {
+					out.RawByte(',')
+				}
+				(v15).MarshalEasyJSON(out)
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v PlaylistTracksArray) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v PlaylistTracksArray) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *PlaylistTracksArray) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *PlaylistTracksArray) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(l, v)
+}
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(in *jlexer.Lexer, out *PlaylistTracks) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -920,7 +1032,7 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(out *jwriter.Writer, in PlaylistTracks) {
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(out *jwriter.Writer, in PlaylistTracks) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -950,27 +1062,27 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 // MarshalJSON supports json.Marshaler interface
 func (v PlaylistTracks) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(&w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v PlaylistTracks) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *PlaylistTracks) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(&r, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *PlaylistTracks) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels8(l, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(l, v)
 }
-func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(in *jlexer.Lexer, out *Playlist) {
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(in *jlexer.Lexer, out *Playlist) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -995,6 +1107,10 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.Name = string(in.String())
 		case "image":
 			out.Image = string(in.String())
+		case "user_id":
+			out.UserId = string(in.String())
+		case "private":
+			out.Private = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -1005,7 +1121,7 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(out *jwriter.Writer, in Playlist) {
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(out *jwriter.Writer, in Playlist) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1024,33 +1140,214 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		out.RawString(prefix)
 		out.String(string(in.Image))
 	}
+	{
+		const prefix string = ",\"user_id\":"
+		out.RawString(prefix)
+		out.String(string(in.UserId))
+	}
+	{
+		const prefix string = ",\"private\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.Private))
+	}
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
 func (v Playlist) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(&w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Playlist) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Playlist) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(&r, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Playlist) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels9(l, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(l, v)
 }
-func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(in *jlexer.Lexer, out *ArtistStat) {
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(in *jlexer.Lexer, out *Artists) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "artists":
+			if in.IsNull() {
+				in.Skip()
+				out.Artists = nil
+			} else {
+				in.Delim('[')
+				if out.Artists == nil {
+					if !in.IsDelim(']') {
+						out.Artists = make([]Artist, 0, 1)
+					} else {
+						out.Artists = []Artist{}
+					}
+				} else {
+					out.Artists = (out.Artists)[:0]
+				}
+				for !in.IsDelim(']') {
+					var v16 Artist
+					(v16).UnmarshalEasyJSON(in)
+					out.Artists = append(out.Artists, v16)
+					in.WantComma()
+				}
+				in.Delim(']')
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(out *jwriter.Writer, in Artists) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"artists\":"
+		out.RawString(prefix[1:])
+		if in.Artists == nil && (out.Flags&jwriter.NilSliceAsEmpty) == 0 {
+			out.RawString("null")
+		} else {
+			out.RawByte('[')
+			for v17, v18 := range in.Artists {
+				if v17 > 0 {
+					out.RawByte(',')
+				}
+				(v18).MarshalEasyJSON(out)
+			}
+			out.RawByte(']')
+		}
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v Artists) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v Artists) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *Artists) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *Artists) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(l, v)
+}
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(in *jlexer.Lexer, out *ArtistSubscription) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeString()
+		in.WantColon()
+		if in.IsNull() {
+			in.Skip()
+			in.WantComma()
+			continue
+		}
+		switch key {
+		case "artist_id":
+			out.ArtistID = string(in.String())
+		case "user_id":
+			out.USerID = string(in.String())
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(out *jwriter.Writer, in ArtistSubscription) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"artist_id\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.ArtistID))
+	}
+	{
+		const prefix string = ",\"user_id\":"
+		out.RawString(prefix)
+		out.String(string(in.USerID))
+	}
+	out.RawByte('}')
+}
+
+// MarshalJSON supports json.Marshaler interface
+func (v ArtistSubscription) MarshalJSON() ([]byte, error) {
+	w := jwriter.Writer{}
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(&w, v)
+	return w.Buffer.BuildBytes(), w.Error
+}
+
+// MarshalEasyJSON supports easyjson.Marshaler interface
+func (v ArtistSubscription) MarshalEasyJSON(w *jwriter.Writer) {
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(w, v)
+}
+
+// UnmarshalJSON supports json.Unmarshaler interface
+func (v *ArtistSubscription) UnmarshalJSON(data []byte) error {
+	r := jlexer.Lexer{Data: data}
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(&r, v)
+	return r.Error()
+}
+
+// UnmarshalEasyJSON supports easyjson.Unmarshaler interface
+func (v *ArtistSubscription) UnmarshalEasyJSON(l *jlexer.Lexer) {
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(l, v)
+}
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(in *jlexer.Lexer, out *ArtistStat) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1087,7 +1384,7 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(out *jwriter.Writer, in ArtistStat) {
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(out *jwriter.Writer, in ArtistStat) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1117,27 +1414,27 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 // MarshalJSON supports json.Marshaler interface
 func (v ArtistStat) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(&w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v ArtistStat) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *ArtistStat) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(&r, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *ArtistStat) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels10(l, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(l, v)
 }
-func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(in *jlexer.Lexer, out *ArtistSearch) {
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(in *jlexer.Lexer, out *ArtistSearch) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1172,7 +1469,7 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(out *jwriter.Writer, in ArtistSearch) {
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(out *jwriter.Writer, in ArtistSearch) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1197,27 +1494,27 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 // MarshalJSON supports json.Marshaler interface
 func (v ArtistSearch) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(&w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v ArtistSearch) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *ArtistSearch) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(&r, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *ArtistSearch) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels11(l, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(l, v)
 }
-func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(in *jlexer.Lexer, out *Artist) {
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels15(in *jlexer.Lexer, out *Artist) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1244,6 +1541,8 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.Image = string(in.String())
 		case "genre":
 			out.Genre = string(in.String())
+		case "is_subscribed":
+			out.IsSubscribed = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -1254,7 +1553,7 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(out *jwriter.Writer, in Artist) {
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels15(out *jwriter.Writer, in Artist) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1278,33 +1577,38 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		out.RawString(prefix)
 		out.String(string(in.Genre))
 	}
+	{
+		const prefix string = ",\"is_subscribed\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsSubscribed))
+	}
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
 func (v Artist) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(&w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels15(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Artist) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels15(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Artist) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(&r, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels15(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Artist) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels12(l, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels15(l, v)
 }
-func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(in *jlexer.Lexer, out *AlbumSearch) {
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels16(in *jlexer.Lexer, out *AlbumSearch) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1343,7 +1647,7 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(out *jwriter.Writer, in AlbumSearch) {
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels16(out *jwriter.Writer, in AlbumSearch) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1378,27 +1682,27 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 // MarshalJSON supports json.Marshaler interface
 func (v AlbumSearch) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(&w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels16(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v AlbumSearch) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels16(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *AlbumSearch) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(&r, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels16(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *AlbumSearch) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels13(l, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels16(l, v)
 }
-func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(in *jlexer.Lexer, out *Album) {
+func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels17(in *jlexer.Lexer, out *Album) {
 	isTopLevel := in.IsStart()
 	if in.IsNull() {
 		if isTopLevel {
@@ -1429,6 +1733,8 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.ArtistName = string(in.String())
 		case "artist_id":
 			out.ArtistId = string(in.String())
+		case "is_liked":
+			out.IsLiked = bool(in.Bool())
 		default:
 			in.SkipRecursive()
 		}
@@ -1439,7 +1745,7 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		in.Consumed()
 	}
 }
-func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(out *jwriter.Writer, in Album) {
+func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels17(out *jwriter.Writer, in Album) {
 	out.RawByte('{')
 	first := true
 	_ = first
@@ -1473,29 +1779,34 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		out.RawString(prefix)
 		out.String(string(in.ArtistId))
 	}
+	{
+		const prefix string = ",\"is_liked\":"
+		out.RawString(prefix)
+		out.Bool(bool(in.IsLiked))
+	}
 	out.RawByte('}')
 }
 
 // MarshalJSON supports json.Marshaler interface
 func (v Album) MarshalJSON() ([]byte, error) {
 	w := jwriter.Writer{}
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(&w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels17(&w, v)
 	return w.Buffer.BuildBytes(), w.Error
 }
 
 // MarshalEasyJSON supports easyjson.Marshaler interface
 func (v Album) MarshalEasyJSON(w *jwriter.Writer) {
-	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(w, v)
+	easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels17(w, v)
 }
 
 // UnmarshalJSON supports json.Unmarshaler interface
 func (v *Album) UnmarshalJSON(data []byte) error {
 	r := jlexer.Lexer{Data: data}
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(&r, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels17(&r, v)
 	return r.Error()
 }
 
 // UnmarshalEasyJSON supports easyjson.Unmarshaler interface
 func (v *Album) UnmarshalEasyJSON(l *jlexer.Lexer) {
-	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels14(l, v)
+	easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgModels17(l, v)
 }

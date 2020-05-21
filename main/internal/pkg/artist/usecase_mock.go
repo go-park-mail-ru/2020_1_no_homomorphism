@@ -34,18 +34,18 @@ func (m *MockUseCase) EXPECT() *MockUseCaseMockRecorder {
 }
 
 // GetArtistById mocks base method
-func (m *MockUseCase) GetArtistById(id string) (models.Artist, error) {
+func (m *MockUseCase) GetArtistById(aID, uID string) (models.Artist, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetArtistById", id)
+	ret := m.ctrl.Call(m, "GetArtistById", aID, uID)
 	ret0, _ := ret[0].(models.Artist)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetArtistById indicates an expected call of GetArtistById
-func (mr *MockUseCaseMockRecorder) GetArtistById(id interface{}) *gomock.Call {
+func (mr *MockUseCaseMockRecorder) GetArtistById(aID, uID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetArtistById", reflect.TypeOf((*MockUseCase)(nil).GetArtistById), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetArtistById", reflect.TypeOf((*MockUseCase)(nil).GetArtistById), aID, uID)
 }
 
 // GetBoundedArtists mocks base method
@@ -91,4 +91,33 @@ func (m *MockUseCase) Search(text string, count uint) ([]models.ArtistSearch, er
 func (mr *MockUseCaseMockRecorder) Search(text, count interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockUseCase)(nil).Search), text, count)
+}
+
+// Subscription mocks base method
+func (m *MockUseCase) Subscription(aID, uID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscription", aID, uID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscription indicates an expected call of Subscription
+func (mr *MockUseCaseMockRecorder) Subscription(aID, uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscription", reflect.TypeOf((*MockUseCase)(nil).Subscription), aID, uID)
+}
+
+// SubscriptionList mocks base method
+func (m *MockUseCase) SubscriptionList(uID string) ([]models.ArtistSearch, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscriptionList", uID)
+	ret0, _ := ret[0].([]models.ArtistSearch)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubscriptionList indicates an expected call of SubscriptionList
+func (mr *MockUseCaseMockRecorder) SubscriptionList(uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscriptionList", reflect.TypeOf((*MockUseCase)(nil).SubscriptionList), uID)
 }

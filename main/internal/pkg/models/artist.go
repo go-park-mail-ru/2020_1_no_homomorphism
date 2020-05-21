@@ -1,10 +1,11 @@
 package models
 
 type Artist struct {
-	Id    string `json:"id"`
-	Name  string `json:"name"`
-	Image string `json:"image"`
-	Genre string `json:"genre"`
+	Id           string `json:"id"`
+	Name         string `json:"name"`
+	Image        string `json:"image"`
+	Genre        string `json:"genre"`
+	IsSubscribed bool   `json:"is_subscribed"`
 }
 
 type ArtistStat struct {
@@ -22,4 +23,9 @@ type ArtistSearch struct {
 
 type Artists struct {
 	Artists []Artist `json:"artists"`
+}
+
+type ArtistSubscription struct {
+	ArtistID string `json:"artist_id"`
+	USerID   string `json:"user_id"`
 }

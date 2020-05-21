@@ -67,7 +67,7 @@ func TestGetUserAlbums(t *testing.T) {
 
 		albumHandlers.AlbumUC = m
 
-		albumStr := `{"artist_id":"%s", "artist_name":"%s", "id":"%s", "image":"%s", "name":"%s", "release":"%s"}`
+		albumStr := `{"artist_id":"%s", "artist_name":"%s", "id":"%s", "image":"%s", "name":"%s", "release":"%s", "is_liked":%s}`
 		bodyStr := strings.Join([]string{albumStr, albumStr}, ",")
 		bodyStr = `{"albums":[` + bodyStr + `]}`
 
@@ -84,12 +84,14 @@ func TestGetUserAlbums(t *testing.T) {
 				albums[0].Image,
 				albums[0].Name,
 				albums[0].Release,
+				"false",
 				albums[1].ArtistId,
 				albums[1].ArtistName,
 				albums[1].Id,
 				albums[1].Image,
 				albums[1].Name,
 				albums[1].Release,
+				"false",
 			)).
 			Status(http.StatusOK).
 			End()
@@ -149,7 +151,7 @@ func TestGetFullAlbum(t *testing.T) {
 		m := album.NewMockUseCase(ctrl)
 
 		m.EXPECT().
-			GetAlbumById(idVal).
+			GetAlbumById(idVal, "").
 			Return(albumModel, nil)
 
 		albumHandlers.AlbumUC = m
@@ -191,7 +193,7 @@ func TestGetFullAlbum(t *testing.T) {
 		testError := errors.New("test error")
 
 		m.EXPECT().
-			GetAlbumById(idVal).
+			GetAlbumById(idVal, "").
 			Return(models.Album{}, testError)
 
 		albumHandlers.AlbumUC = m
@@ -299,6 +301,93 @@ func TestGetBoundedAlbumsByArtistId(t *testing.T) {
 
 		apitest.New("GetBoundedAlbumsByArtistId-UseCaseError").
 			Handler(vars).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+}
+
+func TestRateAlbum(t *testing.T) {
+	t.Run("RateAlbum-OK", func(t *testing.T) {
+		artistId := "1231"
+
+		handler := middleware.AuthMiddlewareMock(
+			middleware.SetMuxVars(albumHandlers.RateAlbum, "id", artistId),
+			true,
+			testUser,
+			"",
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := album.NewMockUseCase(ctrl)
+
+		m.EXPECT().
+			RateAlbum(artistId, testUser.Id).
+			Return(nil)
+
+		albumHandlers.AlbumUC = m
+
+		apitest.New("RateAlbum-OK").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusOK).
+			End()
+	})
+
+	t.Run("RateAlbum-NoAuth", func(t *testing.T) {
+		apitest.New("RateAlbum-NoAuth").
+			Handler(http.HandlerFunc(albumHandlers.RateAlbum)).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusInternalServerError).
+			End()
+	})
+
+	t.Run("RateAlbum-NoMuxVars", func(t *testing.T) {
+		handler := middleware.AuthMiddlewareMock(
+			albumHandlers.RateAlbum,
+			true,
+			testUser,
+			"",
+		)
+
+		apitest.New("RateAlbum-NoMuxVars").
+			Handler(handler).
+			Method("Get").
+			Expect(t).
+			Status(http.StatusBadRequest).
+			End()
+	})
+
+	t.Run("RateAlbum-Error", func(t *testing.T) {
+		artistId := "1231"
+
+		handler := middleware.AuthMiddlewareMock(
+			middleware.SetMuxVars(albumHandlers.RateAlbum, "id", artistId),
+			true,
+			testUser,
+			"",
+		)
+
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		m := album.NewMockUseCase(ctrl)
+
+		testError := errors.New("test error")
+
+		m.EXPECT().
+			RateAlbum(artistId, testUser.Id).
+			Return(testError)
+
+		albumHandlers.AlbumUC = m
+
+		apitest.New("RateAlbum-Error").
+			Handler(handler).
 			Method("Get").
 			Expect(t).
 			Status(http.StatusBadRequest).

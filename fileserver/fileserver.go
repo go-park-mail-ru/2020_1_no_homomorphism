@@ -38,7 +38,6 @@ func main() {
 	}()
 
 	log.Println("Starts server at ", viper.GetString(config.ConfigFields.PortTLS))
-	//err := http.ListenAndServeTLS(viper.GetString(config.ConfigFields.PortTLS),"fullchain.pem","privkey.pem", http.FileServer(http.Dir(viper.GetString(config.ConfigFields.Dir)))))
 	err = http.ListenAndServe(viper.GetString(config.ConfigFields.PortTLS), http.FileServer(http.Dir(viper.GetString(config.ConfigFields.Dir))))
 	if err != nil {
 		log.Println(err)
