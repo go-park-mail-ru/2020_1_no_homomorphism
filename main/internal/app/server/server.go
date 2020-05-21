@@ -211,19 +211,6 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	return panicMiddleware
 }
 
-func generateSSL() {
-	// Проверяем, доступен ли cert файл.
-	err := httpscerts.Check("fullchain.pem", "privkey.pem")
-	// Если он недоступен, то генерируем новый.
-	if err != nil {
-		err = httpscerts.Generate("fullchain.pem", "privkey.pem", "https://127.0.0.1:8081")
-		//err = httpscerts.Generate("cert.pem", "key.pem", "http://89.208.199.170:8001")
-		if err != nil {
-			logrus.Fatal("failed to generate https cert")
-		}
-	}
-}
-
 func StartNew() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Failed to export env vars: %v", err)
@@ -305,11 +292,8 @@ func StartNew() {
 
 	routes := InitRouter(customLogger, db, csrfToken, sessManager, fileserver)
 
-	generateSSL()
-
 	fmt.Println("Starts server at ", viper.GetString(config.ConfigFields.MainAddr))
-	err = http.ListenAndServeTLS(viper.GetString(config.ConfigFields.MainAddr), viper.GetString(config.ConfigFields.SSLfullchain), viper.GetString(config.ConfigFields.SSLkey), c.Handler(m.HeadersHandler(routes)))
-	//err = http.ListenAndServe(viper.GetString(config.ConfigFields.MainAddr), c.Handler(m.HeadersHandler(routes)))
+	err = http.ListenAndServe(viper.GetString(config.ConfigFields.MainAddr), c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)
 		return
