@@ -15,14 +15,14 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v2
+      - uses: actions/checkout@v2
+      - uses: Mushus/checkout-submodule@v1
         with:
-          go-version: '1.14.x'
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Main Service Test
-        run: go get github.com/golangci/golangci-lint/cmd/golangci-lint && cd main/ && golangci-lint run
+          submodulePath: ./main
+      - name: golangci-lint main
+        uses: golangci/golangci-lint-action@v1
+        with:
+          version: v1.26
   test:
     name: tests
     runs-on: ubuntu-latest
