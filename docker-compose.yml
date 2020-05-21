@@ -2,21 +2,21 @@ version: '3'
 
 services:
   main:
-    image: bulletmys/music_app_main
+    image: bulletmys/music_app_main:${MUSIC_APP_VERSION}
     expose:
       - "8081"
     restart: always
     network_mode:
       host
   fileserver:
-    image: bulletmys/music_app_fileserver
+    image: bulletmys/music_app_fileserver:${MUSIC_APP_VERSION}
     expose:
       - "8082"
     restart: always
     network_mode:
       host
   sessions:
-    image: bulletmys/music_app_sessions
+    image: bulletmys/music_app_sessions:${MUSIC_APP_VERSION}
     restart: always
     expose:
       - "8083"
