@@ -74,4 +74,4 @@ jobs:
           script: |
             sudo docker rm -f $(sudo docker ps -aq)
             export MUSIC_APP_VERSION=${GITHUB_SHA::8}
-            sudo docker-compose -f backend/2020_1_no_homomorphism/docker-compose.yml -d up
+            sudo docker-compose -f backend/2020_1_no_homomorphism/docker-compose.yml up -d
