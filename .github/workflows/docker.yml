@@ -22,7 +22,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Main Service Test
-        run: go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.27.0 && cd main/ && golangci-lint run
+        run: go get github.com/golangci/golangci-lint/cmd/golangci-lint && cd main/ && golangci-lint run
   test:
     name: tests
     runs-on: ubuntu-latest
