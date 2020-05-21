@@ -65,8 +65,8 @@ jobs:
       - name: Login to DockerHub Registry
         run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
       - name: Build Docker image
-        run: export CSRF_SECRET=${{ secrets.CSRF_SECRET }} &&
-          export DB_CONN=${{ secrets.DB_CONN }} &&
+        run: echo CSRF_SECRET=${{ secrets.CSRF_SECRET }} >> main/.env &&
+          echo DB_CONN=${{ secrets.DB_CONN }} > main/.env &&
           sudo docker build -t bulletmys/music_app_main:${GITHUB_SHA::8} -f main/Dockerfile . &&
           sudo docker build -t bulletmys/music_app_fileserver:${GITHUB_SHA::8} -f sessions/Dockerfile . &&
           sudo docker build -t bulletmys/music_app_sessions:${GITHUB_SHA::8} -f fileserver/Dockerfile .
