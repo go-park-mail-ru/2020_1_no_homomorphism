@@ -12,7 +12,7 @@ on:
 
 jobs:
   golangci-main:
-    name: lint
+    name: lint-main
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
@@ -20,9 +20,10 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
+          golangci_lint_flags: "--config=.github/.golangci.yml"
           workdir: main/
   golangci-sessions:
-    name: lint
+    name: lint-sessions
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
@@ -30,9 +31,10 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
+          golangci_lint_flags: "--config=.github/.golangci.yml"
           workdir: sessions/
   golangci-fileserver:
-    name: lint
+    name: lint-fileserver
     runs-on: ubuntu-latest
     steps:
       - name: Check out code into the Go module directory
@@ -40,6 +42,7 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
+          golangci_lint_flags: "--config=.github/.golangci.yml"
           workdir: fileserver/
   test:
     name: tests

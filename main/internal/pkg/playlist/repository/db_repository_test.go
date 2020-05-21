@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
@@ -194,7 +195,7 @@ func (s *Suite) TestAddTrackToPlaylist() {
 	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
 		WithArgs(plID, tID, index, pl.Image).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).
-		AddRow(plID))
+			AddRow(plID))
 
 	s.mock.ExpectCommit()
 
@@ -213,6 +214,97 @@ func (s *Suite) TestAddTrackToPlaylist() {
 	s.mock.ExpectRollback()
 
 	err = s.repository.AddTrackToPlaylist(pl)
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestDeletePlaylist() {
+	var plID int64 = 53452
+
+	query := `DELETE FROM "playlists"  WHERE "playlists"."id" = $1`
+
+	s.mock.ExpectBegin()
+
+	s.mock.ExpectExec(regexp.QuoteMeta(query)).
+		WithArgs(plID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	s.mock.ExpectCommit()
+
+	err := s.repository.DeletePlaylist(fmt.Sprint(plID))
+
+	require.NoError(s.T(), err)
+
+	//test on db error
+	dbError := errors.New("db_error")
+
+	s.mock.ExpectBegin()
+
+	s.mock.ExpectExec(regexp.QuoteMeta(query)).
+		WithArgs(plID).WillReturnError(dbError)
+
+	s.mock.ExpectRollback()
+
+	err = s.repository.DeletePlaylist(fmt.Sprint(plID))
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestChangePrivacy() {
+	var plID int64 = 53452
+
+	query := `update playlists set private = not private where id = $1`
+
+	s.mock.ExpectExec(regexp.QuoteMeta(query)).
+		WithArgs(plID).WillReturnResult(sqlmock.NewResult(1, 1))
+
+	err := s.repository.ChangePrivacy(fmt.Sprint(plID))
+
+	require.NoError(s.T(), err)
+
+	//test on db error
+	dbError := errors.New("db_error")
+
+	s.mock.ExpectExec(regexp.QuoteMeta(query)).
+		WithArgs(plID).WillReturnError(dbError)
+
+	err = s.repository.ChangePrivacy(fmt.Sprint(plID))
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestGetAllPlaylistTracks() {
+	var plID int64 = 53452
+	var trID int64 = 62425235
+	var index int64 = 3
+
+	tracks := []models.PlaylistTracks{
+		{
+			PlaylistID: fmt.Sprint(plID),
+			TrackID:    fmt.Sprint(trID),
+			Index:      fmt.Sprint(index),
+			Image:      "default",
+		},
+	}
+
+	query := `SELECT * FROM "playlist_tracks"  WHERE (playlist_id = $1)`
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(fmt.Sprint(plID)).WillReturnRows(
+		sqlmock.NewRows([]string{"playlist_id", "track_id", "index", "image"}).
+			AddRow(tracks[0].PlaylistID, tracks[0].TrackID, tracks[0].Index, tracks[0].Image),
+	)
+
+	res, err := s.repository.GetAllPlaylistTracks(fmt.Sprint(plID))
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(res, tracks))
+
+	//test on db error
+	dbError := errors.New("db_error")
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(fmt.Sprint(plID)).WillReturnError(dbError)
+
+	_, err = s.repository.GetAllPlaylistTracks(fmt.Sprint(plID))
 
 	require.Error(s.T(), err)
 }

@@ -227,3 +227,36 @@ func (s *Suite) TestSearch() {
 
 	require.Error(s.T(), err)
 }
+
+func (s *Suite) TestGetUserTracks() {
+	uID := "23423"
+	tracks := []models.Track{s.tracks[0]}
+
+	s.mock.ExpectQuery("").
+		WithArgs(uID).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "artist", "duration", "image", "artist_id", "link"}).
+			AddRow(tracks[0].Id,
+				tracks[0].Name,
+				tracks[0].Artist,
+				tracks[0].Duration,
+				tracks[0].Image,
+				tracks[0].ArtistID,
+				tracks[0].Link,
+			))
+
+	res, err := s.repository.GetUserTracks(uID)
+
+	tracks[0].IsLiked = true
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(tracks, res))
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("").
+		WillReturnError(dbError)
+
+	_, err = s.repository.GetUserTracks(uID)
+
+	require.Error(s.T(), err)
+}

@@ -194,3 +194,29 @@ func (s *Suite) TestGetBoundedAlbumsByArtistId() {
 
 	require.Error(s.T(), err)
 }
+
+func (s *Suite) TestCheckLike() {
+	aID := "4125252"
+	uID := "67264262352"
+
+	query := fmt.Sprintf(`SELECT`)
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(aID, uID).
+		WillReturnRows(sqlmock.NewRows([]string{"artist_id", "user_id"}).
+			AddRow(aID, uID))
+
+	res := s.repository.CheckLike(aID, uID)
+
+	require.True(s.T(), res)
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(aID, uID).
+		WillReturnError(dbError)
+
+	res = s.repository.CheckLike(aID, uID)
+
+	require.False(s.T(), res)
+}
