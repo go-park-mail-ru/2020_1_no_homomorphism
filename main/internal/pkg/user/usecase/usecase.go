@@ -120,6 +120,7 @@ func (uc *UserUseCase) GetOutputUserData(user models.User) models.User {
 		Sex:   user.Sex,
 		Image: user.Image,
 		Email: user.Email,
+		Theme: user.Theme,
 	}
 }
 
