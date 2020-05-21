@@ -20,7 +20,7 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
-          golangci_lint_flags: "--config=.github/.golangci.yml"
+          golangci_lint_flags: "--config=../.golangci.yml"
           workdir: main/
   golangci-sessions:
     name: lint-sessions
@@ -31,7 +31,7 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
-          golangci_lint_flags: "--config=.github/.golangci.yml"
+          golangci_lint_flags: "--config=../.golangci.yml"
           workdir: sessions/
   golangci-fileserver:
     name: lint-fileserver
@@ -42,7 +42,7 @@ jobs:
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v1
         with:
-          golangci_lint_flags: "--config=.github/.golangci.yml"
+          golangci_lint_flags: "--config=../.golangci.yml"
           workdir: fileserver/
   test:
     name: tests
