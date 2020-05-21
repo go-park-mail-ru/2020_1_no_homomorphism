@@ -16,21 +16,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - name: CD
+        run: cd main/
       - name: golangci-lint main
         uses: golangci/golangci-lint-action@v1
         with:
           version: v1.26
-          args: ./main/...
-      - name: golangci-lint sessions
-        uses: golangci/golangci-lint-action@v1
-        with:
-          version: v1.26
-          args: ./sessions/...
-      - name: golangci-lint fileserver
-        uses: golangci/golangci-lint-action@v1
-        with:
-          version: v1.26
-          args: ./fileserver/...
   test:
     name: tests
     runs-on: ubuntu-latest
