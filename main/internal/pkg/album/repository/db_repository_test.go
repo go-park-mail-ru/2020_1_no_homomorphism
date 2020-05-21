@@ -199,7 +199,7 @@ func (s *Suite) TestCheckLike() {
 	aID := "4125252"
 	uID := "67264262352"
 
-	query := fmt.Sprintf(`SELECT`)
+	query := `SELECT`
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
 		WithArgs(aID, uID).
