@@ -113,5 +113,4 @@ jobs:
           key: ${{ secrets.PRIVATE_KEY }}
           script: |
             sudo docker rm -f $(sudo docker ps -aq)
-            export MUSIC_APP_VERSION=${GITHUB_SHA::8}
-            sudo docker-compose -f backend/2020_1_no_homomorphism/docker-compose.yml up -d
+            sudo MUSIC_APP_VERSION=${GITHUB_SHA::8} docker-compose -f backend/2020_1_no_homomorphism/compose/docker-compose.yml up -d
