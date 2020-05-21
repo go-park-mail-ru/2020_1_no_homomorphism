@@ -27,11 +27,6 @@ CREATE TRIGGER artists_trigger
     FOR EACH ROW
 EXECUTE PROCEDURE artists_trigger_func();
 
-select id, name, image, release, artist_name, artist_id, album_ID is not null as is_liked
-from albums
-         full join liked_albums la on albums.ID = la.album_ID
-where ;
-
 CREATE TABLE albums
 (
     ID          BIGSERIAL PRIMARY KEY,

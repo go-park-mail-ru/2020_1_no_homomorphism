@@ -175,7 +175,7 @@ func (tr *DbTrackRepository) GetUserTracks(uID string) ([]models.Track, error) {
 	if err := db.Error; err != nil {
 		return nil, fmt.Errorf("failed to get user tracks: %v", err)
 	}
-	for i, _ := range tracks {
+	for i := range tracks {
 		tracks[i].IsLiked = true
 	}
 

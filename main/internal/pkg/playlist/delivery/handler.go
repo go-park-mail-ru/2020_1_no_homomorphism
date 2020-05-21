@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/playlist"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
@@ -19,7 +20,7 @@ type PlaylistHandler struct {
 }
 
 func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetUserPlaylists", "failed to get from ctx")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -76,9 +77,9 @@ func (h *PlaylistHandler) GetFullPlaylistById(w http.ResponseWriter, r *http.Req
 }
 
 func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *http.Request) {
-	id, okId := r.Context().Value("id").(string)
-	start, okStart := r.Context().Value("start").(uint64)
-	end, okEnd := r.Context().Value("end").(uint64)
+	id, okId := r.Context().Value(middleware.Id).(string)
+	start, okStart := r.Context().Value(middleware.Start).(uint64)
+	end, okEnd := r.Context().Value(middleware.End).(uint64)
 
 	if !okId || !okStart || !okEnd {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetBoundedPlaylistTracks", "failed to get vars")
@@ -90,7 +91,7 @@ func (h *PlaylistHandler) GetBoundedPlaylistTracks(w http.ResponseWriter, r *htt
 		return
 	}
 
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		user = models.User{Id: ""}
 	}
@@ -121,7 +122,7 @@ func (h *PlaylistHandler) sendBadRequest(w http.ResponseWriter, ctx context.Cont
 }
 
 func (h *PlaylistHandler) checkUserAccess(w http.ResponseWriter, r *http.Request, playlistID string, isStrict bool) error {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		user = models.User{Id: "0"}
 	}
@@ -146,7 +147,7 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "CreatePlaylist", "failed to get from ctx")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -154,6 +155,10 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 	}
 
 	plID, err := h.PlaylistUC.CreatePlaylist(name, user.Id)
+	if err != nil {
+		h.sendBadRequest(w, r.Context(), "cant create playlist:"+err.Error())
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -201,7 +206,7 @@ func (h *PlaylistHandler) GetPlaylistsIDByTrack(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetPlaylistsIDByTrack", "failed to get from ctx")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -295,7 +300,7 @@ func (h *PlaylistHandler) AddSharedPlaylist(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to get from ctx")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -313,9 +318,11 @@ func (h *PlaylistHandler) AddSharedPlaylist(w http.ResponseWriter, r *http.Reque
 	}
 	w.Header().Set("Content-Type", "application/json")
 
-	output := models.Playlist{Id: id}
+	//output := models.Playlist{Id: id}
 
-	err = json.NewEncoder(w).Encode(output)
+	err = json.NewEncoder(w).Encode(struct {
+		Id string `json:"id"`
+	}{id})
 
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to encode json"+err.Error())

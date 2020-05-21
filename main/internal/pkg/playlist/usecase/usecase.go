@@ -47,11 +47,16 @@ func (uc PlaylistUseCase) AddSharedPlaylist(plID string, uID string) (string, er
 	if err != nil {
 		return "", fmt.Errorf("cant get playlist: %v", err)
 	}
+
 	newPl, err := uc.PlRepository.CreatePlaylist(pl.Name, uID)
 	if err != nil {
 		return "", fmt.Errorf("cant create playlist: %v", err)
 	}
+
 	tracks, err := uc.PlRepository.GetAllPlaylistTracks(plID)
+	if err != nil {
+		return "", fmt.Errorf("cant get playlist tracks: %v", err)
+	}
 
 	for _, elem := range tracks {
 		plTracks := models.PlaylistTracks{

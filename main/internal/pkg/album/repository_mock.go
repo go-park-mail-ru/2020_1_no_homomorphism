@@ -92,3 +92,31 @@ func (mr *MockRepositoryMockRecorder) Search(text, count interface{}) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockRepository)(nil).Search), text, count)
 }
+
+// RateAlbum mocks base method
+func (m *MockRepository) RateAlbum(aID, uID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RateAlbum", aID, uID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RateAlbum indicates an expected call of RateAlbum
+func (mr *MockRepositoryMockRecorder) RateAlbum(aID, uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RateAlbum", reflect.TypeOf((*MockRepository)(nil).RateAlbum), aID, uID)
+}
+
+// CheckLike mocks base method
+func (m *MockRepository) CheckLike(aID, uID string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckLike", aID, uID)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CheckLike indicates an expected call of CheckLike
+func (mr *MockRepositoryMockRecorder) CheckLike(aID, uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckLike", reflect.TypeOf((*MockRepository)(nil).CheckLike), aID, uID)
+}

@@ -148,3 +148,94 @@ func (s *Suite) TestSearch() {
 
 	require.Error(s.T(), err)
 }
+
+func (s *Suite) TestGetArtistStat() {
+
+	stat := models.ArtistStat{
+		ArtistId:    "14124",
+		Tracks:      52134,
+		Albums:      532,
+		Subscribers: 42324513,
+	}
+
+	query := `SELECT * FROM "artist_stat" WHERE (artist_id = $1)`
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(stat.ArtistId).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "tracks", "albums", "subscribers"}).
+			AddRow(stat.ArtistId, stat.Tracks, stat.Albums, stat.Subscribers))
+
+	res, err := s.repository.GetArtistStat(stat.ArtistId)
+
+	stat.ArtistId = ""
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(stat, res))
+
+	//test on db error
+	dbError := errors.New("db_error")
+	s.mock.ExpectQuery("SELECT").
+		WillReturnError(dbError)
+
+	_, err = s.repository.GetArtistStat(stat.ArtistId)
+
+	require.Error(s.T(), err)
+}
+
+func (s *Suite) TestIsSubscribed() {
+	query := `SELECT`
+	var aID uint64 = 1231412
+	var uID uint64 = 5135
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(uID, aID).
+		WillReturnRows(sqlmock.NewRows([]string{"artist_id", "user_id"}).
+			AddRow(aID, uID))
+
+	res := s.repository.IsSubscribed(fmt.Sprint(aID), fmt.Sprint(uID))
+
+	require.Equal(s.T(), true, res)
+
+	//test on false
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(uID, aID).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	res = s.repository.IsSubscribed(fmt.Sprint(aID), fmt.Sprint(uID))
+
+	require.Equal(s.T(), false, res)
+}
+
+func (s *Suite) TestSubscriptionsList() {
+	query := `SELECT * FROM "sub_artists"  WHERE (user_id = $1)`
+	uID := "5135"
+
+	testArtist := []models.ArtistSearch{
+		{
+			ArtistID: "234234",
+			Name:     "dfdsf",
+			Image:    "default.png",
+		},
+	}
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(uID).
+		WillReturnRows(sqlmock.NewRows([]string{"artist_id", "name", "image"}).
+			AddRow(testArtist[0].ArtistID, testArtist[0].Name, testArtist[0].Image))
+
+	res, err := s.repository.SubscriptionsList(fmt.Sprint(uID))
+
+	require.NoError(s.T(), err)
+	require.Nil(s.T(), deep.Equal(testArtist, res))
+
+	//test on false
+	dbError := errors.New("test error")
+
+	s.mock.ExpectQuery(regexp.QuoteMeta(query)).
+		WithArgs(uID).
+		WillReturnError(dbError)
+
+	_, err = s.repository.SubscriptionsList(fmt.Sprint(uID))
+
+	require.Error(s.T(), err)
+}

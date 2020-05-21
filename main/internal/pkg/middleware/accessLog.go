@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
+	"github.com/2020_1_no_homomorphism/no_homo_main/config"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/prometheus/client_golang/prometheus"
 	"math/rand"
@@ -10,8 +11,6 @@ import (
 	"strconv"
 	"time"
 )
-
-const requestId int = 1
 
 type statusResponseWriter struct {
 	http.ResponseWriter
@@ -50,7 +49,7 @@ func AccessLogMiddleware(next http.Handler, log *logger.MainLogger) http.Handler
 
 		ctx := r.Context()
 		ctx = context.WithValue(ctx,
-			requestId,
+			config.RequestID,
 			rid,
 		)
 		srw := NewStatusResponseWriter(w)

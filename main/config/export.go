@@ -64,6 +64,10 @@ var ConfigFields = struct {
 	SSLfullchain:       "ssl.fullchain",
 }
 
+type requestID int
+
+const RequestID requestID = 1
+
 func CorsInit() cors.Options {
 	return cors.Options{
 		AllowedOrigins:   viper.GetStringSlice(ConfigFields.CorsAllowedOrigins),

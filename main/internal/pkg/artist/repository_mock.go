@@ -92,3 +92,46 @@ func (mr *MockRepositoryMockRecorder) Search(text, count interface{}) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Search", reflect.TypeOf((*MockRepository)(nil).Search), text, count)
 }
+
+// IsSubscribed mocks base method
+func (m *MockRepository) IsSubscribed(uID, aID string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSubscribed", uID, aID)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsSubscribed indicates an expected call of IsSubscribed
+func (mr *MockRepositoryMockRecorder) IsSubscribed(uID, aID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSubscribed", reflect.TypeOf((*MockRepository)(nil).IsSubscribed), uID, aID)
+}
+
+// Subscription mocks base method
+func (m *MockRepository) Subscription(aID, uID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Subscription", aID, uID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Subscription indicates an expected call of Subscription
+func (mr *MockRepositoryMockRecorder) Subscription(aID, uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Subscription", reflect.TypeOf((*MockRepository)(nil).Subscription), aID, uID)
+}
+
+// SubscriptionsList mocks base method
+func (m *MockRepository) SubscriptionsList(uID string) ([]models.ArtistSearch, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscriptionsList", uID)
+	ret0, _ := ret[0].([]models.ArtistSearch)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubscriptionsList indicates an expected call of SubscriptionsList
+func (mr *MockRepositoryMockRecorder) SubscriptionsList(uID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscriptionsList", reflect.TypeOf((*MockRepository)(nil).SubscriptionsList), uID)
+}

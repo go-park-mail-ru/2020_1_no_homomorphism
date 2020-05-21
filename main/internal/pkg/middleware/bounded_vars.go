@@ -2,10 +2,18 @@ package middleware
 
 import (
 	"context"
+	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"github.com/gorilla/mux"
 	"net/http"
-	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
 	"strconv"
+)
+
+type VarsKeys string
+
+const (
+	Id    VarsKeys = "id"
+	Start VarsKeys = "start"
+	End   VarsKeys = "end"
 )
 
 func BoundedVars(next http.HandlerFunc, log *logger.MainLogger) http.HandlerFunc {
@@ -32,9 +40,9 @@ func BoundedVars(next http.HandlerFunc, log *logger.MainLogger) http.HandlerFunc
 			return
 		}
 
-		ctx = context.WithValue(ctx, "id", id)
-		ctx = context.WithValue(ctx, "start", start)
-		ctx = context.WithValue(ctx, "end", end)
+		ctx = context.WithValue(ctx, Id, id)
+		ctx = context.WithValue(ctx, Start, start)
+		ctx = context.WithValue(ctx, End, end)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}

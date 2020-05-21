@@ -2,13 +2,12 @@ package logger
 
 import (
 	"context"
+	"github.com/2020_1_no_homomorphism/no_homo_main/config"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"time"
 )
-
-const requestId int = 1
 
 type MainLogger struct {
 	*logrus.Logger
@@ -33,7 +32,7 @@ func (l *MainLogger) LogError(ctx context.Context, pkg string, funcName string, 
 }
 
 func (l *MainLogger) GetIdFromContext(ctx context.Context) string {
-	rid, ok := ctx.Value(requestId).(string)
+	rid, ok := ctx.Value(config.RequestID).(string)
 	if !ok {
 		l.WithFields(logrus.Fields{
 			"id":       "NO_ID",

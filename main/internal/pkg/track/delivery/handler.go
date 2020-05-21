@@ -2,6 +2,7 @@ package delivery
 
 import (
 	"encoding/json"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/middleware"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	track "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/track"
 	"github.com/2020_1_no_homomorphism/no_homo_main/logger"
@@ -39,9 +40,9 @@ func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TrackHandler) GetBoundedArtistTracks(w http.ResponseWriter, r *http.Request) {
-	id, okId := r.Context().Value("id").(string)
-	start, okStart := r.Context().Value("start").(uint64)
-	end, okEnd := r.Context().Value("end").(uint64)
+	id, okId := r.Context().Value(middleware.Id).(string)
+	start, okStart := r.Context().Value(middleware.Start).(uint64)
+	end, okEnd := r.Context().Value(middleware.End).(uint64)
 
 	if !okId || !okStart || !okEnd {
 		h.Log.LogWarning(r.Context(), "track delivery", "GetBoundedArtistTracks", "failed to get vars")
@@ -49,7 +50,7 @@ func (h *TrackHandler) GetBoundedArtistTracks(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		user = models.User{Id: ""}
 	}
@@ -77,9 +78,9 @@ func (h *TrackHandler) GetBoundedArtistTracks(w http.ResponseWriter, r *http.Req
 }
 
 func (h *TrackHandler) GetBoundedAlbumTracks(w http.ResponseWriter, r *http.Request) {
-	id, okId := r.Context().Value("id").(string)
-	start, okStart := r.Context().Value("start").(uint64)
-	end, okEnd := r.Context().Value("end").(uint64)
+	id, okId := r.Context().Value(middleware.Id).(string)
+	start, okStart := r.Context().Value(middleware.Start).(uint64)
+	end, okEnd := r.Context().Value(middleware.End).(uint64)
 
 	if !okId || !okStart || !okEnd {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "GetBoundedPlaylistTracks", "failed to get vars")
@@ -87,7 +88,7 @@ func (h *TrackHandler) GetBoundedAlbumTracks(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		user = models.User{Id: ""}
 	}
@@ -115,7 +116,7 @@ func (h *TrackHandler) GetBoundedAlbumTracks(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *TrackHandler) GetUserTracks(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "delivery", "GetUserTracks", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -145,7 +146,7 @@ func (h *TrackHandler) GetUserTracks(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *TrackHandler) RateTrack(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(models.User)
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		h.Log.LogWarning(r.Context(), "delivery", "GetUserTracks", "failed to get from context")
 		w.WriteHeader(http.StatusInternalServerError)
