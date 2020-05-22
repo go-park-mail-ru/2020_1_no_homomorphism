@@ -118,7 +118,7 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	}
 	dbUser.Name = input.Name
 	dbUser.Email = input.Email
-	if dbUser.Theme != "" {
+	if input.Theme != "" {
 		dbUser.Theme = input.Theme
 	}
 
