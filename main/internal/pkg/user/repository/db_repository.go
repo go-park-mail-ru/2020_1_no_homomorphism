@@ -75,7 +75,7 @@ func ToModel(user User) models.User {
 		Email:    user.Email,
 		Sex:      user.Sex,
 		Image:    user.Image,
-		Theme:    user.Theme,
+		Theme:    "false green",
 	}
 }
 
@@ -118,7 +118,7 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	}
 	dbUser.Name = input.Name
 	dbUser.Email = input.Email
-	if dbUser.Theme != "" {
+	if input.Theme != "" {
 		dbUser.Theme = input.Theme
 	}
 
