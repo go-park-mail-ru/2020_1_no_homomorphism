@@ -75,7 +75,7 @@ func ToModel(user User) models.User {
 		Email:    user.Email,
 		Sex:      user.Sex,
 		Image:    user.Image,
-		Theme:    user.Theme,
+		Theme:    "false green",
 	}
 }
 
