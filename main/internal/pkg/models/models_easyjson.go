@@ -219,6 +219,8 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.Image = string(in.String())
 		case "email":
 			out.Email = string(in.String())
+		case "theme":
+			out.Theme = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -272,6 +274,11 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		const prefix string = ",\"email\":"
 		out.RawString(prefix)
 		out.String(string(in.Email))
+	}
+	{
+		const prefix string = ",\"theme\":"
+		out.RawString(prefix)
+		out.String(string(in.Theme))
 	}
 	out.RawByte('}')
 }
@@ -332,6 +339,8 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.Image = string(in.String())
 		case "email":
 			out.Email = string(in.String())
+		case "theme":
+			out.Theme = string(in.String())
 		default:
 			in.SkipRecursive()
 		}
@@ -380,6 +389,11 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		const prefix string = ",\"email\":"
 		out.RawString(prefix)
 		out.String(string(in.Email))
+	}
+	{
+		const prefix string = ",\"theme\":"
+		out.RawString(prefix)
+		out.String(string(in.Theme))
 	}
 	out.RawByte('}')
 }
