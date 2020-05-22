@@ -117,7 +117,8 @@ CREATE TABLE users
     email        VARCHAR(320) NOT NULL UNIQUE,
     sex          VARCHAR(10)  NOT NULL,
     image        VARCHAR(100) DEFAULT '/static/img/avatar/default.png',
-    liked_tracks integer[]    DEFAULT '{}'
+    liked_tracks integer[]    DEFAULT '{}',
+    theme        VARCHAR(20)  DEFAULT 'light green'
 );
 
 CREATE OR REPLACE VIEW user_liked_tracks AS
