@@ -3,13 +3,13 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/go-test/deep"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/crypto/bcrypt"
-	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"regexp"
 	"testing"
 )
@@ -36,6 +36,7 @@ func (s *Suite) SetupSuite() {
 		Sex:      "male",
 		Image:    "/img/default/png",
 		Email:    "test@email.test",
+		Theme:    "test_theme",
 	}
 
 	s.bdError = errors.New("some bd error")
@@ -76,6 +77,7 @@ func (s *Suite) TestGetUserByLogin() {
 
 	require.NoError(s.T(), err)
 	user.Password = string(hash)
+	user.Theme = ""
 	require.Nil(s.T(), deep.Equal(user, getUser))
 
 	//test on bd error
@@ -106,7 +108,7 @@ func (s *Suite) TestUpdate() {
 
 	var id int64 = 1
 	s.mock.ExpectBegin()
-	s.mock.ExpectExec("UPDATE").WithArgs(user.Login, hash, userSettings.Name, userSettings.Email, user.Sex, user.Image, id).
+	s.mock.ExpectExec("UPDATE").WithArgs(user.Login, hash, userSettings.Name, userSettings.Email, user.Sex, user.Image, "", id).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	s.mock.ExpectCommit()
 
@@ -120,7 +122,7 @@ func (s *Suite) TestUpdate() {
 	userSettings.NewPassword = "1235jei23"
 
 	s.mock.ExpectBegin()
-	s.mock.ExpectExec("UPDATE").WithArgs(user.Login, sqlmock.AnyArg(), userSettings.Name, userSettings.Email, user.Sex, user.Image, id).
+	s.mock.ExpectExec("UPDATE").WithArgs(user.Login, sqlmock.AnyArg(), userSettings.Name, userSettings.Email, user.Sex, user.Image, "", id).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	s.mock.ExpectCommit()
 
@@ -140,7 +142,7 @@ func (s *Suite) TestUpdate() {
 	s.getMockSelectAll(user, hash)
 
 	s.mock.ExpectBegin()
-	s.mock.ExpectExec("UPDATE").WithArgs(user.Login, hash, userSettings.Name, userSettings.Email, user.Sex, user.Image, id).
+	s.mock.ExpectExec("UPDATE").WithArgs(user.Login, hash, userSettings.Name, userSettings.Email, user.Sex, user.Image, "",id).
 		WillReturnError(s.bdError)
 	s.mock.ExpectRollback()
 
@@ -152,11 +154,9 @@ func (s *Suite) TestUpdate() {
 
 func (s *Suite) TestCreate() {
 	user := s.user
-	//hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.MinCost)
-	//require.NoError(s.T(), err)
 
 	s.mock.ExpectBegin()
-	s.mock.ExpectQuery("INSERT INTO").WithArgs(user.Login, sqlmock.AnyArg(), user.Name, user.Email, user.Sex, user.Image).
+	s.mock.ExpectQuery("INSERT INTO").WithArgs(user.Login, sqlmock.AnyArg(), user.Name, user.Email, user.Sex, user.Image, user.Theme).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(user.Id))
 	s.mock.ExpectCommit()
 
@@ -174,7 +174,7 @@ func (s *Suite) TestCreate() {
 	user.Email = "mail@mai.ru"
 
 	s.mock.ExpectBegin()
-	s.mock.ExpectQuery("INSERT INTO").WithArgs(user.Login, sqlmock.AnyArg(), user.Name, user.Email, user.Sex, user.Image).
+	s.mock.ExpectQuery("INSERT INTO").WithArgs(user.Login, sqlmock.AnyArg(), user.Name, user.Email, user.Sex, user.Image, user.Theme).
 		WillReturnError(s.bdError)
 	s.mock.ExpectRollback()
 

@@ -29,6 +29,7 @@ var testUser = models.User{
 	Sex:      "Man",
 	Image:    "/static/avatar/default.png",
 	Email:    "klsJDLKfj@mail.ru",
+	//Theme:    "test_theme",
 }
 
 func init() {
@@ -435,6 +436,7 @@ func TestSelfProfile(t *testing.T) {
 			Sex:   testUser.Sex,
 			Image: testUser.Image,
 			Email: testUser.Email,
+			Theme: "",
 		}
 
 		m.EXPECT().
@@ -448,13 +450,14 @@ func TestSelfProfile(t *testing.T) {
 			Method("Get").
 			URL("/profile/me").
 			Expect(t).
-			Body(fmt.Sprintf(`{"id":"%s", "name":"%s", "login":"%s", "sex":"%s", "image":"%s", "email":"%s"}`,
+			Body(fmt.Sprintf(`{"id":"%s", "name":"%s", "login":"%s", "sex":"%s", "image":"%s", "email":"%s", "theme":"%s"}`,
 				profile.Id,
 				profile.Name,
 				profile.Login,
 				profile.Sex,
 				profile.Image,
 				profile.Email,
+				profile.Theme,
 			)).
 			Status(http.StatusOK).
 			End()
@@ -477,6 +480,7 @@ func TestGetProfile(t *testing.T) {
 			Sex:   testUser.Sex,
 			Image: testUser.Image,
 			Email: testUser.Email,
+			Theme: "test_theme",
 		}
 
 		m.EXPECT().
@@ -490,13 +494,14 @@ func TestGetProfile(t *testing.T) {
 			Method("Get").
 			URL("/profile/keklol").
 			Expect(t).
-			Body(fmt.Sprintf(`{"id":"%s", "name":"%s", "login":"%s", "sex":"%s", "image":"%s", "email":"%s"}`,
+			Body(fmt.Sprintf(`{"id":"%s", "name":"%s", "login":"%s", "sex":"%s", "image":"%s", "email":"%s", "theme":"%s"}`,
 				profile.Id,
 				profile.Name,
 				profile.Login,
 				profile.Sex,
 				profile.Image,
 				profile.Email,
+				profile.Theme,
 			)).
 			Status(http.StatusOK).
 			End()
