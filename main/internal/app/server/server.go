@@ -214,16 +214,10 @@ func StartNew() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatalf("Failed to export env vars: %v", err)
 	}
-	fmt.Println(os.Getenv("DB_CONN"))
-	fmt.Println(os.Getenv("CSRF_SECRET"))
-	fmt.Println(os.Getenv("MAIN_CONFIG_PATH"))
-	fmt.Println(os.Getenv("MAIN_CONFIG_NAME"))
-
 
 	if err := config.ExportConfig(); err != nil {
 		log.Fatalf("Failed to export config: %v", err)
 	}
-
 
 	db, err := gorm.Open("postgres", os.Getenv("DB_CONN"))
 	if err != nil {
@@ -299,6 +293,7 @@ func StartNew() {
 	routes := InitRouter(customLogger, db, csrfToken, sessManager, fileserver)
 
 	fmt.Println("Starts server at ", viper.GetString(config.ConfigFields.MainAddr))
+	//err = http.ListenAndServeTLS(viper.GetString(config.ConfigFields.MainAddr), viper.GetString(config.ConfigFields.SSLfullchain), viper.GetString(config.ConfigFields.SSLkey), c.Handler(m.HeadersHandler(routes)))
 	err = http.ListenAndServe(viper.GetString(config.ConfigFields.MainAddr), c.Handler(m.HeadersHandler(routes)))
 	if err != nil {
 		log.Println(err)
