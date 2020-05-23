@@ -23,7 +23,9 @@ cors:
                     "http://195.19.37.246:10982",
                     "http://89.208.199.170:3001",
                     "http://localhost:3000",
-                    "http://virusmusic.fun"]
+                    "http://virusmusic.fun",
+                    "https://virusmusic.fun",
+                    "https://lsd.virusmusic.fun"]
   allowed_cred: true
   allowed_methods: ["GET", "POST", "PUT", "DELETE"]
   allowed_headers: ["Content-Type", "X-Content-Type-Options", "Csrf-Token"]
