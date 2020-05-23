@@ -20,6 +20,7 @@ type User struct {
 	Email    string `gorm:"column:email"`
 	Sex      string `gorm:"column:sex"`
 	Image    string `gorm:"column:image"`
+	Theme    string `gorm:"column:theme"`
 }
 
 type DbUserRepository struct {
@@ -61,6 +62,7 @@ func (ur *DbUserRepository) prepareDbUser(user models.User, hash []byte) (User, 
 		Email:    user.Email,
 		Sex:      user.Sex,
 		Image:    ur.defaultImage,
+		Theme:    user.Theme,
 	}, nil
 }
 
@@ -73,6 +75,7 @@ func ToModel(user User) models.User {
 		Email:    user.Email,
 		Sex:      user.Sex,
 		Image:    user.Image,
+		Theme:    user.Theme,
 	}
 }
 
@@ -115,6 +118,9 @@ func (ur *DbUserRepository) Update(user models.User, input models.UserSettings) 
 	}
 	dbUser.Name = input.Name
 	dbUser.Email = input.Email
+	if input.Theme != "" {
+		dbUser.Theme = input.Theme
+	}
 
 	db := ur.db.Save(&dbUser)
 
