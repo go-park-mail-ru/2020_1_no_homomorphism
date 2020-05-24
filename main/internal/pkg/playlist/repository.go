@@ -12,4 +12,6 @@ type Repository interface {
 	DeletePlaylist(plID string) error
 	ChangePrivacy(plID string) error
 	GetAllPlaylistTracks(plID string) ([]models.PlaylistTracks, error)
+	UpdateAvatar(playlist models.Playlist, avatarDir string, fileType string) (string, error)
+	Update(id string, name string) error
 }

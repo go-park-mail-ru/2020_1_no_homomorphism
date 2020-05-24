@@ -17,6 +17,7 @@ type PlaylistHandler struct {
 	PlaylistUC playlist.UseCase
 	TrackUC    track.UseCase
 	Log        *logger.MainLogger
+	ImgTypes   map[string]string
 }
 
 func (h *PlaylistHandler) GetUserPlaylists(w http.ResponseWriter, r *http.Request) {
@@ -327,6 +328,74 @@ func (h *PlaylistHandler) AddSharedPlaylist(w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		h.Log.LogWarning(r.Context(), "playlist delivery", "AddSharedPlaylist", "failed to encode json"+err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *PlaylistHandler) UpdatePlaylistAvatar(w http.ResponseWriter, r *http.Request) {
+	playlistID, ok := mux.Vars(r)["id"]
+	if !ok {
+		h.sendBadRequest(w, r.Context(), "no id in mux vars")
+		return
+	}
+	token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
+	if !token || !ok {
+		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if err := h.checkUserAccess(w, r, playlistID, true); err != nil {
+		return
+	}
+	file, handler, err := r.FormFile("playlist_image")
+	if err != nil || handler.Size == 0 {
+		h.Log.HttpInfo(r.Context(), "can't read playlist_image", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	mimeType := handler.Header.Get("Content-Type")
+	elem, ok := h.ImgTypes[mimeType]
+	if !ok {
+		h.Log.HttpInfo(r.Context(), "wrong file content-type", http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	path, err := h.PlaylistUC.UpdateAvatar(playlistID, file, elem)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "UpdatePlaylistAvatar", "failed to update avatar:"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	h.Log.Info("new file created:", path)
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
+func (h *PlaylistHandler) Update(w http.ResponseWriter, r *http.Request) {
+	plID, okID := mux.Vars(r)["id"]
+	plName, okName := mux.Vars(r)["name"]
+	if !okID || !okName {
+		h.sendBadRequest(w, r.Context(), "no name or id in mux vars")
+		return
+	}
+	token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
+	if !token || !ok {
+		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.checkUserAccess(w, r, plID, true); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	err := h.PlaylistUC.Update(plID, plName)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "can't update playlist:"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
