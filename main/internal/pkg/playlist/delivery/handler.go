@@ -372,6 +372,7 @@ func (h *PlaylistHandler) UpdatePlaylistAvatar(w http.ResponseWriter, r *http.Re
 	}
 	h.Log.Info("new file created:", path)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *PlaylistHandler) Update(w http.ResponseWriter, r *http.Request) {
@@ -381,12 +382,12 @@ func (h *PlaylistHandler) Update(w http.ResponseWriter, r *http.Request) {
 		h.sendBadRequest(w, r.Context(), "no name or id in mux vars")
 		return
 	}
-	token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
-	if !token || !ok {
-		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	//token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
+	//if !token || !ok {
+	//	h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
 
 	if err := h.checkUserAccess(w, r, plID, true); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -400,4 +401,5 @@ func (h *PlaylistHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+	w.WriteHeader(http.StatusOK)
 }
