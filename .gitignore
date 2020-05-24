@@ -5,6 +5,6 @@ images/*
 coverage.out
 *.log
 /logfile.log
-/resources/*
 *.pem
 *.out
+/resources/*

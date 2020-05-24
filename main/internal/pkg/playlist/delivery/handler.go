@@ -340,12 +340,12 @@ func (h *PlaylistHandler) UpdatePlaylistAvatar(w http.ResponseWriter, r *http.Re
 		h.sendBadRequest(w, r.Context(), "no id in mux vars")
 		return
 	}
-	token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
-	if !token || !ok {
-		h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
+	//token, ok := r.Context().Value(middleware.CSRFTokenCorrect).(bool)
+	//if !token || !ok {
+	//	h.Log.HttpInfo(r.Context(), "permission denied: user has wrong csrf token", http.StatusUnauthorized)
+	//	w.WriteHeader(http.StatusUnauthorized)
+	//	return
+	//}
 	if err := h.checkUserAccess(w, r, playlistID, true); err != nil {
 		return
 	}
