@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
 	"github.com/jinzhu/gorm"
+	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -214,4 +216,32 @@ func (pr *DbPlaylistRepository) GetAllPlaylistTracks(plID string) ([]models.Play
 	}
 
 	return tracks, nil
+}
+
+func (pr *DbPlaylistRepository) UpdateAvatar(pl models.Playlist, avatarDir string, fileName string) (string, error) {
+
+	serverFilePath := os.Getenv("FILE_SERVER") + filepath.Join(avatarDir, fileName)
+
+	db := pr.db.
+		Model(&pl).
+		Update("image", serverFilePath)
+
+	err := db.Error
+	if err != nil {
+		return "", fmt.Errorf("failed to update user: %v", err)
+	}
+
+	return serverFilePath, nil
+}
+
+func (pr *DbPlaylistRepository) Update(id string, name string) error {
+	dbPlaylist, err := pr.GetPlaylistById(id)
+	if err != nil {
+		return err
+	}
+
+	dbPlaylist.Name = name
+	db := pr.db.Save(&dbPlaylist)
+
+	return db.Error
 }

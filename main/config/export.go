@@ -40,6 +40,8 @@ var ConfigFields = struct {
 	// ssl
 	SSLkey       string
 	SSLfullchain string
+	// playlisy
+	PlaylistAvatarDir string
 }{
 	DBMaxConnNum:       "db.max_conn_num",
 	LogFile:            "logger.file",
@@ -62,6 +64,7 @@ var ConfigFields = struct {
 	MainAddr:           "main.addr",
 	SSLkey:             "ssl.key",
 	SSLfullchain:       "ssl.fullchain",
+	PlaylistAvatarDir:  "playlist.avatar.dir",
 }
 
 type requestID int

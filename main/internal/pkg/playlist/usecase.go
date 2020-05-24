@@ -1,6 +1,9 @@
 package playlist
 
-import "github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+import (
+	"github.com/2020_1_no_homomorphism/no_homo_main/internal/pkg/models"
+	"io"
+)
 
 type UseCase interface {
 	GetUserPlaylists(id string) ([]models.Playlist, error)
@@ -13,4 +16,6 @@ type UseCase interface {
 	DeletePlaylist(plID string) error
 	ChangePrivacy(plID string) error
 	AddSharedPlaylist(plID string, uID string) (string, error)
+	UpdateAvatar(plID string, file io.Reader, fileType string) (string, error)
+	Update(id string, name string) error
 }

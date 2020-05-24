@@ -40,3 +40,6 @@ main:
 ssl:
   key: "privkey.pem"
   fullchain: "fullchain.pem"
+playlist:
+  avatar:
+    dir: "/playlist"
