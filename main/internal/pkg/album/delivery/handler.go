@@ -137,3 +137,33 @@ func (h *AlbumHandler) RateAlbum(w http.ResponseWriter, r *http.Request) {
 
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
+
+func (h *AlbumHandler) GetNewestReleases(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
+	if !ok {
+		h.Log.LogWarning(r.Context(), "delivery", "GetNewestReleases", "failed to get from context")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	begin, end := 0, 20
+
+	releases, err := h.AlbumUC.GetNewestReleases(user.Id, begin, end)
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "GetNewestReleases", "failed to get from db"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(releases)
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "GetNewestReleases", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+
+}

@@ -167,3 +167,36 @@ func (ar *DbAlbumRepository) CheckLike(aID, uID string) bool {
 
 	return true
 }
+
+type NewestReleases struct {
+	Albums
+	artist_image string `gorm:"artist_image" json:"artist_image"`
+}
+
+func toNewestReleasesModel(r NewestReleases) models.NewestReleases{
+   return models.NewestReleases{
+	   Album:       toModel(r.Albums),
+	   ArtistImage: r.artist_image,
+   }
+}
+
+func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) ([]models.NewestReleases, error) {
+	newestReleases := []NewestReleases{}
+	dif := end - begin
+	db := ar.db.Raw("SELECT albums.*, sub_artists.image as artist_image" +
+		"FROM sub_artists" +
+		"JOIN albums on sub_artists.artist_id = albums.artist_id" +
+		"WHERE user_id = ?" +
+		"ORDER BY release" +
+		"LIMIT ?" +
+		"OFFSET ?", uID, dif, begin)
+
+	if err := db.Error; err != nil {
+		return nil, err
+	}
+	newestReleasesModel := make([]models.NewestReleases, len(newestReleases))
+	for i, r := range newestReleases {
+		newestReleasesModel[i] = toNewestReleasesModel(r)
+	}
+	return newestReleasesModel, nil
+}

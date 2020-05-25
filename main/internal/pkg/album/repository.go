@@ -9,4 +9,5 @@ type Repository interface {
 	Search(text string, count uint) ([]models.AlbumSearch, error)
 	RateAlbum(aID, uID string) error
 	CheckLike(aID, uID string) bool
+	GetNewestReleases(uID string, begin int, end int) ([]models.NewestReleases, error)
 }

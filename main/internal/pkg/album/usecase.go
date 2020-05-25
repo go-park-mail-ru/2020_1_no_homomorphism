@@ -8,4 +8,5 @@ type UseCase interface {
 	GetBoundedAlbumsByArtistId(id string, start uint64, end uint64) ([]models.Album, error)
 	Search(text string, count uint) ([]models.AlbumSearch, error)
 	RateAlbum(aID, uID string) error
+	GetNewestReleases(uID string, begin, end int) ([]models.NewestReleases, error)
 }

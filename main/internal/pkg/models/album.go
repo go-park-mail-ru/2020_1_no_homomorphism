@@ -17,3 +17,8 @@ type AlbumSearch struct {
 	ArtistName string `json:"artist_name"`
 	Image      string `json:"image"`
 }
+
+type NewestReleases struct {
+	Album
+	ArtistImage string `json:"artist_image"`
+}
