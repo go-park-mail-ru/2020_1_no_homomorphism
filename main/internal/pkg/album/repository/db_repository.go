@@ -189,7 +189,7 @@ func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) (
 		"WHERE user_id = ?" +
 		"ORDER BY release" +
 		"LIMIT ?" +
-		"OFFSET ?", uID, dif, begin)
+		"OFFSET ?", uID, dif, begin).Scan(&newestReleases)
 
 	if err := db.Error; err != nil {
 		return nil, err
