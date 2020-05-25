@@ -35,3 +35,7 @@ func (uc AlbumUseCase) Search(text string, count uint) ([]models.AlbumSearch, er
 func (uc AlbumUseCase) RateAlbum(aID, uID string) error {
 	return uc.AlbumRepository.RateAlbum(aID, uID)
 }
+
+func (uc AlbumUseCase) GetNewestReleases(uID string, begin, end int) ([]models.NewestReleases, error) {
+	return uc.AlbumRepository.GetNewestReleases(uID, begin, end)
+}

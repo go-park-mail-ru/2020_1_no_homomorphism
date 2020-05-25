@@ -193,6 +193,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.Handle("/tracks/{id:[0-9]+}/rating", auth.Auth(track.RateTrack, false)).Methods("POST")
 	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedAlbumTracks, user.Log), true)).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedArtistTracks, user.Log), true)).Methods("GET")
+	r.Handle("/albums/newest", auth.Auth(album.GetNewestReleases, false)).Methods("GET")
 
 	r.Handle("/users", auth.Auth(user.CheckAuth, false))
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
@@ -204,6 +205,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.Handle("/users/profiles/{profile}", auth.Auth(user.Profile, false)).Methods("GET")
 	r.Handle("/users/settings", auth.Auth(csrf.CSRFCheck(user.Update), false)).Methods("PUT")
 	r.Handle("/users/images", auth.Auth(csrf.CSRFCheck(user.UpdateAvatar), false)).Methods("POST")
+
 
 	r.HandleFunc("/media/{text}/{count:[0-9]+}", search.Search).Methods("GET")
 
