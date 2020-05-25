@@ -181,15 +181,15 @@ func toNewestReleasesModel(r NewestReleases) models.NewestReleases{
 }
 
 func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) ([]models.NewestReleases, error) {
-	newestReleases := []NewestReleases{}
+	var newestReleases []NewestReleases
 	dif := end - begin
-	db := ar.db.Raw("SELECT albums.*, sub_artists.image as artist_image" +
-		"FROM sub_artists" +
-		"JOIN albums on sub_artists.artist_id = albums.artist_id" +
-		"WHERE user_id = ?" +
-		"ORDER BY release" +
-		"LIMIT ?" +
-		"OFFSET ?", uID, dif, begin).Scan(&newestReleases)
+	db := ar.db.Raw("SELECT albums.*, sub_artists.image as artist_image " +
+		"FROM sub_artists " +
+		"JOIN albums on sub_artists.artist_id = albums.artist_id " +
+		"WHERE user_id = ? " +
+		"ORDER BY release " +
+		"LIMIT ? " +
+		"OFFSET ? ", uID, dif, begin).Scan(&newestReleases)
 
 	if err := db.Error; err != nil {
 		return nil, err
