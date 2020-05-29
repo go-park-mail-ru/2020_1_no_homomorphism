@@ -87,5 +87,8 @@ func (uc TrackUseCase) setLikes(tracks []models.Track, uID string) error {
 }
 
 func (uc TrackUseCase) IsLikedByUser(uID string, tID string) (bool, error) {
+	if uID == "" || tID == "" {
+		return false, nil
+	}
 	return uc.Repository.IsLikedByUser(uID, tID)
 }

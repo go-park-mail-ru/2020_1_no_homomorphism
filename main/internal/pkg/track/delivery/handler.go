@@ -33,8 +33,12 @@ func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	trackData.IsLiked, _ = h.TrackUC.IsLikedByUser(user.Id, trackData.Id)
-
+	trackData.IsLiked, err = h.TrackUC.IsLikedByUser(user.Id, trackData.Id)
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed get like data"+err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	writer := json.NewEncoder(w)
 	err = writer.Encode(trackData)
