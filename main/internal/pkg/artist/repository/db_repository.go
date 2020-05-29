@@ -176,7 +176,7 @@ func toArtistAndSubsModel(r ArtistsAndSubscribers) models.ArtistAndSubscribers {
 
 type ArtistsAndSubscribers struct {
 	models.Artist
-	subscribers uint64 `gorm:"subscribers" json:"subscribers"`
+	subscribers uint64 `gorm:"column:subscribers" json:"subscribers"`
 }
 
 func (ar *DbArtistRepository) GetTopArtist() ([]models.ArtistAndSubscribers, error) {

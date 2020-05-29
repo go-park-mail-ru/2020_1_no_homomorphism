@@ -187,7 +187,7 @@ func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) (
 		"FROM sub_artists " +
 		"JOIN albums on sub_artists.artist_id = albums.artist_id " +
 		"WHERE user_id = ? " +
-		"ORDER BY release DESC" +
+		"ORDER BY release DESC " +
 		"LIMIT ? " +
 		"OFFSET ? ", uID, dif, begin).Scan(&newestReleases)
 
