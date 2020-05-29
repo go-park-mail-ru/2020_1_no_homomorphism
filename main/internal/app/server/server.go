@@ -195,7 +195,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.Handle("/albums/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedAlbumTracks, user.Log), true)).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}/tracks/{start:[0-9]+}/{end:[0-9]+}", auth.Auth(m.BoundedVars(track.GetBoundedArtistTracks, user.Log), true)).Methods("GET")
 	r.Handle("/albums/newest", auth.Auth(album.GetNewestReleases, false)).Methods("GET")
-
+	r.HandleFunc("/albums/worldnews", album.GetWorldNews).Methods("GET")
 	r.Handle("/users", auth.Auth(user.CheckAuth, false))
 	r.HandleFunc("/users/{id:[0-9]+}/stat", user.GetUserStat).Methods("GET")
 	r.Handle("/users/login", auth.Auth(user.Login, true)).Methods("POST")

@@ -167,3 +167,25 @@ func (h *AlbumHandler) GetNewestReleases(w http.ResponseWriter, r *http.Request)
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 
 }
+
+func (h *AlbumHandler) GetWorldNews(w http.ResponseWriter, r *http.Request) {
+
+	releases, err := h.AlbumUC.GetWorldNews()
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "GetWorldNews", "failed to get from db"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(releases)
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "GetWorldNews", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}

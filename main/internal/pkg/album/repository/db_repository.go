@@ -200,3 +200,15 @@ func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) (
 	}
 	return newestReleasesModel, nil
 }
+func (ar *DbAlbumRepository) GetWorldNews() ([]models.Album, error) {
+	var newAlbumsDb []Albums
+	db := ar.db.Raw("SELECT albums.* FROM albums ORDER BY release DESC LIMIT 20").Scan(&newAlbumsDb)
+	if err := db.Error; err != nil {
+		return nil, err
+	}
+	newAlbumsModel := make([]models.Album, len(newAlbumsDb))
+	for i, r := range newAlbumsDb {
+		newAlbumsModel[i] = toModel(r)
+	}
+	return newAlbumsModel, nil
+}

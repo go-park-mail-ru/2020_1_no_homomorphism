@@ -9,4 +9,5 @@ type UseCase interface {
 	Search(text string, count uint) ([]models.AlbumSearch, error)
 	RateAlbum(aID, uID string) error
 	GetNewestReleases(uID string, begin, end int) ([]models.NewestReleases, error)
+	GetWorldNews() ([]models.Album, error)
 }

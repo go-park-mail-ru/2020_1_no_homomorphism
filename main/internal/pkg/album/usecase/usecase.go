@@ -39,3 +39,6 @@ func (uc AlbumUseCase) RateAlbum(aID, uID string) error {
 func (uc AlbumUseCase) GetNewestReleases(uID string, begin, end int) ([]models.NewestReleases, error) {
 	return uc.AlbumRepository.GetNewestReleases(uID, begin, end)
 }
+func (uc AlbumUseCase) GetWorldNews() ([]models.Album, error) {
+	return uc.AlbumRepository.GetWorldNews()
+}
