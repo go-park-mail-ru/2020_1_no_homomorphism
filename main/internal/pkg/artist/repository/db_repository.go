@@ -191,8 +191,9 @@ func (ar *DbArtistRepository) GetTopArtist() ([]models.ArtistAndSubscribers, err
 	if err := db.Error; err != nil {
 		return nil, err
 	}
-	newestReleasesModel := make([]models.ArtistAndSubscribers, len(topArtists))
+	artists := make([]models.ArtistAndSubscribers, len(topArtists))
 	for i, r := range topArtists {
-		newestReleasesModel[i] = toArtistAndSubsModel(r)
+		artists[i] = toArtistAndSubsModel(r)
 	}
+	return artists, nil
 }
