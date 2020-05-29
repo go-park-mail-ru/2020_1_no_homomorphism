@@ -174,6 +174,7 @@ func InitRouter(customLogger *logger.MainLogger, db *gorm.DB, csrfToken csrfLib.
 	r.HandleFunc("/artists/{id:[0-9]+}/stat", artist.GetArtistStat).Methods("GET")
 	r.HandleFunc("/artists/{start:[0-9]+}/{end:[0-9]+}", artist.GetBoundedArtists).Methods("GET")
 	r.Handle("/artists/{id:[0-9]+}/subscription", auth.Auth(artist.Subscribe, false)).Methods("POST") //todo csrf
+	r.HandleFunc("/artists/top", artist.GetTopArtists).Methods("GET")
 
 	r.Handle("/users/playlists", auth.Auth(playlist.GetUserPlaylists, false)).Methods("GET")
 	r.Handle("/playlists/{id:[0-9]+}", auth.Auth(playlist.GetFullPlaylistById, true)).Methods("GET")

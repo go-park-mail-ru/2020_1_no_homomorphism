@@ -160,3 +160,24 @@ func (h *ArtistHandler) SubscriptionList(w http.ResponseWriter, r *http.Request)
 	}
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
+
+func (h *ArtistHandler) GetTopArtists(w http.ResponseWriter, r *http.Request) {
+	topArtists, err := h.ArtistUC.GetTopArtist()
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "GetTopArtists", "failed to get from db"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(topArtists)
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "delivery", "GetTopArtists", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}

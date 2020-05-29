@@ -166,3 +166,33 @@ func (ar *DbArtistRepository) SubscriptionsList(uID string) ([]models.ArtistSear
 
 	return artists, nil
 }
+
+func toArtistAndSubsModel(r ArtistsAndSubscribers) models.ArtistAndSubscribers {
+	return models.ArtistAndSubscribers{
+		Artist:      r.Artist,
+		Subscribers: r.subscribers,
+	}
+}
+
+type ArtistsAndSubscribers struct {
+	models.Artist
+	subscribers uint64 `gorm:"subscribers" json:"subscribers"`
+}
+
+func (ar *DbArtistRepository) GetTopArtist() ([]models.ArtistAndSubscribers, error) {
+	var topArtists []ArtistsAndSubscribers
+
+	db := ar.db.Raw("SELECT artists.*, count(user_id) as subscribers " +
+		"FROM user_artists	" +
+		"JOIN artists on user_artists.artist_id = artists.id 	" +
+		"GROUP BY artists.id " +
+		"ORDER BY count(user_id) DESC " +
+		"LIMIT 20").Scan(&topArtists)
+	if err := db.Error; err != nil {
+		return nil, err
+	}
+	newestReleasesModel := make([]models.ArtistAndSubscribers, len(topArtists))
+	for i, r := range topArtists {
+		newestReleasesModel[i] = toArtistAndSubsModel(r)
+	}
+}

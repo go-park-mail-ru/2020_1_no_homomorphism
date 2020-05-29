@@ -9,6 +9,7 @@ type User struct {
 	Image    string `json:"image"`
 	Email    string `json:"email"`
 	Theme    string `json:"theme"`
+	Lang     string `json:"lang"`
 }
 
 type UserSettings struct {

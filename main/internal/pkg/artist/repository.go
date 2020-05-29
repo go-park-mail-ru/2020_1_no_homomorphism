@@ -10,4 +10,5 @@ type Repository interface {
 	IsSubscribed(uID string, aID string) bool
 	Subscription(aID string, uID string) error
 	SubscriptionsList(uID string) ([]models.ArtistSearch, error)
+	GetTopArtist() ([]models.ArtistAndSubscribers, error)
 }

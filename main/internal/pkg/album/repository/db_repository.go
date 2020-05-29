@@ -170,7 +170,7 @@ func (ar *DbAlbumRepository) CheckLike(aID, uID string) bool {
 
 type NewestReleases struct {
 	Albums
-	artist_image string `gorm:"artist_image" json:"artist_image"`
+	artist_image string `gorm:"column:artist_image" json:"artist_image"`
 }
 
 func toNewestReleasesModel(r NewestReleases) models.NewestReleases{
@@ -187,7 +187,7 @@ func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) (
 		"FROM sub_artists " +
 		"JOIN albums on sub_artists.artist_id = albums.artist_id " +
 		"WHERE user_id = ? " +
-		"ORDER BY release " +
+		"ORDER BY release DESC" +
 		"LIMIT ? " +
 		"OFFSET ? ", uID, dif, begin).Scan(&newestReleases)
 

@@ -29,3 +29,8 @@ type ArtistSubscription struct {
 	ArtistID string `json:"artist_id"`
 	USerID   string `json:"user_id"`
 }
+
+type ArtistAndSubscribers struct {
+	Artist
+	Subscribers uint64 `json:"subscribers"`
+}

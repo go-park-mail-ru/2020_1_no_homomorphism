@@ -41,3 +41,7 @@ func (uc *ArtistUseCase) GetArtistStat(id string) (models.ArtistStat, error) {
 func (uc *ArtistUseCase) Search(text string, count uint) ([]models.ArtistSearch, error) {
 	return uc.ArtistRepository.Search(text, count)
 }
+
+func (uc *ArtistUseCase) GetTopArtist() ([]models.ArtistAndSubscribers, error) {
+	return uc.ArtistRepository.GetTopArtist()
+}
