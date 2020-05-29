@@ -42,4 +42,4 @@ ssl:
   fullchain: "fullchain.pem"
 playlist:
   avatar:
-    dir: "/playlist"
+    dir: "/avatar/playlist"
