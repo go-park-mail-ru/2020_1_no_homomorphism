@@ -7,4 +7,3 @@ coverage.out
 /logfile.log
 *.pem
 *.out
-/resources/*
