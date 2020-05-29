@@ -223,3 +223,15 @@ func (tr *DbTrackRepository) RateTrack(uID string, tID string) error {
 
 	return nil
 }
+
+func (tr *DbTrackRepository) IsLikedByUser(uID string, tID string) (bool, error) {
+	var isLiked struct {
+		IsLiked bool `gorm:"column:is_liked"`
+	}
+
+	db := tr.db.Raw("select ? = any(liked_tracks) as is_liked from users where id = ?", tID, uID).Scan(&isLiked)
+	if err := db.Error; err != nil {
+		return false, fmt.Errorf("failed to check like: %v", err)
+	}
+	return isLiked.IsLiked, nil
+}

@@ -170,13 +170,13 @@ func (ar *DbAlbumRepository) CheckLike(aID, uID string) bool {
 
 type NewestReleases struct {
 	Albums
-	artist_image string `gorm:"column:artist_image" json:"artist_image"`
+	artistImage string `json:"artist_image"`
 }
 
 func toNewestReleasesModel(r NewestReleases) models.NewestReleases{
    return models.NewestReleases{
 	   Album:       toModel(r.Albums),
-	   ArtistImage: r.artist_image,
+	   ArtistImage: r.artistImage,
    }
 }
 

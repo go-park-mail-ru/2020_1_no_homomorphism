@@ -11,4 +11,5 @@ type Repository interface {
 	GetUserTracks(uID string) ([]models.Track, error)
 	GetUserLikedTracksIDs(uID string) ([]int64, error)
 	RateTrack(uID string, tID string) error
+	IsLikedByUser(uID string, tID string) (bool, error)
 }

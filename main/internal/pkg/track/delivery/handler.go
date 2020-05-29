@@ -16,6 +16,11 @@ type TrackHandler struct {
 }
 
 func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(middleware.UserKey).(models.User)
+	if !ok {
+		user = models.User{Id: ""}
+	}
+
 	varId, ok := mux.Vars(r)["id"]
 	if !ok {
 		h.Log.HttpInfo(r.Context(), "no id in mux vars", http.StatusBadRequest)
@@ -28,6 +33,8 @@ func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	trackData.IsLiked, _ = h.TrackUC.IsLikedByUser(user.Id, trackData.Id)
+
 	w.Header().Set("Content-Type", "application/json")
 	writer := json.NewEncoder(w)
 	err = writer.Encode(trackData)

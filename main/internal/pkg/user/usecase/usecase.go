@@ -121,6 +121,7 @@ func (uc *UserUseCase) GetOutputUserData(user models.User) models.User {
 		Image: user.Image,
 		Email: user.Email,
 		Theme: user.Theme,
+		Lang: user.Lang,
 	}
 }
 

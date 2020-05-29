@@ -10,4 +10,5 @@ type UseCase interface {
 	Search(text string, count uint) ([]models.TrackSearch, error)
 	GetUserTracks(uID string) ([]models.Track, error)
 	RateTrack(uID, tID string) error
+	IsLikedByUser(uID string, tID string) (bool, error)
 }
