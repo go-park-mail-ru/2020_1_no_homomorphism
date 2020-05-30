@@ -63,8 +63,8 @@ func (ur *DbUserRepository) prepareDbUser(user models.User, hash []byte) (User, 
 		Email:    user.Email,
 		Sex:      user.Sex,
 		Image:    ur.defaultImage,
-		Theme:    user.Theme,
-		Lang:     user.Lang,
+		Theme:    "light green",
+		Lang:     "eng",
 	}, nil
 }
 
