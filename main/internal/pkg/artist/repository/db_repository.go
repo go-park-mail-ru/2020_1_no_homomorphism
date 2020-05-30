@@ -185,8 +185,8 @@ func (ar *DbArtistRepository) GetTopArtist() ([]models.ArtistAndSubscribers, err
 	db := ar.db.Raw("SELECT artists.*, count(user_id) as subscribers " +
 		"FROM user_artists	" +
 		"JOIN artists on user_artists.artist_id = artists.id 	" +
-		"GROUP BY artists.id " +
 		"WHERE release BETWEEN NOW() - INTERVAL '60 DAYS' AND NOW() " +
+		"GROUP BY artists.id " +
 		"ORDER BY count(user_id) DESC " +
 		"LIMIT 20").Scan(&topArtists)
 	if err := db.Error; err != nil {
