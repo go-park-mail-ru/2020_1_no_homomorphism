@@ -202,7 +202,7 @@ func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) (
 }
 func (ar *DbAlbumRepository) GetWorldNews() ([]models.Album, error) {
 	var newAlbumsDb []Albums
-	db := ar.db.Raw("SELECT albums.* FROM albums ORDER BY release DESC LIMIT 20").Scan(&newAlbumsDb)
+	db := ar.db.Raw("SELECT albums.* FROM albums WHERE release BETWEEN NOW() - INTERVAL '60 DAYS' AND NOW() ORDER BY release DESC LIMIT 20").Scan(&newAlbumsDb)
 	if err := db.Error; err != nil {
 		return nil, err
 	}
