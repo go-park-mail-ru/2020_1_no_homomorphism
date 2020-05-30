@@ -186,7 +186,7 @@ func (ar *DbAlbumRepository) GetNewestReleases(uID string, begin int, end int) (
 	db := ar.db.Raw("SELECT albums.*, sub_artists.image as artist_image " +
 		"FROM sub_artists " +
 		"JOIN albums on sub_artists.artist_id = albums.artist_id " +
-		"WHERE user_id = ? " +
+		"WHERE user_id = ?  AND release BETWEEN NOW() - INTERVAL '60 DAYS' AND NOW() " +
 		"ORDER BY release DESC " +
 		"LIMIT ? " +
 		"OFFSET ? ", uID, dif, begin).Scan(&newestReleases)

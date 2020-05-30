@@ -15,7 +15,7 @@ type TrackHandler struct {
 	Log     *logger.MainLogger
 }
 
-func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
+func (h *TrackHandler) GetTrack(w http.ResponseWriStatusBadRequestter, r *http.Request) {
 	user, ok := r.Context().Value(middleware.UserKey).(models.User)
 	if !ok {
 		user = models.User{Id: ""}
