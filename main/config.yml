@@ -22,6 +22,8 @@ cors:
   allowed_origins: ["http://89.208.199.170:3000",
                     "http://195.19.37.246:10982",
                     "http://89.208.199.170:3001",
+                    "http://87.239.111.253:3000",
+                    "http://87.239.111.253:3001",
                     "http://localhost:3000",
                     "http://virusmusic.fun",
                     "https://virusmusic.fun",

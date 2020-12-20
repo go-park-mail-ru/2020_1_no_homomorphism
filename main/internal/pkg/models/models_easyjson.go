@@ -462,6 +462,8 @@ func easyjsonD2b7633eDecodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 			out.ArtistName = string(in.String())
 		case "artist_id":
 			out.ArtistID = string(in.String())
+		case "link":
+			out.Link = string(in.String())
 		case "image":
 			out.Image = string(in.String())
 		default:
@@ -497,6 +499,11 @@ func easyjsonD2b7633eEncodeGithubCom20201NoHomomorphismNoHomoMainInternalPkgMode
 		const prefix string = ",\"artist_id\":"
 		out.RawString(prefix)
 		out.String(string(in.ArtistID))
+	}
+	{
+		const prefix string = ",\"link\":"
+		out.RawString(prefix)
+		out.String(string(in.Link))
 	}
 	{
 		const prefix string = ",\"image\":"

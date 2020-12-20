@@ -33,6 +33,7 @@ func toSearchModel(dbTrack Tracks) models.TrackSearch {
 		TrackName:  dbTrack.Name,
 		ArtistName: dbTrack.Artist,
 		ArtistID:   strconv.FormatUint(dbTrack.ArtistID, 10),
+		Link:       dbTrack.Link,
 		Image:      dbTrack.Image,
 	}
 }
