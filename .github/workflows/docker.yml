@@ -6,6 +6,7 @@ on:
       - master
       - dev
       - deploy
+      - kek
       - lint+deploy
   pull_request:
     branches: [ master ]
