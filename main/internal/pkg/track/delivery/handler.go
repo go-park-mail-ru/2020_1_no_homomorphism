@@ -50,6 +50,29 @@ func (h *TrackHandler) GetTrack(w http.ResponseWriter, r *http.Request) {
 	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
 }
 
+
+func (h *TrackHandler) GetAllTracks(w http.ResponseWriter, r *http.Request) {
+	tracks, err := h.TrackUC.GetAllTracks()
+	if err != nil {
+		h.Log.HttpInfo(r.Context(), "failed to get tracks"+err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(struct {
+		Tracks []models.Track `json:"tracks"`
+	}{tracks})
+
+	if err != nil {
+		h.Log.LogWarning(r.Context(), "track delivery", "GetAllTracks", "failed to encode json"+err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	h.Log.HttpInfo(r.Context(), "OK", http.StatusOK)
+}
+
 func (h *TrackHandler) GetBoundedArtistTracks(w http.ResponseWriter, r *http.Request) {
 	id, okId := r.Context().Value(middleware.Id).(string)
 	start, okStart := r.Context().Value(middleware.Start).(uint64)

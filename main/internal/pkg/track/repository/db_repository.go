@@ -64,6 +64,24 @@ func (tr *DbTrackRepository) GetTrackById(id string) (models.Track, error) {
 	}
 	return toModel(track), nil
 }
+func (tr *DbTrackRepository) GetAllTracks() ([]models.Track, error) {
+	var tracks []Tracks
+
+	db := tr.db.
+		Table("tracks").
+		Find(&tracks)
+
+	err := db.Error
+	if err != nil {
+		return nil, fmt.Errorf("failed to select query: %e", err)
+	}
+
+	modTracks := make([]models.Track, len(tracks))
+	for i, elem := range tracks {
+		modTracks[i] = toModel(elem)
+	}
+	return modTracks, nil
+}
 
 func (tr *DbTrackRepository) GetBoundedTracksByArtistId(id string, start, end uint64) ([]models.Track, error) {
 	var tracks []Tracks

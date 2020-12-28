@@ -18,6 +18,9 @@ func (uc TrackUseCase) GetTrackById(id string) (models.Track, error) {
 func (uc TrackUseCase) RateTrack(uID, tID string) error {
 	return uc.Repository.RateTrack(uID, tID)
 }
+func (uc TrackUseCase) GetAllTracks() ([]models.Track, error)  {
+	return uc.Repository.GetAllTracks()
+}
 
 func (uc TrackUseCase) GetBoundedTracksByArtistId(id string, start, end uint64, uID string) ([]models.Track, error) {
 	dbTracks, err := uc.Repository.GetBoundedTracksByArtistId(id, start, end)
