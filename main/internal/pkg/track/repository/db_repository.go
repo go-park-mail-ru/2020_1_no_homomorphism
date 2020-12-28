@@ -68,7 +68,8 @@ func (tr *DbTrackRepository) GetAllTracks() ([]models.Track, error) {
 	var tracks []Tracks
 
 	db := tr.db.
-		Table("tracks").
+		Table("full_track_info").
+		Order("RANDOM()").
 		Find(&tracks)
 
 	err := db.Error
